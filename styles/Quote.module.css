@@ -232,6 +232,113 @@
   object-fit: contain;
 }
 
+/* 상태 바 */
+.statusBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  padding: 8px 10px;
+  margin-bottom: 14px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+.statusBar strong { color: #111827; }
+.dirty { color: #b91c1c; font-weight: 700; }
+.saved { color: #059669; font-weight: 600; }
+
+/* 고정 정보 박스 */
+.fixedBox {
+  position: relative;
+  background: #f9fafb;
+  border: 1px dashed #d1d5db;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: #4b5563;
+  line-height: 1.7;
+}
+.fixedTag {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 10px;
+  color: #9ca3af;
+}
+
+/* 모달 (견적서 목록) */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 16px;
+  z-index: 50;
+  overflow-y: auto;
+}
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 860px;
+  padding: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+}
+.modalHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.modalHead h2 { margin: 0; font-size: 18px; }
+.emptyList {
+  text-align: center;
+  color: #6b7280;
+  padding: 30px;
+}
+.listTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.listTable th,
+.listTable td {
+  border-bottom: 1px solid #eee;
+  padding: 9px 8px;
+  text-align: left;
+  vertical-align: middle;
+}
+.listTable thead th {
+  color: #6b7280;
+  font-size: 12px;
+  border-bottom: 2px solid #e5e7eb;
+}
+.activeRow { background: #eff6ff; }
+.listActions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+.listActions button {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  border-radius: 5px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #374151;
+}
+.listActions button:hover { background: #f3f4f6; }
+.listActions .listDelete {
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+.listActions .listDelete:hover { background: #fef2f2; }
+
 /* ===== 미리보기 (A4 견적서) ===== */
 .previewWrap {
   display: flex;
