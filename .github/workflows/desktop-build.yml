@@ -1,9 +1,16 @@
 name: Build Desktop App
 
-# 태그(v1.0.0 등)를 올리거나, Actions 탭에서 수동 실행하면
-# 윈도우 설치파일(.exe)을 만들어 Releases에 게시합니다.
+# 동작:
+#  - desktop/ 코드를 브랜치에 push 하거나 Actions 탭에서 수동 실행하면
+#    윈도우 설치파일(.exe)을 만들어 "Actions 실행 결과의 Artifact"로 올립니다. (바로 내려받아 설치 가능)
+#  - v1.0.1 같은 태그를 push 하면 추가로 Releases 에 게시하고 자동 업데이트가 동작합니다.
 on:
   push:
+    branches:
+      - claude/quotation-generator-program-jz3pl1
+    paths:
+      - 'desktop/**'
+      - '.github/workflows/desktop-build.yml'
     tags:
       - 'v*'
   workflow_dispatch:
@@ -29,13 +36,22 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build & publish installer
-        run: npx electron-builder --win --publish always
+      # 태그에서 실행될 때만 Releases 에 게시(onTag), 평소엔 빌드만
+      - name: Build installer
+        run: npx electron-builder --win --publish onTag
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 자동 업데이트가 인식하도록 릴리스를 공개(draft 해제)합니다.
+      - name: Upload installer as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BRAUMM-Office-installer
+          path: desktop/dist/*.exe
+          if-no-files-found: error
+
+      # 태그 빌드일 때만 릴리스를 공개(draft 해제) → 자동 업데이트 인식
       - name: Publish the release (un-draft)
+        if: startsWith(github.ref, 'refs/tags/')
         shell: pwsh
         run: |
           $ver = "v$(node -p "require('./package.json').version")"
