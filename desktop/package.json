@@ -1,0 +1,49 @@
+{
+  "name": "braumm-office",
+  "version": "1.0.0",
+  "description": "BRAUMM 사무 도구 — 견적서 / 거래명세서 / 성적서 / 제품 / 매출",
+  "author": "BRAUMM",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "dist": "electron-builder --win --publish never",
+    "release": "electron-builder --win --publish always"
+  },
+  "build": {
+    "appId": "com.braumm.office",
+    "productName": "BRAUMM Office",
+    "files": [
+      "main.js",
+      "renderer/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "BRAUMM 사무 도구"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "JONGHYEONLim",
+        "repo": "next-netlify-starter"
+      }
+    ]
+  },
+  "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.9"
+  }
+}
