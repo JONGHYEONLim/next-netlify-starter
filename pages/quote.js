@@ -31,6 +31,7 @@ function makeEmptyItem() {
 }
 
 const DEFAULT_STATE = {
+  logo: '/braumm-logo.svg', // 기본 로고 (URL 또는 업로드 시 data URL)
   supplier: DEFAULT_SUPPLIER,
   date: todayISO(),
   serialSeq: 1,
@@ -51,6 +52,7 @@ export default function Quote() {
   const [state, setState] = useState(DEFAULT_STATE)
   const [loaded, setLoaded] = useState(false)
   const fileInputRef = useRef(null)
+  const logoInputRef = useRef(null)
 
   // 최초 로드 시 localStorage에서 복원
   useEffect(() => {
@@ -134,6 +136,19 @@ export default function Quote() {
     URL.revokeObjectURL(url)
   }
 
+  const handleLogoClick = () => logoInputRef.current?.click()
+
+  const handleLogoFile = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => update({ logo: ev.target.result })
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
+  const handleLogoRemove = () => update({ logo: '' })
+
   const handleImportClick = () => fileInputRef.current?.click()
 
   const handleImportFile = (e) => {
@@ -179,6 +194,34 @@ export default function Quote() {
       <div className={styles.layout}>
         {/* ===== 입력 폼 ===== */}
         <div className={styles.form}>
+          <div className={styles.section}>
+            <h2>로고</h2>
+            <div className={styles.logoRow}>
+              <div className={styles.logoPreview}>
+                {state.logo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={state.logo} alt="로고 미리보기" />
+                ) : (
+                  <span className={styles.logoEmpty}>로고 없음</span>
+                )}
+              </div>
+              <div className={styles.logoBtns}>
+                <button className={styles.btnSmall} onClick={handleLogoClick}>이미지 업로드</button>
+                {state.logo ? (
+                  <button className={`${styles.btnSmall} ${styles.btnSmallGhost}`} onClick={handleLogoRemove}>제거</button>
+                ) : null}
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoFile}
+                  style={{ display: 'none' }}
+                />
+              </div>
+            </div>
+            <p className={styles.hint}>PNG/JPG 로고를 올리면 견적서 상단에 표시되고 브라우저에 저장됩니다.</p>
+          </div>
+
           <div className={styles.section}>
             <h2>견적 정보</h2>
             <div className={styles.row2}>
@@ -390,6 +433,12 @@ export default function Quote() {
         {/* ===== 미리보기 (인쇄되는 견적서) ===== */}
         <div className={styles.previewWrap}>
           <div className={styles.sheet}>
+            {state.logo ? (
+              <div className={styles.sheetLogo}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={state.logo} alt="회사 로고" />
+              </div>
+            ) : null}
             <div className={styles.docTitle}>견 적 서</div>
             <div className={styles.serial}>일련번호 {serialNo} [ 1 / 1 ]</div>
 

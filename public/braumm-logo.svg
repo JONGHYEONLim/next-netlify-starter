@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 120" role="img" aria-label="BRAUMM">
+  <title>BRAUMM</title>
+  <!-- Icon mark (approximation of the BRAUMM symbol) -->
+  <g>
+    <path fill="#F9A825" d="M40 12 h44 a26 26 0 0 1 26 26 a22 22 0 0 1 -14 20 a24 24 0 0 1 16 23 a26 26 0 0 1 -26 27 H36 z"/>
+    <!-- white negative-space diagonals -->
+    <path fill="#ffffff" d="M50 34 l40 0 l-14 18 l-40 0 z"/>
+    <path fill="#ffffff" d="M62 66 l40 0 l-14 18 l-40 0 z"/>
+  </g>
+  <!-- Wordmark -->
+  <text x="150" y="82" font-family="Arial, 'Helvetica Neue', Helvetica, sans-serif"
+        font-size="72" font-weight="800" letter-spacing="2" fill="#111111">BRAUMM</text>
+</svg>
