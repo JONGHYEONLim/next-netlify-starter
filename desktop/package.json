@@ -1,6 +1,6 @@
 {
   "name": "braumm-office",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "BRAUMM 사무 도구 — 견적서 / 거래명세서 / 성적서 / 제품 / 매출",
   "author": "BRAUMM",
   "license": "UNLICENSED",
@@ -17,6 +17,7 @@
     "productName": "BRAUMM Office",
     "files": [
       "main.js",
+      "preload.js",
       "renderer/**/*",
       "package.json"
     ],
@@ -44,6 +45,7 @@
     "electron-builder": "^24.13.3"
   },
   "dependencies": {
-    "electron-updater": "^6.3.9"
+    "electron-updater": "^6.3.9",
+    "nodemailer": "^6.9.16"
   }
 }

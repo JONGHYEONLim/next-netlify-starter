@@ -146,10 +146,13 @@
 (function(){
 "use strict";
 var VAT=0.1;
-var K={quotes:"braumm-quotes-v3",products:"braumm-products-v3",certs:"braumm-certs-v3",statements:"braumm-statements-v3",settings:"braumm-settings-v3",draft:"braumm-draft-v3"};
+var K={quotes:"braumm-quotes-v3",products:"braumm-products-v3",certs:"braumm-certs-v3",statements:"braumm-statements-v3",settings:"braumm-settings-v3",draft:"braumm-draft-v3",history:"braumm-mailhistory-v3"};
 var SUP={bizNo:"216-87-04048",company:"(주)브라움",ceo:"임종현",address:"경기도 부천시 오정구 석천로397 부천테크노파크 쌍용3차 101동 406",bizType:"제조",bizItem:"전자코일 기타 유도자"};
 var DLOGO='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 120"><path fill="#F5A623" d="M40 12 h44 a26 26 0 0 1 26 26 a22 22 0 0 1 -14 20 a24 24 0 0 1 16 23 a26 26 0 0 1 -26 27 H36 z"/><path fill="#fff" d="M50 34 l40 0 l-14 18 l-40 0 z"/><path fill="#fff" d="M62 66 l40 0 l-14 18 l-40 0 z"/><text x="150" y="82" font-family="Arial,sans-serif" font-size="72" font-weight="800" letter-spacing="2" fill="#111">BRAUMM</text></svg>');
-var DSET={logo:DLOGO,manager:"임종현",companyTel:"010-3321-5197",testedName:"임종현",approvedName:"임석규"};
+var DSET={logo:DLOGO,manager:"임종현",companyTel:"010-3321-5197",testedName:"임종현",approvedName:"임석규",mailFrom:"sales@braummpower.com",mailFromName:"(주)브라움",mailBcc:true,
+  bodyQuote:"안녕하세요.\n(주)브라움입니다.\n요청하신 견적서를 첨부와 같이 송부드립니다.\n검토 후 회신 부탁드립니다.\n감사합니다.",
+  bodyStatement:"안녕하세요.\n(주)브라움입니다.\n거래명세서를 첨부와 같이 송부드립니다.\n확인 부탁드립니다.\n감사합니다.",
+  bodyCert:"안녕하세요.\n(주)브라움입니다.\n시험성적서를 첨부와 같이 송부드립니다.\n확인 부탁드립니다.\n감사합니다."};
 var FIXED_NOTES="*상기 견적가는 수량(MOQ) 및 사양에 따라 다소 변경될 수 있습니다.\n기타: 1. 상기 견적은 운송비를 포함한 금액입니다.\n2. 상기 견적은 샘플 제작 기준으로 산정되었으며, 양산 시 단가가 변경될 수 있습니다.";
 var STATUS=["견적","발주접수","제작중","제작완료","세금계산서발행","거래명세서발행"];
 
@@ -182,9 +185,11 @@ function printDoc(datePart,kind,who){
 // ---- state ----
 var settings=Object.assign({},DSET,rd(K.settings,{}));
 var quotes=rd(K.quotes,[]),products=rd(K.products,[]),certs=rd(K.certs,[]),statements=rd(K.statements,[]);
+var mailHistory=rd(K.history,[]);
 var draft=rd(K.draft,null);
 var view="quote";
 var pickCb=null;
+var isDesktop=!!(typeof window!=="undefined"&&window.braumm&&window.braumm.isDesktop);
 var $=function(id){return document.getElementById(id);};
 document.getElementById("filePick").addEventListener("change",function(e){var f=e.target.files[0];var cb=pickCb;pickCb=null;if(f&&cb){var r=new FileReader();r.onload=function(ev){cb(ev.target.result);};r.readAsDataURL(f);}e.target.value="";});
 function pickImage(cb){pickCb=cb;$("filePick").click();}
@@ -193,7 +198,7 @@ function saveAll(){wr(K.quotes,quotes);wr(K.products,products);wr(K.certs,certs)
 
 // =========================================================== QUOTE
 function emptyItem(){return{name:"",spec:"",qty:1,unit:"EA",price:0,remark:""};}
-function newQuote(){return{id:id("q"),date:todayISO(),seq:null,status:0,taxDate:"",recipient:"",attn:"",recipientTel:"",recipientFax:"",payment:"선급",validity:"1개월",items:[emptyItem()],extraNotes:"",manager:settings.manager,companyTel:settings.companyTel,savedAt:null};}
+function newQuote(){return{id:id("q"),date:todayISO(),seq:null,status:0,taxDate:"",recipient:"",attn:"",recipientTel:"",recipientFax:"",recipientEmail:"",payment:"선급",validity:"1개월",items:[emptyItem()],extraNotes:"",manager:settings.manager,companyTel:settings.companyTel,savedAt:null};}
 var quote=(draft&&draft.id&&draft.items)?draft:newQuote();
 var qdirty=false;
 function nextQSeq(date,qid){return 1+quotes.filter(function(q){return q.date===date&&q.id!==qid;}).length;}
@@ -207,13 +212,40 @@ function renderQuote(){
     '<div class="status"><span>일련번호 <b id="qserial">'+esc(sn)+'</b></span><span class="badge" id="qbadge"></span></div>'+
     sec("🖼 로고",'<div class="logo-row"><div class="logo-prev" id="qlogo"></div><div class="logo-btns"><button class="btn-sm" id="qlogoUp">이미지 업로드</button><button class="btn-sm ghost" id="qlogoRm">기본값</button></div></div><p class="hint">실제 로고 PNG를 올리면 견적서·명세서·성적서 상단에 표시됩니다.</p>')+
     sec("견적 정보",'<div class="row2"><div class="field"><label>견적일자</label><input type="date" data-q="date" value="'+esc(quote.date)+'"></div><div class="field"><label>일련번호(자동)</label><input value="'+esc(sn)+'" disabled></div></div><div class="row2"><div class="field"><label>결제조건</label><input data-q="payment" value="'+esc(quote.payment)+'"></div><div class="field"><label>유효기간</label><input data-q="validity" value="'+esc(quote.validity)+'"></div></div>')+
-    sec("수신처",'<div class="field"><label>수신(회사명)</label><input data-q="recipient" value="'+esc(quote.recipient)+'" placeholder="예: (주)한국전력"></div><div class="field"><label>참조(담당자)</label><input data-q="attn" value="'+esc(quote.attn)+'"></div><div class="row2"><div class="field"><label>수신 TEL</label><input data-q="recipientTel" value="'+esc(quote.recipientTel)+'"></div><div class="field"><label>수신 FAX</label><input data-q="recipientFax" value="'+esc(quote.recipientFax)+'"></div></div>')+
+    sec("수신처",'<div class="field"><label>수신(회사명)</label><input data-q="recipient" value="'+esc(quote.recipient)+'" placeholder="예: (주)한국전력"></div><div class="field"><label>참조(담당자)</label><input data-q="attn" value="'+esc(quote.attn)+'"></div><div class="field"><label>수신 이메일 (메일 발송용)</label><input type="email" data-q="recipientEmail" value="'+esc(quote.recipientEmail||"")+'" placeholder="예: buyer@company.com"></div><div class="row2"><div class="field"><label>수신 TEL</label><input data-q="recipientTel" value="'+esc(quote.recipientTel)+'"></div><div class="field"><label>수신 FAX</label><input data-q="recipientFax" value="'+esc(quote.recipientFax)+'"></div></div>')+
     '<div class="sec"><h2>품목 (<span id="qcnt">'+quote.items.length+'</span>)</h2><div id="qitems"></div><button class="add" id="qadd">+ 품목 추가</button></div>'+
     sec("기타 추가내용",'<div class="field"><textarea rows="3" data-q="extraNotes" placeholder="이 견적서에만 넣을 추가 문구">'+esc(quote.extraNotes)+'</textarea></div>')+
     sec("내 회사 정보",'<div class="row2"><div class="field"><label>담당자 이름</label><input data-set="manager" value="'+esc(quote.manager)+'"></div><div class="field"><label>회사 전화번호</label><input data-set="companyTel" value="'+esc(quote.companyTel)+'"></div></div><div class="fixed-box">'+esc(SUP.company)+' · 대표 '+esc(SUP.ceo)+'<br>사업자등록번호 '+esc(SUP.bizNo)+'<br>'+esc(SUP.address)+'<br>업태/종목: '+esc(SUP.bizType)+' / '+esc(SUP.bizItem)+'<span class="fixed-tag">고정</span></div>')+
+    sec("이메일 설정",mailSettingsHtml())+
     '</div></aside><div class="preview-wrap"><div class="sheet" id="qsheet"></div></div></div>';
   bindLogo("qlogo","qlogoUp","qlogoRm");
+  bindMailSettings();
   renderQItems();qsheet();updateQBadge();
+}
+function mailSettingsHtml(){
+  if(!isDesktop){
+    return '<div class="fixed-box">✉ 이메일 직접 발송은 <b>데스크톱 앱</b>에서만 됩니다.<br>(브라우저 버전은 보안상 메일 발송 불가)</div>';
+  }
+  return '<div class="row2"><div class="field"><label>보내는 이메일</label><input data-set="mailFrom" value="'+esc(settings.mailFrom||"")+'"></div><div class="field"><label>보내는 이름</label><input data-set="mailFromName" value="'+esc(settings.mailFromName||"")+'"></div></div>'+
+    '<div class="field"><label>Gmail 앱 비밀번호 <span id="mailPwState" style="color:var(--muted)"></span></label><div class="logo-row"><input type="password" id="mailPwInput" placeholder="16자리 앱 비밀번호" style="flex:1;border:1px solid var(--line);border-radius:7px;padding:8px 10px;background:var(--panel);color:var(--text)"><button class="btn-sm" id="mailPwSave">저장</button></div></div>'+
+    '<label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:4px"><input type="checkbox" id="mailBcc"'+(settings.mailBcc?" checked":"")+'> 보낼 때 나 자신을 숨은참조(BCC)로 넣어 사본 보관</label>'+
+    '<p class="hint">앱 비밀번호는 이 PC에 암호화되어 저장되며, 코드/서버로 전송되지 않습니다. 발급 방법은 도움말을 참고하세요.</p>';
+}
+function bindMailSettings(){
+  if(!isDesktop)return;
+  var st=$("mailPwState");
+  if(st&&window.braumm)window.braumm.hasMailPassword().then(function(has){st.textContent=has?"· 저장됨 ✓":"· 미저장";});
+  var save=$("mailPwSave");
+  if(save)save.onclick=function(){
+    var v=$("mailPwInput").value.replace(/\s/g,"");
+    if(!v){alert("앱 비밀번호를 입력하세요.");return;}
+    window.braumm.saveMailPassword(v).then(function(r){
+      if(r&&r.ok){$("mailPwInput").value="";if(st)st.textContent="· 저장됨 ✓";alert("앱 비밀번호를 안전하게 저장했습니다.");}
+      else alert("저장 실패: "+((r&&r.error)||"알 수 없음"));
+    });
+  };
+  var bcc=$("mailBcc");
+  if(bcc)bcc.onchange=function(){settings.mailBcc=bcc.checked;wr(K.settings,settings);};
 }
 function sec(t,inner){return '<div class="sec"><h2>'+t+'</h2>'+inner+'</div>';}
 function renderQItems(){
@@ -377,7 +409,7 @@ function renderStatementView(){
     '<div class="card"><table class="list"><thead><tr><th>일련번호</th><th>수신처</th><th>합계</th><th>발행일</th><th></th></tr></thead><tbody>'+list.map(function(s){return '<tr'+(curStatement&&s.id===curStatement.id?' class="active"':'')+'><td>'+esc(String(s.date).replace(/-/g,"/")+" -"+s.seq)+'</td><td>'+esc(s.recipient||"-")+'</td><td class="n">￦ '+fmt(stTotal(s))+'</td><td>'+esc(s.date)+'</td><td class="rowacts"><button class="mini go" data-sopen="'+s.id+'">보기</button><button class="mini del" data-sdel="'+s.id+'">삭제</button></td></tr>';}).join("")+'</tbody></table></div>';
   var sheet=curStatement?'<div class="preview-wrap"><div class="sheet" id="ssheet" style="min-height:auto"></div></div>':'';
   $("app").innerHTML='<div class="single"><h1 class="h1">🧾 거래명세서</h1><p class="sub">세금계산서 발행 후 만들어집니다. 매출은 세금계산서 발행일 기준으로 잡힙니다.</p>'+
-    (curStatement?'<div class="toolbar no-print"><label style="font-size:13px;color:var(--muted);align-self:center">발행일</label><input type="date" id="sdate" value="'+esc(curStatement.date)+'" style="border:1px solid var(--line);border-radius:7px;padding:7px 10px;background:var(--panel);color:var(--text)"><button class="btn primary" id="sprint">🖨 인쇄 / PDF</button></div>':'')+
+    (curStatement?'<div class="toolbar no-print"><label style="font-size:13px;color:var(--muted);align-self:center">발행일</label><input type="date" id="sdate" value="'+esc(curStatement.date)+'" style="border:1px solid var(--line);border-radius:7px;padding:7px 10px;background:var(--panel);color:var(--text)"><button class="btn primary" id="sprint">🖨 인쇄 / PDF</button>'+(isDesktop?'<button class="btn" id="sMail">✉ 메일 보내기</button>':'')+'</div>':'')+
     listHtml+sheet+'</div>';
   if(curStatement)ssheet();
 }
@@ -427,9 +459,10 @@ function openQuoteList(){
 // =========================================================== global actions & router
 function setGlobalActions(){
   var a=$("globalActions");
-  if(view==="quote"){a.innerHTML='<button class="btn" id="gList">📋 목록 ('+quotes.length+')</button><button class="btn primary" id="gSave">💾 저장<span id="gdot"></span></button><button class="btn" id="gNew">🆕 새 견적서</button><button class="btn primary" id="gPrint">🖨 인쇄/PDF</button><button class="btn" id="gBackup">백업</button>';}
-  else if(view==="cert"){a.innerHTML='<button class="btn primary" id="cSave">💾 저장</button><button class="btn" id="cNew">🆕 새 성적서</button><button class="btn primary" id="gPrint">🖨 인쇄/PDF</button>';}
-  else{a.innerHTML='<button class="btn" id="gBackup">백업</button><button class="btn" id="gRestore">복원</button>';}
+  var mailBtn=isDesktop?'<button class="btn" id="gMail">✉ 메일 보내기</button>':'';
+  if(view==="quote"){a.innerHTML='<button class="btn" id="gList">📋 목록 ('+quotes.length+')</button><button class="btn primary" id="gSave">💾 저장<span id="gdot"></span></button><button class="btn" id="gNew">🆕 새 견적서</button><button class="btn primary" id="gPrint">🖨 인쇄/PDF</button>'+mailBtn+(isDesktop?'<button class="btn" id="gHist">📮 발송이력</button>':'')+'<button class="btn" id="gBackup">백업</button>';}
+  else if(view==="cert"){a.innerHTML='<button class="btn primary" id="cSave">💾 저장</button><button class="btn" id="cNew">🆕 새 성적서</button><button class="btn primary" id="gPrint">🖨 인쇄/PDF</button>'+mailBtn;}
+  else{a.innerHTML=(isDesktop?'<button class="btn" id="gHist">📮 발송이력</button>':'')+'<button class="btn" id="gBackup">백업</button><button class="btn" id="gRestore">복원</button>';}
   wire();
 }
 function wire(){
@@ -445,8 +478,60 @@ function wire(){
   if(b=$("gRestore"))b.onclick=function(){$("restorePick").click();};
   if(b=$("cSave"))b.onclick=function(){if(!cert.productId){alert("먼저 제품을 선택하세요.");return;}if(cert.serialSeq==null)cert.serialSeq=nextCertSeq(cert.date);cert.serial=certSerial(cert.date,cert.serialSeq);cert.savedAt=Date.now();var i=certs.findIndex(function(c){return c.id===cert.id;});if(i>=0)certs[i]=clone(cert);else certs.push(clone(cert));wr(K.certs,certs);cdirty=false;updateCBadge();renderCertView();};
   if(b=$("cNew"))b.onclick=function(){cert=newCert(cert.productId);cdirty=false;renderCertView();};
+  if(b=$("gMail"))b.onclick=function(){openMailDialog(view);};
+  if(b=$("gHist"))b.onclick=openMailHistory;
 }
 function doBackup(){var data={settings:settings,quotes:quotes,products:products,certs:certs,statements:statements,exportedAt:new Date().toISOString()};var blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});var u=URL.createObjectURL(blob),x=document.createElement("a");x.href=u;x.download="braumm_백업_"+todayISO()+".json";x.click();URL.revokeObjectURL(u);}
+
+// ===== 이메일 발송 =====
+// 현재 보고 있는 문서(견적/거래명세/성적)의 정보를 모아 발송 다이얼로그를 연다.
+function currentDocInfo(kind){
+  if(kind==="statement"&&curStatement){var s=curStatement;return{kind:"거래명세서",to:"",who:s.recipient,date:s.date,subject:"[거래명세서] "+SUP.company+" - "+String(s.date).replace(/-/g,"/")+" -"+s.seq,body:settings.bodyStatement};}
+  if(kind==="cert"){var pp=products.find(function(x){return x.id===cert.productId;})||{};return{kind:"성적서",to:"",who:pp.name||"제품",date:cert.date,subject:"[시험성적서] "+SUP.company+" - "+(cert.serial||"")+" "+(pp.name||""),body:settings.bodyCert};}
+  var seq=quote.seq!=null?quote.seq:nextQSeq(quote.date,quote.id);
+  return{kind:"견적서",to:quote.recipientEmail||"",who:quote.recipient,date:quote.date,subject:"[견적서] "+SUP.company+" - "+qserial(quote.date,seq),body:settings.bodyQuote};
+}
+function openMailDialog(kind){
+  if(!isDesktop){alert("이메일 직접 발송은 데스크톱 앱에서만 가능합니다.");return;}
+  var d=currentDocInfo(kind);
+  var fname=safeName(d.date)+"_"+d.kind+"_"+safeName(d.who);
+  $("modalTitle").textContent="✉ 이메일 보내기 · "+d.kind;
+  $("modalBody").innerHTML='<div id="mailWarn"></div>'+
+    '<div class="field"><label>받는 사람 (이메일)</label><input type="email" id="mTo" value="'+esc(d.to)+'" placeholder="buyer@company.com"></div>'+
+    '<div class="field"><label>제목</label><input id="mSubject" value="'+esc(d.subject)+'"></div>'+
+    '<div class="field"><label>본문</label><textarea id="mBody" rows="7">'+esc(d.body||"")+'</textarea></div>'+
+    '<div class="fixed-box">📎 첨부: <b>'+esc(fname)+'.pdf</b> (현재 화면의 '+esc(d.kind)+'가 PDF로 자동 첨부됩니다)</div>'+
+    '<div class="toolbar" style="margin-top:14px"><button class="btn" id="mCancel">취소</button><button class="btn primary" id="mSend">보내기</button></div>';
+  $("overlay").hidden=false;
+  window.braumm.hasMailPassword().then(function(has){if(!has)$("mailWarn").innerHTML='<div class="fixed-box" style="border-color:var(--danger);color:var(--danger);margin-bottom:10px">⚠ Gmail 앱 비밀번호가 저장되어 있지 않습니다. 견적서 탭 → [이메일 설정]에서 먼저 저장하세요.</div>';});
+  $("mCancel").onclick=function(){$("overlay").hidden=true;};
+  $("mSend").onclick=function(){
+    var to=$("mTo").value.trim();
+    if(!to){alert("받는 사람 이메일을 입력하세요.");return;}
+    var payload={from:settings.mailFrom,fromName:settings.mailFromName,to:to,bcc:settings.mailBcc?settings.mailFrom:"",subject:$("mSubject").value,body:$("mBody").value,filename:fname};
+    var btn=$("mSend");btn.textContent="보내는 중…";btn.disabled=true;
+    window.braumm.sendMail(payload).then(function(r){
+      if(r&&r.ok){
+        mailHistory.unshift({kind:d.kind,to:to,subject:payload.subject,at:Date.now(),ok:true});
+        wr(K.history,mailHistory);
+        $("overlay").hidden=true;
+        alert("메일을 보냈습니다. → "+to);
+      }else{
+        mailHistory.unshift({kind:d.kind,to:to,subject:payload.subject,at:Date.now(),ok:false,error:(r&&r.error)||""});
+        wr(K.history,mailHistory);
+        btn.textContent="보내기";btn.disabled=false;
+        alert("발송 실패: "+((r&&r.error)||"알 수 없는 오류")+"\n\n앱 비밀번호/인터넷 연결을 확인하세요.");
+      }
+    });
+  };
+}
+function openMailHistory(){
+  $("modalTitle").textContent="📮 발송 이력 ("+mailHistory.length+")";
+  $("modalBody").innerHTML=mailHistory.length===0?'<p class="empty">발송 이력이 없습니다.</p>':
+    '<table class="list"><thead><tr><th>보낸시각</th><th>종류</th><th>받는사람</th><th>제목</th><th>결과</th></tr></thead><tbody>'+
+    mailHistory.slice(0,100).map(function(h){return '<tr><td>'+esc(fmtTime(h.at))+'</td><td>'+esc(h.kind)+'</td><td>'+esc(h.to)+'</td><td style="font-size:12px">'+esc(h.subject)+'</td><td>'+(h.ok?'<span class="chip s3">성공</span>':'<span class="chip s0" title="'+esc(h.error||"")+'">실패</span>')+'</td></tr>';}).join("")+'</tbody></table>';
+  $("overlay").hidden=false;
+}
 $("restorePick").addEventListener("change",function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(ev){try{var d=JSON.parse(ev.target.result);if(d.quotes)quotes=d.quotes;if(d.products)products=d.products;if(d.certs)certs=d.certs;if(d.statements)statements=d.statements;if(d.settings)settings=Object.assign(settings,d.settings);saveAll();alert("백업을 불러왔습니다.");route();}catch(err){alert("올바른 백업 파일이 아닙니다.");}};r.readAsText(f);e.target.value="";});
 
 function bindLogo(prevId,upId,rmId){renderBrand();var p=$(prevId);if(p)p.innerHTML=settings.logo?'<img src="'+esc(settings.logo)+'">':'<span class="logo-empty">로고 없음</span>';var u=$(upId);if(u)u.onclick=function(){pickImage(function(d){settings.logo=d;wr(K.settings,settings);route();});};var r=$(rmId);if(r)r.onclick=function(){settings.logo=DLOGO;wr(K.settings,settings);route();};}
@@ -493,6 +578,7 @@ document.addEventListener("click",function(e){
   if(d.sopen){curStatement=statements.find(function(x){return x.id===d.sopen;});renderStatementView();}
   if(d.sdel){if(confirm("이 거래명세서를 삭제할까요?")){var del=statements.find(function(x){return x.id===d.sdel;});statements=statements.filter(function(x){return x.id!==d.sdel;});if(del){var q=quotes.find(function(x){return x.id===del.quoteId;});if(q){q.status=3;q.statementId=null;wr(K.quotes,quotes);}}wr(K.statements,statements);curStatement=null;renderStatementView();}}
   if(t.id==="sprint"&&curStatement){printDoc(curStatement.date,"거래명세서",curStatement.recipient);}
+  if(t.id==="sMail"){openMailDialog("statement");}
   if(t.id==="sdate"){}
 });
 document.addEventListener("change",function(e){if(e.target.id==="sdate"&&curStatement){curStatement.date=e.target.value;var i=statements.findIndex(function(x){return x.id===curStatement.id;});if(i>=0)statements[i].date=e.target.value;wr(K.statements,statements);ssheet();}});
