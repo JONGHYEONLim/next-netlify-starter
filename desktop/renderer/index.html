@@ -102,7 +102,7 @@
   .list thead th{color:var(--muted);font-size:12px;border-bottom:2px solid var(--line);} .list td.n{text-align:right;font-variant-numeric:tabular-nums;}
   .list tr.active{background:rgba(245,166,35,.12);}
   .chip{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;}
-  .chip.s0{background:#e5e7eb;color:#374151;} .chip.s1{background:#dbeafe;color:#1e40af;} .chip.s2{background:#fef3c7;color:#92400e;} .chip.s3{background:#dcfce7;color:#166534;} .chip.s4{background:#e9d5ff;color:#6b21a8;}
+  .chip.s0{background:#e5e7eb;color:#374151;} .chip.s1{background:#dbeafe;color:#1e40af;} .chip.s2{background:#fef3c7;color:#92400e;} .chip.s3{background:#dcfce7;color:#166534;} .chip.s4{background:#fde68a;color:#78350f;} .chip.s5{background:#e9d5ff;color:#6b21a8;}
   .mini{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:4px 9px;font-size:12px;cursor:pointer;font-weight:600;color:var(--text);} .mini:hover{background:var(--panel-2);}
   .mini.del{color:var(--danger);border-color:var(--danger);} .mini.go{background:var(--accent);color:#241a05;border-color:var(--accent);}
   .rowacts{display:flex;gap:5px;justify-content:flex-end;flex-wrap:wrap;}
@@ -151,7 +151,7 @@ var SUP={bizNo:"216-87-04048",company:"(주)브라움",ceo:"임종현",address:"
 var DLOGO='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 120"><path fill="#F5A623" d="M40 12 h44 a26 26 0 0 1 26 26 a22 22 0 0 1 -14 20 a24 24 0 0 1 16 23 a26 26 0 0 1 -26 27 H36 z"/><path fill="#fff" d="M50 34 l40 0 l-14 18 l-40 0 z"/><path fill="#fff" d="M62 66 l40 0 l-14 18 l-40 0 z"/><text x="150" y="82" font-family="Arial,sans-serif" font-size="72" font-weight="800" letter-spacing="2" fill="#111">BRAUMM</text></svg>');
 var DSET={logo:DLOGO,manager:"임종현",companyTel:"010-3321-5197",testedName:"임종현",approvedName:"임석규"};
 var FIXED_NOTES="*상기 견적가는 수량(MOQ) 및 사양에 따라 다소 변경될 수 있습니다.\n기타: 1. 상기 견적은 운송비를 포함한 금액입니다.\n2. 상기 견적은 샘플 제작 기준으로 산정되었으며, 양산 시 단가가 변경될 수 있습니다.";
-var STATUS=["견적","발주접수","제작중","제작완료","명세서발행"];
+var STATUS=["견적","발주접수","제작중","제작완료","세금계산서발행","거래명세서발행"];
 
 // ---- korean number ----
 var _D=["","일","이","삼","사","오","육","칠","팔","구"],_S=["","십","백","천"],_B=["","만","억","조","경"];
@@ -169,6 +169,15 @@ function todayISO(){var d=new Date(),p=function(n){return String(n).padStart(2,"
 function ymd6(iso){var s=(iso||todayISO()).replace(/-/g,"");return s.slice(2);} // YYMMDD
 function fmtTime(ts){if(!ts)return"";var d=new Date(ts),p=function(n){return String(n).padStart(2,"0");};return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+" "+p(d.getHours())+":"+p(d.getMinutes());}
 function clone(o){return JSON.parse(JSON.stringify(o));}
+function safeName(s){return String(s==null||s===""?"무제":s).replace(/[\\/:*?"<>|\n\r\t]/g," ").replace(/\s+/g," ").trim();}
+// 인쇄/PDF 저장 시 파일명을 '날짜_종류_업체명' 으로 자동 지정 (브라우저·Electron 모두 document.title 을 기본 파일명으로 사용)
+function printDoc(datePart,kind,who){
+  var prev=document.title;
+  document.title=safeName(datePart)+"_"+kind+"_"+safeName(who);
+  var restore=function(){document.title=prev;window.removeEventListener("afterprint",restore);};
+  window.addEventListener("afterprint",restore);
+  setTimeout(function(){window.print();},30);
+}
 
 // ---- state ----
 var settings=Object.assign({},DSET,rd(K.settings,{}));
@@ -177,14 +186,14 @@ var draft=rd(K.draft,null);
 var view="quote";
 var pickCb=null;
 var $=function(id){return document.getElementById(id);};
-document.getElementById("filePick").addEventListener("change",function(e){var f=e.target.files[0];if(f&&pickCb){var r=new FileReader();r.onload=function(ev){pickCb(ev.target.result);};r.readAsDataURL(f);}e.target.value="";pickCb=null;});
+document.getElementById("filePick").addEventListener("change",function(e){var f=e.target.files[0];var cb=pickCb;pickCb=null;if(f&&cb){var r=new FileReader();r.onload=function(ev){cb(ev.target.result);};r.readAsDataURL(f);}e.target.value="";});
 function pickImage(cb){pickCb=cb;$("filePick").click();}
 
 function saveAll(){wr(K.quotes,quotes);wr(K.products,products);wr(K.certs,certs);wr(K.statements,statements);wr(K.settings,settings);}
 
 // =========================================================== QUOTE
 function emptyItem(){return{name:"",spec:"",qty:1,unit:"EA",price:0,remark:""};}
-function newQuote(){return{id:id("q"),date:todayISO(),seq:null,status:0,recipient:"",attn:"",recipientTel:"",recipientFax:"",payment:"선급",validity:"1개월",items:[emptyItem()],extraNotes:"",manager:settings.manager,companyTel:settings.companyTel,savedAt:null};}
+function newQuote(){return{id:id("q"),date:todayISO(),seq:null,status:0,taxDate:"",recipient:"",attn:"",recipientTel:"",recipientFax:"",payment:"선급",validity:"1개월",items:[emptyItem()],extraNotes:"",manager:settings.manager,companyTel:settings.companyTel,savedAt:null};}
 var quote=(draft&&draft.id&&draft.items)?draft:newQuote();
 var qdirty=false;
 function nextQSeq(date,qid){return 1+quotes.filter(function(q){return q.date===date&&q.id!==qid;}).length;}
@@ -343,12 +352,20 @@ function markC(){cdirty=true;updateCBadge();}
 function todayDot(){return"";}
 
 // =========================================================== STATEMENT (거래명세서)
+function askTaxDate(q){
+  $("modalTitle").textContent="세금계산서 발행";
+  $("modalBody").innerHTML='<p class="sub">세금계산서를 발행한 날짜를 입력하세요. 이 날짜 기준으로 <b>그 달 매출</b>로 잡힙니다.</p><div class="field"><label>세금계산서 발행일 (매출일)</label><input type="date" id="taxDateInput" value="'+esc(q.taxDate||todayISO())+'"></div><div class="toolbar"><button class="btn" id="taxCancel">취소</button><button class="btn primary" id="taxOk">발행 확정</button></div>';
+  $("overlay").hidden=false;
+  $("taxCancel").onclick=function(){$("overlay").hidden=true;openQuoteList();};
+  $("taxOk").onclick=function(){q.taxDate=$("taxDateInput").value||todayISO();q.status=Math.max(q.status||0,4);wr(K.quotes,quotes);$("overlay").hidden=true;openQuoteList();};
+}
 function issueStatement(q){
-  var st={id:id("s"),quoteId:q.id,date:todayISO(),seq:null,recipient:q.recipient,recipientAddr:"",recipientTel:q.recipientTel,recipientAttn:q.attn,
-    items:q.items.map(function(it){return{date:todayISO(),name:it.name,spec:it.spec,qty:it.qty,unit:it.unit,price:it.price,remark:it.remark};}),createdAt:Date.now()};
+  var d0=q.taxDate||todayISO();
+  var st={id:id("s"),quoteId:q.id,date:d0,taxDate:q.taxDate||"",seq:null,recipient:q.recipient,recipientAddr:"",recipientTel:q.recipientTel,recipientAttn:q.attn,
+    items:q.items.map(function(it){return{date:d0,name:it.name,spec:it.spec,qty:it.qty,unit:it.unit,price:it.price,remark:it.remark};}),createdAt:Date.now()};
   st.seq=1+statements.filter(function(s){return s.date===st.date;}).length;
   statements.push(st);wr(K.statements,statements);
-  q.status=4;q.statementId=st.id;wr(K.quotes,quotes);
+  q.status=5;q.statementId=st.id;wr(K.quotes,quotes);
   return st;
 }
 var curStatement=null;
@@ -356,10 +373,10 @@ function stTotal(s){return(s.items||[]).reduce(function(a,it){var sp=(Number(it.
 function renderStatementView(){
   var list=statements.slice().sort(function(a,b){return(b.createdAt||0)-(a.createdAt||0);});
   if(!curStatement&&list.length)curStatement=list[0];
-  var listHtml=list.length===0?'<div class="card"><p class="empty">발행된 거래명세서가 없습니다.<br>견적서 탭 → 목록에서 상태를 "제작완료"로 올린 뒤 [거래명세서 발행]을 누르세요.</p></div>':
+  var listHtml=list.length===0?'<div class="card"><p class="empty">발행된 거래명세서가 없습니다.<br>견적서 목록에서 <b>제작완료 → 세금계산서 발행 → 거래명세서 발행</b> 순서로 진행하세요.</p></div>':
     '<div class="card"><table class="list"><thead><tr><th>일련번호</th><th>수신처</th><th>합계</th><th>발행일</th><th></th></tr></thead><tbody>'+list.map(function(s){return '<tr'+(curStatement&&s.id===curStatement.id?' class="active"':'')+'><td>'+esc(String(s.date).replace(/-/g,"/")+" -"+s.seq)+'</td><td>'+esc(s.recipient||"-")+'</td><td class="n">￦ '+fmt(stTotal(s))+'</td><td>'+esc(s.date)+'</td><td class="rowacts"><button class="mini go" data-sopen="'+s.id+'">보기</button><button class="mini del" data-sdel="'+s.id+'">삭제</button></td></tr>';}).join("")+'</tbody></table></div>';
   var sheet=curStatement?'<div class="preview-wrap"><div class="sheet" id="ssheet" style="min-height:auto"></div></div>':'';
-  $("app").innerHTML='<div class="single"><h1 class="h1">🧾 거래명세서</h1><p class="sub">제작완료된 견적에서 발행됩니다. 발행일 기준으로 그 달 매출로 잡힙니다.</p>'+
+  $("app").innerHTML='<div class="single"><h1 class="h1">🧾 거래명세서</h1><p class="sub">세금계산서 발행 후 만들어집니다. 매출은 세금계산서 발행일 기준으로 잡힙니다.</p>'+
     (curStatement?'<div class="toolbar no-print"><label style="font-size:13px;color:var(--muted);align-self:center">발행일</label><input type="date" id="sdate" value="'+esc(curStatement.date)+'" style="border:1px solid var(--line);border-radius:7px;padding:7px 10px;background:var(--panel);color:var(--text)"><button class="btn primary" id="sprint">🖨 인쇄 / PDF</button></div>':'')+
     listHtml+sheet+'</div>';
   if(curStatement)ssheet();
@@ -380,12 +397,13 @@ function ssheet(){
 // =========================================================== SALES (매출)
 function renderSalesView(){
   var byMonth={};
-  statements.forEach(function(s){var m=(s.date||"").slice(0,7);if(!m)return;if(!byMonth[m])byMonth[m]={supply:0,vat:0,total:0,cnt:0};var t=stTotal(s);var sp=t/1.1;byMonth[m].total+=t;byMonth[m].cnt++;s.items.forEach(function(it){var x=(Number(it.qty)||0)*(Number(it.price)||0);byMonth[m].supply+=x;byMonth[m].vat+=Math.round(x*VAT);});});
+  // 세금계산서 발행일(taxDate) 기준으로 매출 집계
+  quotes.forEach(function(q){if(!q.taxDate)return;var m=q.taxDate.slice(0,7);if(!m)return;if(!byMonth[m])byMonth[m]={supply:0,vat:0,total:0,cnt:0};byMonth[m].total+=quoteTotal(q);byMonth[m].cnt++;(q.items||[]).forEach(function(it){var x=(Number(it.qty)||0)*(Number(it.price)||0);byMonth[m].supply+=x;byMonth[m].vat+=Math.round(x*VAT);});});
   var months=Object.keys(byMonth).sort().reverse();
   var grand=months.reduce(function(a,m){return a+byMonth[m].total;},0);
-  var body=months.length===0?'<div class="card"><p class="empty">아직 매출이 없습니다. 거래명세서를 발행하면 발행월 기준으로 집계됩니다.</p></div>':
+  var body=months.length===0?'<div class="card"><p class="empty">아직 매출이 없습니다. 견적서 목록에서 [세금계산서 발행]을 하면 그 발행월 기준으로 집계됩니다.</p></div>':
     '<div class="card"><table class="list"><thead><tr><th>월</th><th>건수</th><th>공급가액</th><th>부가세</th><th>합계(매출)</th></tr></thead><tbody>'+months.map(function(m){var d=byMonth[m];return '<tr><td style="font-weight:700">'+esc(m)+'</td><td>'+d.cnt+'건</td><td class="n">'+fmt(d.supply)+'</td><td class="n">'+fmt(d.vat)+'</td><td class="n" style="font-weight:800">￦ '+fmt(d.total)+'</td></tr>';}).join("")+'</tbody><tfoot><tr><td colspan="4" style="text-align:right;font-weight:700">누계</td><td class="n" style="font-weight:800">￦ '+fmt(grand)+'</td></tr></tfoot></table></div>';
-  $("app").innerHTML='<div class="single"><h1 class="h1">📈 월별 매출</h1><p class="sub">거래명세서 발행일 기준 집계입니다.</p>'+body+'</div>';
+  $("app").innerHTML='<div class="single"><h1 class="h1">📈 월별 매출</h1><p class="sub">세금계산서 발행일 기준으로 집계합니다.</p>'+body+'</div>';
 }
 
 // =========================================================== QUOTE LIST modal (with pipeline)
@@ -396,10 +414,12 @@ function openQuoteList(){
     '<table class="list"><thead><tr><th>일련번호</th><th>수신처</th><th>합계</th><th>상태</th><th></th></tr></thead><tbody>'+sorted.map(function(q){
       var st=q.status||0;
       var actions='<button class="mini" data-qopen="'+q.id+'">열기</button>';
-      if(st<4)actions+='<button class="mini" data-qadv="'+q.id+'">다음단계</button>';
-      if(st>=3&&st<4)actions+='<button class="mini go" data-qissue="'+q.id+'">거래명세서</button>';
+      if(st<3)actions+='<button class="mini" data-qadv="'+q.id+'">다음단계</button>';
+      else if(st===3)actions+='<button class="mini go" data-qtax="'+q.id+'">세금계산서 발행</button>';
+      else if(st===4)actions+='<button class="mini go" data-qissue="'+q.id+'">거래명세서 발행</button>';
       actions+='<button class="mini del" data-qdel="'+q.id+'">삭제</button>';
-      return '<tr'+(q.id===quote.id?' class="active"':'')+'><td>'+esc(qserial(q.date,q.seq))+'</td><td>'+esc(q.recipient||"(수신처 없음)")+'</td><td class="n">￦ '+fmt(quoteTotal(q))+'</td><td><span class="chip s'+st+'">'+STATUS[st]+'</span></td><td class="rowacts">'+actions+'</td></tr>';
+      var taxInfo=q.taxDate?'<div style="font-size:10px;color:var(--muted);margin-top:2px">세금계산서 '+esc(q.taxDate)+'</div>':'';
+      return '<tr'+(q.id===quote.id?' class="active"':'')+'><td>'+esc(qserial(q.date,q.seq))+'</td><td>'+esc(q.recipient||"(수신처 없음)")+'</td><td class="n">￦ '+fmt(quoteTotal(q))+'</td><td><span class="chip s'+st+'">'+STATUS[st]+'</span>'+taxInfo+'</td><td class="rowacts">'+actions+'</td></tr>';
     }).join("")+'</tbody></table>';
   $("overlay").hidden=false;
 }
@@ -417,7 +437,10 @@ function wire(){
   if(b=$("gList"))b.onclick=openQuoteList;
   if(b=$("gNew"))b.onclick=function(){if(qdirty&&!confirm("저장 안 된 변경이 있습니다. 새로 시작할까요?"))return;quote=newQuote();qdirty=false;wr(K.draft,quote);renderQuote();};
   if(b=$("gSave"))b.onclick=function(){if(quote.seq==null)quote.seq=nextQSeq(quote.date,quote.id);quote.savedAt=Date.now();var i=quotes.findIndex(function(q){return q.id===quote.id;});if(i>=0)quotes[i]=clone(quote);else quotes.push(clone(quote));wr(K.quotes,quotes);wr(K.draft,quote);qdirty=false;updateQBadge();setGlobalActions();};
-  if(b=$("gPrint"))b.onclick=function(){window.print();};
+  if(b=$("gPrint"))b.onclick=function(){
+    if(view==="cert"){var pp=products.find(function(x){return x.id===cert.productId;});printDoc(cert.date,"성적서",pp?pp.name:"제품");}
+    else{printDoc(quote.date,"견적서",quote.recipient);}
+  };
   if(b=$("gBackup"))b.onclick=doBackup;
   if(b=$("gRestore"))b.onclick=function(){$("restorePick").click();};
   if(b=$("cSave"))b.onclick=function(){if(!cert.productId){alert("먼저 제품을 선택하세요.");return;}if(cert.serialSeq==null)cert.serialSeq=nextCertSeq(cert.date);cert.serial=certSerial(cert.date,cert.serialSeq);cert.savedAt=Date.now();var i=certs.findIndex(function(c){return c.id===cert.id;});if(i>=0)certs[i]=clone(cert);else certs.push(clone(cert));wr(K.certs,certs);cdirty=false;updateCBadge();renderCertView();};
@@ -459,7 +482,8 @@ document.addEventListener("click",function(e){
   if(t.id==="qadd"){quote.items.push(emptyItem());markQ();renderQItems();qsheet();}
   if(d.qopen){if(qdirty&&!confirm("저장 안 된 변경이 있습니다. 다른 견적을 열까요?"))return;var q=quotes.find(function(x){return x.id===d.qopen;});if(q){quote=clone(q);qdirty=false;wr(K.draft,quote);$("overlay").hidden=true;renderQuote();}}
   if(d.qdel){if(confirm("이 견적서를 삭제할까요?")){quotes=quotes.filter(function(x){return x.id!==d.qdel;});wr(K.quotes,quotes);openQuoteList();setGlobalActions();}}
-  if(d.qadv){var q2=quotes.find(function(x){return x.id===d.qadv;});if(q2){q2.status=Math.min(4,(q2.status||0)+1);wr(K.quotes,quotes);openQuoteList();}}
+  if(d.qadv){var q2=quotes.find(function(x){return x.id===d.qadv;});if(q2){q2.status=Math.min(3,(q2.status||0)+1);wr(K.quotes,quotes);openQuoteList();}}
+  if(d.qtax){var qt=quotes.find(function(x){return x.id===d.qtax;});if(qt)askTaxDate(qt);}
   if(d.qissue){var q3=quotes.find(function(x){return x.id===d.qissue;});if(q3){var st=issueStatement(q3);$("overlay").hidden=true;alert("거래명세서를 발행했습니다. (일련번호 "+String(st.date).replace(/-/g,"/")+" -"+st.seq+")");view="statement";curStatement=st;route();}}
   if(d.paddBtn!==undefined||t.id==="paddBtn"){openProductEdit(null);}
   if(d.pedit){openProductEdit(d.pedit);}
@@ -468,7 +492,7 @@ document.addEventListener("click",function(e){
   if(d.copen){var c=certs.find(function(x){return x.id===d.copen;});if(c){cert=clone(c);cdirty=false;renderCertView();}}
   if(d.sopen){curStatement=statements.find(function(x){return x.id===d.sopen;});renderStatementView();}
   if(d.sdel){if(confirm("이 거래명세서를 삭제할까요?")){var del=statements.find(function(x){return x.id===d.sdel;});statements=statements.filter(function(x){return x.id!==d.sdel;});if(del){var q=quotes.find(function(x){return x.id===del.quoteId;});if(q){q.status=3;q.statementId=null;wr(K.quotes,quotes);}}wr(K.statements,statements);curStatement=null;renderStatementView();}}
-  if(t.id==="sprint"){window.print();}
+  if(t.id==="sprint"&&curStatement){printDoc(curStatement.date,"거래명세서",curStatement.recipient);}
   if(t.id==="sdate"){}
 });
 document.addEventListener("change",function(e){if(e.target.id==="sdate"&&curStatement){curStatement.date=e.target.value;var i=statements.findIndex(function(x){return x.id===curStatement.id;});if(i>=0)statements[i].date=e.target.value;wr(K.statements,statements);ssheet();}});
@@ -476,5 +500,6 @@ document.addEventListener("change",function(e){if(e.target.id==="sdate"&&curStat
 route();
 })();
 </script>
+
 </body>
 </html>
