@@ -153,7 +153,24 @@ var DSET={logo:DLOGO,manager:"임종현",companyTel:"010-3321-5197",testedName:"
   bodyQuote:"안녕하세요.\n(주)브라움입니다.\n요청하신 견적서를 첨부와 같이 송부드립니다.\n검토 후 회신 부탁드립니다.\n감사합니다.",
   bodyStatement:"안녕하세요.\n(주)브라움입니다.\n거래명세서를 첨부와 같이 송부드립니다.\n확인 부탁드립니다.\n감사합니다.",
   bodyCert:"안녕하세요.\n(주)브라움입니다.\n시험성적서를 첨부와 같이 송부드립니다.\n확인 부탁드립니다.\n감사합니다."};
-var FIXED_NOTES="*상기 견적가는 수량(MOQ) 및 사양에 따라 다소 변경될 수 있습니다.\n기타: 1. 상기 견적은 운송비를 포함한 금액입니다.\n2. 상기 견적은 샘플 제작 기준으로 산정되었으며, 양산 시 단가가 변경될 수 있습니다.";
+// 표준 안내문구: 각 줄을 견적서마다 켜고 끌 수 있음 (양산 시 3번째 줄 해제)
+var STD_NOTES=[
+  "*상기 견적가는 수량(MOQ) 및 사양에 따라 다소 변경될 수 있습니다.",
+  "상기 견적은 운송비를 포함한 금액입니다.",
+  "상기 견적은 샘플 제작 기준으로 산정되었으며, 양산 시 단가가 변경될 수 있습니다."
+];
+function defaultNoteFlags(){return STD_NOTES.map(function(){return true;});}
+function buildNotesHtml(q){
+  var flags=(q.noteFlags&&q.noteFlags.length===STD_NOTES.length)?q.noteFlags:defaultNoteFlags();
+  var on=STD_NOTES.filter(function(_,i){return flags[i];});
+  var lines=[];
+  if(on.length){
+    lines.push(on[0]); // 별표 문구
+    var etc=on.slice(1);
+    for(var i=0;i<etc.length;i++){lines.push((i===0?"기타: ":"")+(i+1)+". "+etc[i]);}
+  }
+  return lines.length?'<div class="foot">'+esc(lines.join("\n"))+'</div>':'';
+}
 var STATUS=["견적","발주접수","제작중","제작완료","세금계산서발행","거래명세서발행"];
 
 // ---- korean number ----
@@ -198,7 +215,7 @@ function saveAll(){wr(K.quotes,quotes);wr(K.products,products);wr(K.certs,certs)
 
 // =========================================================== QUOTE
 function emptyItem(){return{name:"",spec:"",qty:1,unit:"EA",price:0,remark:""};}
-function newQuote(){return{id:id("q"),date:todayISO(),seq:null,status:0,taxDate:"",discountRate:0,recipient:"",attn:"",recipientTel:"",recipientFax:"",recipientEmail:"",payment:"선급",validity:"1개월",items:[emptyItem()],extraNotes:"",manager:settings.manager,companyTel:settings.companyTel,savedAt:null};}
+function newQuote(){return{id:id("q"),date:todayISO(),seq:null,status:0,taxDate:"",discountRate:0,recipient:"",attn:"",recipientTel:"",recipientFax:"",recipientEmail:"",payment:"선급",validity:"1개월",items:[emptyItem()],extraNotes:"",noteFlags:defaultNoteFlags(),manager:settings.manager,companyTel:settings.companyTel,savedAt:null};}
 // 견적 금액 계산 (정가 → 할인 → 공급가액 → 부가세 → 합계)
 function quoteCalc(q){
   var items=(q&&q.items)||[];
@@ -225,6 +242,7 @@ function renderQuote(){
     sec("견적 정보",'<div class="row2"><div class="field"><label>견적일자</label><input type="date" data-q="date" value="'+esc(quote.date)+'"></div><div class="field"><label>일련번호(자동)</label><input value="'+esc(sn)+'" disabled></div></div><div class="row2"><div class="field"><label>결제조건</label><input data-q="payment" value="'+esc(quote.payment)+'"></div><div class="field"><label>유효기간</label><input data-q="validity" value="'+esc(quote.validity)+'"></div></div><div class="field"><label>할인율 (%)</label><input type="number" min="0" max="100" step="0.1" data-q="discountRate" value="'+esc(quote.discountRate||0)+'"></div><div class="item-calc" id="qDisc"></div>')+
     sec("수신처",'<div class="field"><label>수신(회사명)</label><input data-q="recipient" value="'+esc(quote.recipient)+'" placeholder="예: (주)한국전력"></div><div class="field"><label>참조(담당자)</label><input data-q="attn" value="'+esc(quote.attn)+'"></div><div class="field"><label>수신 이메일 (메일 발송용)</label><input type="email" data-q="recipientEmail" value="'+esc(quote.recipientEmail||"")+'" placeholder="예: buyer@company.com"></div><div class="row2"><div class="field"><label>수신 TEL</label><input data-q="recipientTel" value="'+esc(quote.recipientTel)+'"></div><div class="field"><label>수신 FAX</label><input data-q="recipientFax" value="'+esc(quote.recipientFax)+'"></div></div>')+
     '<div class="sec"><h2>품목 (<span id="qcnt">'+quote.items.length+'</span>)</h2><div id="qitems"></div><button class="add" id="qadd">+ 품목 추가</button></div>'+
+    sec("표준 안내문구 (체크한 줄만 표시)",noteChecksHtml())+
     sec("기타 추가내용",'<div class="field"><textarea rows="3" data-q="extraNotes" placeholder="이 견적서에만 넣을 추가 문구">'+esc(quote.extraNotes)+'</textarea></div>')+
     sec("내 회사 정보",'<div class="row2"><div class="field"><label>담당자 이름</label><input data-set="manager" value="'+esc(quote.manager)+'"></div><div class="field"><label>회사 전화번호</label><input data-set="companyTel" value="'+esc(quote.companyTel)+'"></div></div><div class="fixed-box">'+esc(SUP.company)+' · 대표 '+esc(SUP.ceo)+'<br>사업자등록번호 '+esc(SUP.bizNo)+'<br>'+esc(SUP.address)+'<br>업태/종목: '+esc(SUP.bizType)+' / '+esc(SUP.bizItem)+'<span class="fixed-tag">고정</span></div>')+
     sec("이메일 설정",mailSettingsHtml())+
@@ -259,6 +277,14 @@ function bindMailSettings(){
   if(bcc)bcc.onchange=function(){settings.mailBcc=bcc.checked;wr(K.settings,settings);};
 }
 function sec(t,inner){return '<div class="sec"><h2>'+t+'</h2>'+inner+'</div>';}
+function noteChecksHtml(){
+  var flags=(quote.noteFlags&&quote.noteFlags.length===STD_NOTES.length)?quote.noteFlags:defaultNoteFlags();
+  quote.noteFlags=flags;
+  return STD_NOTES.map(function(line,i){
+    return '<label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;margin-bottom:8px;line-height:1.4"><input type="checkbox" data-note="'+i+'"'+(flags[i]?" checked":"")+' style="margin-top:2px">'+
+      '<span>'+esc(line)+(i===2?' <b style="color:var(--accent-deep)">(양산 시 보통 해제)</b>':'')+'</span></label>';
+  }).join("")+'<p class="hint">체크 해제한 줄은 견적서에 표시되지 않습니다.</p>';
+}
 function renderQItems(){
   $("qcnt").textContent=quote.items.length;
   $("qitems").innerHTML=quote.items.map(function(it,i){return '<div class="item"><div class="item-head"><span>품목 '+(i+1)+'</span><button class="rm" data-qrm="'+i+'">삭제</button></div>'+
@@ -298,7 +324,7 @@ function qsheet(){
     '<div class="amount"><span class="krw">금 액 : '+esc(won(g))+'</span><span><span class="num">(￦ '+fmt(g)+' 원)</span> <span class="vat">/ VAT포함</span></span></div>'+
     '<table class="items"><thead><tr><th style="width:30px">No</th><th>품목명 [규격]</th><th style="width:54px">수량</th><th style="width:76px">단가</th><th style="width:80px">공급가액</th><th style="width:70px">부가세</th><th style="width:100px">적요</th></tr></thead><tbody>'+ir+'</tbody><tfoot><tr><td class="c" colspan="2">'+(c.discount>0?"정가 소계":"합 계")+'</td><td class="c">'+fmt(tq)+'</td><td></td><td class="n">'+fmt(ts)+'</td><td class="n">'+fmt(Math.round(ts*VAT))+'</td><td class="n">'+fmt(ts+Math.round(ts*VAT))+'</td></tr></tfoot></table>'+
     qSummaryHtml(c)+
-    '<div class="foot">'+esc(FIXED_NOTES)+'</div>'+(quote.extraNotes?'<div class="foot">'+esc(quote.extraNotes)+'</div>':'');
+    buildNotesHtml(quote)+(quote.extraNotes?'<div class="foot">'+esc(quote.extraNotes)+'</div>':'');
 }
 function markQ(){qdirty=true;updateQBadge();wr(K.draft,quote);}
 
@@ -624,7 +650,10 @@ document.addEventListener("click",function(e){
   if(t.id==="sMail"){openMailDialog("statement");}
   if(t.id==="sdate"){}
 });
-document.addEventListener("change",function(e){if(e.target.id==="sdate"&&curStatement){curStatement.date=e.target.value;var i=statements.findIndex(function(x){return x.id===curStatement.id;});if(i>=0)statements[i].date=e.target.value;wr(K.statements,statements);ssheet();}});
+document.addEventListener("change",function(e){
+  if(e.target.id==="sdate"&&curStatement){curStatement.date=e.target.value;var i=statements.findIndex(function(x){return x.id===curStatement.id;});if(i>=0)statements[i].date=e.target.value;wr(K.statements,statements);ssheet();}
+  if(e.target.dataset&&e.target.dataset.note!==undefined){if(!quote.noteFlags)quote.noteFlags=defaultNoteFlags();quote.noteFlags[+e.target.dataset.note]=e.target.checked;markQ();qsheet();}
+});
 
 route();
 })();
