@@ -8,4 +8,6 @@ contextBridge.exposeInMainWorld('braumm', {
   saveMailPassword: (pw) => ipcRenderer.invoke('mail:save', pw),
   clearMailPassword: () => ipcRenderer.invoke('mail:clear'),
   sendMail: (payload) => ipcRenderer.invoke('mail:send', payload),
+  saveBackup: (data) => ipcRenderer.invoke('data:save', data),
+  loadBackup: () => ipcRenderer.invoke('data:load'),
 })

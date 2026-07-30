@@ -12,6 +12,25 @@ try {
 
 let mainWindow = null
 const credPath = () => path.join(app.getPath('userData'), 'mail.cred')
+const backupPath = () => path.join(app.getPath('userData'), 'braumm-autobackup.json')
+
+// ===== 자동 백업: 저장할 때마다 데이터 파일로 기록 (localStorage 유실 대비) =====
+ipcMain.handle('data:save', (evt, data) => {
+  try {
+    fs.writeFileSync(backupPath(), JSON.stringify(data))
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: String(e && e.message ? e.message : e) }
+  }
+})
+ipcMain.handle('data:load', () => {
+  try {
+    if (!fs.existsSync(backupPath())) return null
+    return JSON.parse(fs.readFileSync(backupPath(), 'utf8'))
+  } catch (e) {
+    return null
+  }
+})
 
 function createWindow() {
   mainWindow = new BrowserWindow({
