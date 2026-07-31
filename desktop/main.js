@@ -103,7 +103,13 @@ ipcMain.handle('mail:send', async (evt, p) => {
 
     // 현재 창을 인쇄용(@media print) 레이아웃으로 PDF 생성 → 시트만 담김
     const wc = BrowserWindow.fromWebContents(evt.sender).webContents
-    const pdf = await wc.printToPDF({ printBackground: true, pageSize: 'A4' })
+    const pdf = await wc.printToPDF({
+      printBackground: true,
+      pageSize: 'A4',
+      margins: { top: 0.4, bottom: 0.4, left: 0.4, right: 0.4 },
+      preferCSSPageSize: true,
+      generateTaggedPDF: true,
+    })
 
     // nodemailer는 필요할 때만 로드
     const nodemailer = require('nodemailer')
