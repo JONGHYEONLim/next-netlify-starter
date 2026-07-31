@@ -159,15 +159,22 @@ var STD_NOTES=[
   "상기 견적은 운송비를 포함한 금액입니다.",
   "상기 견적은 샘플 제작 기준으로 산정되었으며, 양산 시 단가가 변경될 수 있습니다."
 ];
+var STD_NOTES_EN=[
+  "*The quoted prices may vary depending on quantity (MOQ) and specifications.",
+  "The quotation includes shipping cost.",
+  "The quotation is based on sample production; unit prices may change for mass production."
+];
 function defaultNoteFlags(){return STD_NOTES.map(function(){return true;});}
-function buildNotesHtml(q){
-  var flags=(q.noteFlags&&q.noteFlags.length===STD_NOTES.length)?q.noteFlags:defaultNoteFlags();
-  var on=STD_NOTES.filter(function(_,i){return flags[i];});
+function buildNotesHtml(q,lang){
+  var src=lang==="en"?STD_NOTES_EN:STD_NOTES;
+  var etcLabel=lang==="en"?"Note: ":"기타: ";
+  var flags=(q.noteFlags&&q.noteFlags.length===src.length)?q.noteFlags:defaultNoteFlags();
+  var on=src.filter(function(_,i){return flags[i];});
   var lines=[];
   if(on.length){
-    lines.push(on[0]); // 별표 문구
+    lines.push(on[0]);
     var etc=on.slice(1);
-    for(var i=0;i<etc.length;i++){lines.push((i===0?"기타: ":"")+(i+1)+". "+etc[i]);}
+    for(var i=0;i<etc.length;i++){lines.push((i===0?etcLabel:"")+(i+1)+". "+etc[i]);}
   }
   return lines.length?'<div class="foot">'+esc(lines.join("\n"))+'</div>':'';
 }
@@ -215,7 +222,8 @@ function saveAll(){wr(K.quotes,quotes);wr(K.products,products);wr(K.certs,certs)
 
 // =========================================================== QUOTE
 function emptyItem(){return{name:"",spec:"",qty:1,unit:"EA",price:0,remark:""};}
-function newQuote(){return{id:id("q"),date:todayISO(),seq:null,status:0,taxDate:"",discountRate:0,recipient:"",attn:"",recipientTel:"",recipientFax:"",recipientEmail:"",payment:"선급",validity:"1개월",items:[emptyItem()],extraNotes:"",noteFlags:defaultNoteFlags(),manager:settings.manager,companyTel:settings.companyTel,savedAt:null};}
+function newQuote(){return{id:id("q"),date:todayISO(),seq:null,status:0,taxDate:"",discountRate:0,lang:"ko",fxRate:"",fxDate:todayISO(),recipient:"",attn:"",recipientTel:"",recipientFax:"",recipientEmail:"",payment:"선급",validity:"1개월",items:[emptyItem()],extraNotes:"",noteFlags:defaultNoteFlags(),manager:settings.manager,companyTel:settings.companyTel,savedAt:null};}
+function fmtUSD(krw,rate){var r=Number(rate)||0;if(r<=0)return "-";var v=krw/r;return "$"+v.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});}
 // 견적 금액 계산 (정가 → 할인 → 공급가액 → 부가세 → 합계)
 function quoteCalc(q){
   var items=(q&&q.items)||[];
@@ -240,6 +248,8 @@ function renderQuote(){
     '<div class="status"><span>일련번호 <b id="qserial">'+esc(sn)+'</b></span><span class="badge" id="qbadge"></span></div>'+
     sec("🖼 로고",'<div class="logo-row"><div class="logo-prev" id="qlogo"></div><div class="logo-btns"><button class="btn-sm" id="qlogoUp">이미지 업로드</button><button class="btn-sm ghost" id="qlogoRm">기본값</button></div></div><p class="hint">실제 로고 PNG를 올리면 견적서·명세서·성적서 상단에 표시됩니다.</p>')+
     sec("견적 정보",'<div class="row2"><div class="field"><label>견적일자</label><input type="date" data-q="date" value="'+esc(quote.date)+'"></div><div class="field"><label>일련번호(자동)</label><input value="'+esc(sn)+'" disabled></div></div><div class="row2"><div class="field"><label>결제조건</label><input data-q="payment" value="'+esc(quote.payment)+'"></div><div class="field"><label>유효기간</label><input data-q="validity" value="'+esc(quote.validity)+'"></div></div><div class="field"><label>할인율 (%)</label><input type="number" min="0" max="100" step="0.1" data-q="discountRate" value="'+esc(quote.discountRate||0)+'"></div><div class="item-calc" id="qDisc"></div>')+
+    sec("언어 / 환율",'<div class="field"><button class="btn-sm" id="gLang2" style="width:100%">'+(quote.lang==="en"?"🇰🇷 한국어 견적서로 전환":"🇺🇸 영문(USD) 견적서로 전환")+'</button></div>'+
+      (quote.lang==="en"?'<div class="row2"><div class="field"><label>환율 (USD 1 = KRW)</label><input type="number" min="0" step="0.01" data-q="fxRate" value="'+esc(quote.fxRate||"")+'" placeholder="예: 1350"></div><div class="field"><label>환율 기준일</label><input type="date" data-q="fxDate" value="'+esc(quote.fxDate||todayISO())+'"></div></div><p class="hint">영문 모드에서는 위 환율로 KRW→USD 환산해 표기됩니다. (예: as of 기준일)</p>':'<p class="hint">버튼을 누르면 같은 견적서를 영문(USD)으로 전환합니다. 환율은 직접 입력합니다.</p>'))+
     sec("수신처",'<div class="field"><label>수신(회사명)</label><input data-q="recipient" value="'+esc(quote.recipient)+'" placeholder="예: (주)한국전력"></div><div class="field"><label>참조(담당자)</label><input data-q="attn" value="'+esc(quote.attn)+'"></div><div class="field"><label>수신 이메일 (메일 발송용)</label><input type="email" data-q="recipientEmail" value="'+esc(quote.recipientEmail||"")+'" placeholder="예: buyer@company.com"></div><div class="row2"><div class="field"><label>수신 TEL</label><input data-q="recipientTel" value="'+esc(quote.recipientTel)+'"></div><div class="field"><label>수신 FAX</label><input data-q="recipientFax" value="'+esc(quote.recipientFax)+'"></div></div>')+
     '<div class="sec"><h2>품목 (<span id="qcnt">'+quote.items.length+'</span>)</h2><div id="qitems"></div><button class="add" id="qadd">+ 품목 추가</button></div>'+
     sec("표준 안내문구 (체크한 줄만 표시)",noteChecksHtml())+
@@ -308,6 +318,16 @@ function qSummaryHtml(c){
     '<tr><td style="border:0"></td><td class="n" style="font-weight:800;background:#f1efe9">합 계</td><td class="n" style="font-weight:800;background:#f1efe9">'+fmt(c.total)+'</td></tr>'+
     '</tbody></table>';
 }
+function qSummaryEN(c,rate){
+  if(!(c.discount>0)) return '';
+  return '<table class="items" style="margin-top:-6px"><tbody>'+
+    '<tr><td class="n" style="width:calc(100% - 200px);border:0"></td><td class="n" style="width:110px">List Supply</td><td class="n" style="width:90px">'+fmtUSD(c.listSupply,rate)+'</td></tr>'+
+    '<tr><td style="border:0"></td><td class="n">Discount ('+c.rate+'%)</td><td class="n" style="color:#c0392b">-'+fmtUSD(c.discount,rate)+'</td></tr>'+
+    '<tr><td style="border:0"></td><td class="n">Net Supply</td><td class="n">'+fmtUSD(c.netSupply,rate)+'</td></tr>'+
+    '<tr><td style="border:0"></td><td class="n">VAT</td><td class="n">'+fmtUSD(c.vat,rate)+'</td></tr>'+
+    '<tr><td style="border:0"></td><td class="n" style="font-weight:800;background:#f1efe9">TOTAL</td><td class="n" style="font-weight:800;background:#f1efe9">'+fmtUSD(c.total,rate)+'</td></tr>'+
+    '</tbody></table>';
+}
 function updateQBadge(){var b=$("qbadge");if(!b)return;if(qdirty){b.textContent="● 저장 안 됨";b.className="badge dirty";}else if(quote.savedAt){b.textContent="저장됨 · "+fmtTime(quote.savedAt);b.className="badge saved";}else{b.textContent="새 견적서";b.className="badge";}}
 function qsheet(){
   var rows=qrows(),vis=rows.filter(function(r){return r.name||r.spec||r.supply;});
@@ -316,6 +336,22 @@ function qsheet(){
   var seq=quote.seq!=null?quote.seq:nextQSeq(quote.date,quote.id),sn=qserial(quote.date,seq);
   var ir=vis.length===0?'<tr><td class="empty-items" colspan="7">왼쪽에서 품목을 입력하세요.</td></tr>':vis.map(function(r,i){return '<tr><td class="c">'+(i+1)+'</td><td><span class="nm">'+esc(r.name)+'</span>'+(r.spec?'<div class="sp">['+esc(r.spec)+']</div>':'')+'</td><td class="c">'+fmt(r.qty)+' '+esc(r.unit)+'</td><td class="n">'+fmt(r.price)+'</td><td class="n">'+fmt(r.supply)+'</td><td class="n">'+fmt(r.vat)+'</td><td>'+esc(r.remark)+'</td></tr>';}).join("");
   var el=$("qserial");if(el)el.textContent=sn;
+  if(quote.lang==="en"){
+    var rate=quote.fxRate;
+    var rateNote=(Number(rate)>0)?'Applied exchange rate: USD 1 = KRW '+fmt(rate)+' (as of '+esc(quote.fxDate||"-")+')':'<span style="color:#c1121f">⚠ Please enter the exchange rate. (환율을 입력하세요)</span>';
+    var irEN=vis.length===0?'<tr><td class="empty-items" colspan="7">No items.</td></tr>':vis.map(function(r,i){return '<tr><td class="c">'+(i+1)+'</td><td><span class="nm">'+esc(r.name)+'</span>'+(r.spec?'<div class="sp">['+esc(r.spec)+']</div>':'')+'</td><td class="c">'+fmt(r.qty)+' '+esc(r.unit)+'</td><td class="n">'+fmtUSD(r.price,rate)+'</td><td class="n">'+fmtUSD(r.supply,rate)+'</td><td class="n">'+fmtUSD(r.vat,rate)+'</td><td>'+esc(r.remark)+'</td></tr>';}).join("");
+    $("qsheet").innerHTML=(settings.logo?'<div class="sheet-logo"><img src="'+esc(settings.logo)+'"></div>':'')+
+      '<div class="doc-title" style="letter-spacing:8px">QUOTATION</div><div class="doc-serial">No. '+esc(sn)+' [ 1 / 1 ]</div>'+
+      '<div class="head-grid"><table class="meta"><tbody><tr><th>To</th><td>'+esc(quote.recipient)+'&nbsp;</td></tr><tr><th>Attn</th><td>'+esc(quote.attn)+'&nbsp;</td></tr><tr><th>TEL / FAX</th><td>'+esc([quote.recipientTel,quote.recipientFax].filter(Boolean).join(" / "))+'&nbsp;</td></tr><tr><th>Payment</th><td>'+esc(quote.payment)+'</td></tr><tr><th>Validity</th><td>'+esc(quote.validity)+'</td></tr></tbody></table>'+
+      '<table class="meta sup"><tbody><tr><th>Business Reg. No</th><td>'+esc(SUP.bizNo)+'</td></tr><tr><th>Company / CEO</th><td>'+esc(SUP.company)+' / '+esc(SUP.ceo)+'<span class="stamp">인</span></td></tr><tr><th>Address</th><td>'+esc(SUP.address)+'</td></tr><tr><th>Business Type</th><td>'+esc(SUP.bizType)+' / '+esc(SUP.bizItem)+'</td></tr><tr><th>Contact (TEL)</th><td>'+esc(quote.manager)+' ('+esc(quote.companyTel)+')</td></tr></tbody></table></div>'+
+      '<p class="greeting">1. We wish your company continued prosperity.<br>2. We are pleased to submit our quotation as follows.</p>'+
+      '<div class="amount"><span class="krw">AMOUNT : '+fmtUSD(g,rate)+'</span><span class="vat">/ VAT included</span></div>'+
+      '<div class="foot" style="margin:0 0 8px">'+rateNote+'</div>'+
+      '<table class="items"><thead><tr><th style="width:30px">No</th><th>Item [Spec]</th><th style="width:54px">Qty</th><th style="width:82px">Unit Price</th><th style="width:86px">Supply</th><th style="width:74px">VAT</th><th style="width:96px">Remark</th></tr></thead><tbody>'+irEN+'</tbody><tfoot><tr><td class="c" colspan="2">'+(c.discount>0?"Subtotal (List)":"Total")+'</td><td class="c">'+fmt(tq)+'</td><td></td><td class="n">'+fmtUSD(ts,rate)+'</td><td class="n">'+fmtUSD(Math.round(ts*VAT),rate)+'</td><td class="n">'+fmtUSD(ts+Math.round(ts*VAT),rate)+'</td></tr></tfoot></table>'+
+      qSummaryEN(c,rate)+
+      buildNotesHtml(quote,"en")+(quote.extraNotes?'<div class="foot">'+esc(quote.extraNotes)+'</div>':'');
+    return;
+  }
   $("qsheet").innerHTML=(settings.logo?'<div class="sheet-logo"><img src="'+esc(settings.logo)+'"></div>':'')+
     '<div class="doc-title">견 적 서</div><div class="doc-serial">일련번호 '+esc(sn)+' [ 1 / 1 ]</div>'+
     '<div class="head-grid"><table class="meta"><tbody><tr><th>수 신</th><td>'+esc(quote.recipient)+'&nbsp;</td></tr><tr><th>참 조</th><td>'+esc(quote.attn)+'&nbsp;</td></tr><tr><th>TEL / FAX</th><td>'+esc([quote.recipientTel,quote.recipientFax].filter(Boolean).join(" / "))+'&nbsp;</td></tr><tr><th>결제조건</th><td>'+esc(quote.payment)+'</td></tr><tr><th>유효기간</th><td>'+esc(quote.validity)+'</td></tr></tbody></table>'+
@@ -324,7 +360,7 @@ function qsheet(){
     '<div class="amount"><span class="krw">금 액 : '+esc(won(g))+'</span><span><span class="num">(￦ '+fmt(g)+' 원)</span> <span class="vat">/ VAT포함</span></span></div>'+
     '<table class="items"><thead><tr><th style="width:30px">No</th><th>품목명 [규격]</th><th style="width:54px">수량</th><th style="width:76px">단가</th><th style="width:80px">공급가액</th><th style="width:70px">부가세</th><th style="width:100px">적요</th></tr></thead><tbody>'+ir+'</tbody><tfoot><tr><td class="c" colspan="2">'+(c.discount>0?"정가 소계":"합 계")+'</td><td class="c">'+fmt(tq)+'</td><td></td><td class="n">'+fmt(ts)+'</td><td class="n">'+fmt(Math.round(ts*VAT))+'</td><td class="n">'+fmt(ts+Math.round(ts*VAT))+'</td></tr></tfoot></table>'+
     qSummaryHtml(c)+
-    buildNotesHtml(quote)+(quote.extraNotes?'<div class="foot">'+esc(quote.extraNotes)+'</div>':'');
+    buildNotesHtml(quote,"ko")+(quote.extraNotes?'<div class="foot">'+esc(quote.extraNotes)+'</div>':'');
 }
 function markQ(){qdirty=true;updateQBadge();wr(K.draft,quote);}
 
@@ -576,7 +612,7 @@ function wire(){
   if(b=$("gSave"))b.onclick=function(){if(quote.seq==null)quote.seq=nextQSeq(quote.date,quote.id);quote.savedAt=Date.now();var i=quotes.findIndex(function(q){return q.id===quote.id;});if(i>=0)quotes[i]=clone(quote);else quotes.push(clone(quote));wr(K.quotes,quotes);wr(K.draft,quote);var addedP=autoRegisterProducts(quote);qdirty=false;updateQBadge();autoBackup();setGlobalActions();if(addedP)alert("저장 완료. 신규 품목 "+addedP+"건이 제품 리스트에 자동 등록되었습니다.");};
   if(b=$("gPrint"))b.onclick=function(){
     if(view==="cert"){var pp=products.find(function(x){return x.id===cert.productId;});printDoc(cert.date,"성적서",pp?pp.name:"제품");}
-    else{printDoc(quote.date,"견적서",quote.recipient);}
+    else{printDoc(quote.date,(quote.lang==="en"?"Quotation":"견적서"),quote.recipient);}
   };
   if(b=$("gBackup"))b.onclick=doBackup;
   if(b=$("gRestore"))b.onclick=function(){$("restorePick").click();};
@@ -673,6 +709,7 @@ document.addEventListener("click",function(e){
   if(d.qdel){if(confirm("이 견적서를 삭제할까요?")){quotes=quotes.filter(function(x){return x.id!==d.qdel;});wr(K.quotes,quotes);openQuoteList();setGlobalActions();}}
   if(d.qadv){var q2=quotes.find(function(x){return x.id===d.qadv;});if(q2){q2.status=Math.min(3,(q2.status||0)+1);wr(K.quotes,quotes);openQuoteList();}}
   if(d.qtax){var qt=quotes.find(function(x){return x.id===d.qtax;});if(qt)askTaxDate(qt);}
+  if(t.id==="gLang2"){quote.lang=(quote.lang==="en"?"ko":"en");if(quote.lang==="en"&&!quote.fxDate)quote.fxDate=todayISO();markQ();renderQuote();}
   if(d.qcert){var qc=quotes.find(function(x){return x.id===d.qcert;});if(qc)openCertChooser(qc);}
   if(d.certmake){var parts=d.certmake.split("|");var mq=quotes.find(function(x){return x.id===parts[0];});if(mq){var it=mq.items[+parts[1]];var pr=findProductByItem(it.name,it.spec);if(!pr){products.push(newProduct({name:it.name,spec:it.spec}));wr(K.products,products);pr=findProductByItem(it.name,it.spec);}cert=newCert(pr.id,mq.id);cdirty=true;$("overlay").hidden=true;view="cert";route();}}
   if(d.qissue){var q3=quotes.find(function(x){return x.id===d.qissue;});if(q3){var st=issueStatement(q3);$("overlay").hidden=true;alert("거래명세서를 발행했습니다. (일련번호 "+String(st.date).replace(/-/g,"/")+" -"+st.seq+")");view="statement";curStatement=st;route();}}
