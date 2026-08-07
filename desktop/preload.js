@@ -10,4 +10,5 @@ contextBridge.exposeInMainWorld('braumm', {
   sendMail: (payload) => ipcRenderer.invoke('mail:send', payload),
   saveBackup: (data) => ipcRenderer.invoke('data:save', data),
   loadBackup: () => ipcRenderer.invoke('data:load'),
+  openBackupFolder: () => ipcRenderer.invoke('data:folder'),
 })

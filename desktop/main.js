@@ -15,9 +15,28 @@ const credPath = () => path.join(app.getPath('userData'), 'mail.cred')
 const backupPath = () => path.join(app.getPath('userData'), 'braumm-autobackup.json')
 
 // ===== 자동 백업: 저장할 때마다 데이터 파일로 기록 (localStorage 유실 대비) =====
+// - 실시간 백업 1개(braumm-autobackup.json) + 날짜별 백업(backups/braumm-YYYY-MM-DD.json, 최근 30일)
+const backupsDir = () => path.join(app.getPath('userData'), 'backups')
 ipcMain.handle('data:save', (evt, data) => {
   try {
-    fs.writeFileSync(backupPath(), JSON.stringify(data))
+    const json = JSON.stringify(data)
+    // 원자적 쓰기: 임시파일에 쓴 뒤 교체 (쓰기 도중 정전 등에도 원본 보존)
+    const tmp = backupPath() + '.tmp'
+    fs.writeFileSync(tmp, json)
+    fs.renameSync(tmp, backupPath())
+    // 날짜별 백업
+    const dir = backupsDir()
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+    const d = new Date()
+    const p2 = (n) => String(n).padStart(2, '0')
+    const stamp = d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate())
+    fs.writeFileSync(path.join(dir, 'braumm-' + stamp + '.json'), json)
+    // 최근 30개만 유지
+    const files = fs.readdirSync(dir).filter((f) => f.startsWith('braumm-') && f.endsWith('.json')).sort()
+    while (files.length > 30) {
+      const f = files.shift()
+      try { fs.unlinkSync(path.join(dir, f)) } catch (e) {}
+    }
     return { ok: true }
   } catch (e) {
     return { ok: false, error: String(e && e.message ? e.message : e) }
@@ -25,10 +44,25 @@ ipcMain.handle('data:save', (evt, data) => {
 })
 ipcMain.handle('data:load', () => {
   try {
-    if (!fs.existsSync(backupPath())) return null
-    return JSON.parse(fs.readFileSync(backupPath(), 'utf8'))
+    if (fs.existsSync(backupPath())) return JSON.parse(fs.readFileSync(backupPath(), 'utf8'))
+    // 실시간 백업이 없으면 가장 최근 날짜별 백업에서 복구
+    const dir = backupsDir()
+    if (fs.existsSync(dir)) {
+      const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json')).sort()
+      if (files.length) return JSON.parse(fs.readFileSync(path.join(dir, files[files.length - 1]), 'utf8'))
+    }
+    return null
   } catch (e) {
     return null
+  }
+})
+ipcMain.handle('data:folder', () => {
+  try {
+    const dir = app.getPath('userData')
+    shell.openPath(dir)
+    return { ok: true, dir }
+  } catch (e) {
+    return { ok: false, error: String(e && e.message ? e.message : e) }
   }
 })
 
