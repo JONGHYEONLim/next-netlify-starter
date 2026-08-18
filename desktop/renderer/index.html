@@ -179,7 +179,8 @@ function buildNotesHtml(q,lang){
   }
   return lines.length?'<div class="foot">'+esc(lines.join("\n"))+'</div>':'';
 }
-var STATUS=["견적","발주접수","제작중","제작완료","세금계산서발행","거래명세서발행"];
+var STATUS=["견적","발주접수","제작중","제작완료"];
+// 거래명세서/세금계산서는 제작완료 후 각각 독립적으로 발행 (순서 무관, 보통 명세서 먼저 → 세금계산서 월말)
 
 // ---- korean number ----
 var _D=["","일","이","삼","사","오","육","칠","팔","구"],_S=["","십","백","천"],_B=["","만","억","조","경"];
@@ -222,6 +223,7 @@ function doPrint(datePart,kind,who,landscape){
 // ---- state ----
 var settings=Object.assign({},DSET,rd(K.settings,{}));
 var quotes=rd(K.quotes,[]),products=rd(K.products,[]),certs=rd(K.certs,[]),statements=rd(K.statements,[]);
+quotes.forEach(function(q){if((q.status||0)>3)q.status=3;}); // 구버전(4/5) 상태 정리
 var mailHistory=rd(K.history,[]);
 var draft=rd(K.draft,null);
 var view="quote";
@@ -555,17 +557,17 @@ function askTaxDate(q){
   $("modalBody").innerHTML='<p class="sub">세금계산서를 발행한 날짜를 입력하세요. 이 날짜 기준으로 <b>그 달 매출</b>로 잡힙니다.</p><div class="field"><label>세금계산서 발행일 (매출일)</label><input type="date" id="taxDateInput" value="'+esc(q.taxDate||todayISO())+'"></div><div class="toolbar"><button class="btn" id="taxCancel">취소</button><button class="btn primary" id="taxOk">발행 확정</button></div>';
   $("overlay").hidden=false;
   $("taxCancel").onclick=function(){$("overlay").hidden=true;openQuoteList();};
-  $("taxOk").onclick=function(){q.taxDate=$("taxDateInput").value||todayISO();q.status=Math.max(q.status||0,4);wr(K.quotes,quotes);autoBackup();$("overlay").hidden=true;openQuoteList();};
+  $("taxOk").onclick=function(){q.taxDate=$("taxDateInput").value||todayISO();wr(K.quotes,quotes);autoBackup();$("overlay").hidden=true;openQuoteList();};
 }
 function issueStatement(q){
-  var d0=q.taxDate||todayISO();
+  var d0=todayISO();
   var c=quoteCalc(q);
   var st={id:id("s"),quoteId:q.id,date:d0,taxDate:q.taxDate||"",seq:null,recipient:q.recipient,recipientAddr:"",recipientTel:q.recipientTel,recipientAttn:q.attn,
     discountRate:q.discountRate||0,listSupply:c.listSupply,discount:c.discount,netSupply:c.netSupply,vat:c.vat,total:c.total,
     items:q.items.map(function(it){return{date:d0,name:it.name,spec:it.spec,qty:it.qty,unit:it.unit,price:it.price,remark:it.remark};}),createdAt:Date.now()};
   st.seq=1+statements.filter(function(s){return s.date===st.date;}).length;
   statements.push(st);wr(K.statements,statements);
-  q.status=5;q.statementId=st.id;wr(K.quotes,quotes);autoBackup();
+  q.statementId=st.id;wr(K.quotes,quotes);autoBackup();
   return st;
 }
 var curStatement=null;
@@ -578,10 +580,10 @@ function stTotal(s){return stCalc(s).total;}
 function renderStatementView(){
   var list=statements.slice().sort(function(a,b){return(b.createdAt||0)-(a.createdAt||0);});
   if(!curStatement&&list.length)curStatement=list[0];
-  var listHtml=list.length===0?'<div class="card"><p class="empty">발행된 거래명세서가 없습니다.<br>견적서 목록에서 <b>제작완료 → 세금계산서 발행 → 거래명세서 발행</b> 순서로 진행하세요.</p></div>':
+  var listHtml=list.length===0?'<div class="card"><p class="empty">발행된 거래명세서가 없습니다.<br>견적서 목록에서 <b>제작완료</b> 상태의 견적에서 <b>[거래명세서 발행]</b>을 누르세요. (세금계산서는 별도로 발행)</p></div>':
     '<div class="card"><table class="list"><thead><tr><th>일련번호</th><th>수신처</th><th>합계</th><th>발행일</th><th></th></tr></thead><tbody>'+list.map(function(s){return '<tr'+(curStatement&&s.id===curStatement.id?' class="active"':'')+'><td>'+esc(String(s.date).replace(/-/g,"/")+" -"+s.seq)+'</td><td>'+esc(s.recipient||"-")+'</td><td class="n">￦ '+fmt(stTotal(s))+'</td><td>'+esc(s.date)+'</td><td class="rowacts"><button class="mini go" data-sopen="'+s.id+'">보기</button><button class="mini del" data-sdel="'+s.id+'">삭제</button></td></tr>';}).join("")+'</tbody></table></div>';
   var sheet=curStatement?'<div class="preview-wrap"><div class="sheet" id="ssheet" style="min-height:auto"></div></div>':'';
-  $("app").innerHTML='<div class="single"><h1 class="h1">🧾 거래명세서</h1><p class="sub">세금계산서 발행 후 만들어집니다. 매출은 세금계산서 발행일 기준으로 잡힙니다.</p>'+
+  $("app").innerHTML='<div class="single"><h1 class="h1">🧾 거래명세서</h1><p class="sub">제작완료 견적에서 발행합니다. 세금계산서는 별도로(월말 등) 발행하며, 매출은 세금계산서 발행일 기준입니다.</p>'+
     (curStatement?'<div class="toolbar no-print"><label style="font-size:13px;color:var(--muted);align-self:center">발행일</label><input type="date" id="sdate" value="'+esc(curStatement.date)+'" style="border:1px solid var(--line);border-radius:7px;padding:7px 10px;background:var(--panel);color:var(--text)"><button class="btn primary" id="sprint">🖨 인쇄 / PDF</button>'+(isDesktop?'<button class="btn" id="sMail">✉ 메일 보내기</button>':'')+'</div>':'')+
     listHtml+sheet+'</div>';
   if(curStatement)ssheet();
@@ -629,15 +631,20 @@ function openQuoteList(){
   $("modalTitle").textContent="📄 견적서 목록 ("+quotes.length+")";
   $("modalBody").innerHTML=sorted.length===0?'<p class="empty">저장된 견적서가 없습니다. 작성 후 [저장]을 누르세요.</p>':
     '<table class="list"><thead><tr><th>일련번호</th><th>수신처</th><th>합계</th><th>상태</th><th></th></tr></thead><tbody>'+sorted.map(function(q){
-      var st=q.status||0;
+      var st=Math.min(3,q.status||0);
       var actions='<button class="mini" data-qopen="'+q.id+'">열기</button>';
       if(st<3)actions+='<button class="mini" data-qadv="'+q.id+'">다음단계</button>';
-      else if(st===3)actions+='<button class="mini go" data-qtax="'+q.id+'">세금계산서 발행</button>';
-      else if(st===4)actions+='<button class="mini go" data-qissue="'+q.id+'">거래명세서 발행</button>';
-      if(st>=3)actions+='<button class="mini" data-qcert="'+q.id+'">성적서</button>';
+      if(st>=3){
+        if(!q.statementId)actions+='<button class="mini go" data-qissue="'+q.id+'">거래명세서 발행</button>';
+        if(!q.taxDate)actions+='<button class="mini go" data-qtax="'+q.id+'">세금계산서 발행</button>';
+        actions+='<button class="mini" data-qcert="'+q.id+'">성적서</button>';
+      }
       actions+='<button class="mini del" data-qdel="'+q.id+'">삭제</button>';
+      var tags='';
+      if(q.statementId)tags+='<span class="chip" style="background:#dbeafe;color:#1e40af;margin-left:4px">명세서✓</span>';
+      if(q.taxDate)tags+='<span class="chip" style="background:#e9d5ff;color:#6b21a8;margin-left:4px">세금계산서✓</span>';
       var taxInfo=q.taxDate?'<div style="font-size:10px;color:var(--muted);margin-top:2px">세금계산서 '+esc(q.taxDate)+'</div>':'';
-      return '<tr'+(q.id===quote.id?' class="active"':'')+'><td>'+esc(qserial(q.date,q.seq))+'</td><td>'+esc(q.recipient||"(수신처 없음)")+'</td><td class="n">￦ '+fmt(quoteTotal(q))+'</td><td><span class="chip s'+st+'">'+STATUS[st]+'</span>'+taxInfo+'</td><td class="rowacts">'+actions+'</td></tr>';
+      return '<tr'+(q.id===quote.id?' class="active"':'')+'><td>'+esc(qserial(q.date,q.seq))+'</td><td>'+esc(q.recipient||"(수신처 없음)")+'</td><td class="n">￦ '+fmt(quoteTotal(q))+'</td><td><span class="chip s'+st+'">'+STATUS[st]+'</span>'+tags+taxInfo+'</td><td class="rowacts">'+actions+'</td></tr>';
     }).join("")+'</tbody></table>';
   $("overlay").hidden=false;
 }
@@ -779,7 +786,7 @@ document.addEventListener("click",function(e){
   if(d.cert){cert=newCert(d.cert);cdirty=false;view="cert";route();}
   if(d.copen){var c=certs.find(function(x){return x.id===d.copen;});if(c){cert=clone(c);cdirty=false;renderCertView();}}
   if(d.sopen){curStatement=statements.find(function(x){return x.id===d.sopen;});renderStatementView();}
-  if(d.sdel){if(confirm("이 거래명세서를 삭제할까요?")){var del=statements.find(function(x){return x.id===d.sdel;});statements=statements.filter(function(x){return x.id!==d.sdel;});if(del){var q=quotes.find(function(x){return x.id===del.quoteId;});if(q){q.status=3;q.statementId=null;wr(K.quotes,quotes);}}wr(K.statements,statements);autoBackup();curStatement=null;renderStatementView();}}
+  if(d.sdel){if(confirm("이 거래명세서를 삭제할까요?")){var del=statements.find(function(x){return x.id===d.sdel;});statements=statements.filter(function(x){return x.id!==d.sdel;});if(del){var q=quotes.find(function(x){return x.id===del.quoteId;});if(q){q.statementId=null;wr(K.quotes,quotes);}}wr(K.statements,statements);autoBackup();curStatement=null;renderStatementView();}}
   if(t.id==="sprint"&&curStatement){doPrint(curStatement.date,"거래명세서",curStatement.recipient,false);}
   if(t.id==="sMail"){openMailDialog("statement");}
   if(t.id==="sdate"){}
