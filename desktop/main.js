@@ -18,20 +18,19 @@ const backupPath = () => path.join(app.getPath('userData'), 'braumm-autobackup.j
 // - 실시간 백업 1개(braumm-autobackup.json) + 날짜별 백업(backups/braumm-YYYY-MM-DD.json, 최근 30일)
 const backupsDir = () => path.join(app.getPath('userData'), 'backups')
 
-// PDF 생성 공용: 인쇄 시 앱 배경(베이지)이 새지 않도록 흰 배경을 확실히 강제 후 캡처
+// 인쇄용 전체덮기 CSS: 흰 시트가 A4 전체를 덮게 하여 뒤 배경(베이지)이 절대 안 보이게 함
+var PRINT_CSS =
+  'html,body{background:#fff !important;margin:0 !important;padding:0 !important;}' +
+  '.topbar,.panel,.overlay,.toolbar,.no-print,.single .h1,.single .sub,.single .card{display:none !important;}' +
+  '.layout,.single,.preview-wrap{padding:0 !important;margin:0 !important;background:#fff !important;display:block !important;}' +
+  '.sheet{width:210mm !important;min-height:297mm !important;padding:12mm !important;margin:0 !important;box-shadow:none !important;background:#fff !important;}' +
+  '.cert{width:297mm !important;min-height:210mm !important;padding:10mm !important;margin:0 !important;box-shadow:none !important;background:#fff !important;}'
+
+// PDF 생성 공용: 인쇄 시 앱 배경(베이지)이 새지 않도록 흰 시트로 전체를 덮은 뒤 캡처
 async function makePDF(wc, opts) {
-  // 1) 인라인 스타일로 html/body 배경을 흰색 강제 (모든 CSS/미디어쿼리보다 우선)
-  await wc
-    .executeJavaScript(
-      "(function(){var h=document.documentElement,b=document.body;window.__pbg=[h.getAttribute('style')||'',b.getAttribute('style')||''];h.style.setProperty('background','#ffffff','important');b.style.setProperty('background','#ffffff','important');})()"
-    )
-    .catch(() => {})
-  // 2) UI 숨김 보강
   let cssKey
   try {
-    cssKey = await wc.insertCSS(
-      '.topbar,.panel,.overlay,.toolbar,.no-print,.single .h1,.single .sub,.single .card{display:none !important;} .layout,.single{padding:0 !important;background:#fff !important;}'
-    )
+    cssKey = await wc.insertCSS(PRINT_CSS)
   } catch (e) {}
   try {
     return await wc.printToPDF(opts)
@@ -39,12 +38,6 @@ async function makePDF(wc, opts) {
     if (cssKey) {
       try { await wc.removeInsertedCSS(cssKey) } catch (e) {}
     }
-    // 원래 스타일 복원
-    await wc
-      .executeJavaScript(
-        "(function(){if(!window.__pbg)return;var h=document.documentElement,b=document.body;if(window.__pbg[0])h.setAttribute('style',window.__pbg[0]);else h.removeAttribute('style');if(window.__pbg[1])b.setAttribute('style',window.__pbg[1]);else b.removeAttribute('style');window.__pbg=null;})()"
-      )
-      .catch(() => {})
   }
 }
 ipcMain.handle('data:save', (evt, data) => {
@@ -91,9 +84,13 @@ ipcMain.handle('pdf:save', async (evt, opts) => {
   try {
     opts = opts || {}
     const wc = BrowserWindow.fromWebContents(evt.sender).webContents
-    const pdfOpts = { printBackground: true, pageSize: 'A4', generateTaggedPDF: true }
+    const pdfOpts = {
+      printBackground: true,
+      pageSize: 'A4',
+      generateTaggedPDF: true,
+      margins: { top: 0, bottom: 0, left: 0, right: 0 },
+    }
     if (opts.landscape) pdfOpts.landscape = true
-    else pdfOpts.preferCSSPageSize = true
     const pdf = await makePDF(wc, pdfOpts)
     const res = await dialog.showSaveDialog(BrowserWindow.fromWebContents(evt.sender), {
       title: 'PDF로 저장',
@@ -192,8 +189,7 @@ ipcMain.handle('mail:send', async (evt, p) => {
     const pdf = await makePDF(wc, {
       printBackground: true,
       pageSize: 'A4',
-      margins: { top: 0.4, bottom: 0.4, left: 0.4, right: 0.4 },
-      preferCSSPageSize: true,
+      margins: { top: 0, bottom: 0, left: 0, right: 0 },
       generateTaggedPDF: true,
     })
 
