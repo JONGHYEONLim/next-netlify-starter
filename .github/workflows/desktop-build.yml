@@ -2,8 +2,9 @@ name: Build Desktop App
 
 # 동작:
 #  - desktop/ 코드를 브랜치에 push 하거나 Actions 탭에서 수동 실행하면
-#    윈도우 설치파일(.exe)을 만들어 "Actions 실행 결과의 Artifact"로 올립니다. (바로 내려받아 설치 가능)
-#  - v1.0.1 같은 태그를 push 하면 추가로 Releases 에 게시하고 자동 업데이트가 동작합니다.
+#    윈도우 설치파일(.exe)을 만들어 GitHub "Releases"에 공개로 올립니다.
+#    → 로그인 없이 누구나 받을 수 있는 다운로드 링크가 생기고, 자동 업데이트도 동작합니다.
+#  - Actions Artifact 로도 함께 올립니다(백업).
 on:
   push:
     branches:
@@ -36,26 +37,26 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # 태그에서 실행될 때만 Releases 에 게시(onTag), 평소엔 빌드만
-      - name: Build installer
-        run: npx electron-builder --win --publish onTag
+      # Releases 에 게시(.exe + latest.yml 자동 업데이트 메타 포함)
+      - name: Build & publish installer
+        run: npx electron-builder --win --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # 릴리스를 공개(draft 해제) → 로그인 없이 다운로드 가능 + 자동 업데이트 인식
+      - name: Publish the release (un-draft)
+        shell: pwsh
+        run: |
+          $ver = "v$(node -p "require('./package.json').version")"
+          Write-Host "Publishing release $ver"
+          gh release edit $ver --draft=false --latest --repo $env:GITHUB_REPOSITORY
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Actions Artifact 로도 백업 업로드
       - name: Upload installer as artifact
         uses: actions/upload-artifact@v4
         with:
           name: BRAUMM-Office-installer
           path: desktop/dist/*.exe
           if-no-files-found: error
-
-      # 태그 빌드일 때만 릴리스를 공개(draft 해제) → 자동 업데이트 인식
-      - name: Publish the release (un-draft)
-        if: startsWith(github.ref, 'refs/tags/')
-        shell: pwsh
-        run: |
-          $ver = "v$(node -p "require('./package.json').version")"
-          Write-Host "Publishing release $ver"
-          gh release edit $ver --draft=false --repo $env:GITHUB_REPOSITORY
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
