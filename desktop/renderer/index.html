@@ -70,6 +70,8 @@
   .preview-wrap{display:flex;justify-content:center;}
   .sheet{background:#fff;color:#000;width:210mm;min-height:297mm;padding:14mm 12mm;box-shadow:0 2px 12px rgba(0,0,0,.18);font-size:11px;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   .sheet-logo{margin-bottom:4px;} .sheet-logo img{max-height:44px;max-width:250px;object-fit:contain;}
+  .sheet-logo svg{height:42px !important;width:auto !important;max-width:250px;display:block;}
+  .cert-logo svg{height:26px !important;width:auto !important;max-width:130px;} .cert-logo img{height:26px;max-width:130px;object-fit:contain;}
   .doc-title{text-align:center;font-size:30px;font-weight:800;letter-spacing:15px;margin:0 0 3px;padding-left:15px;}
   .doc-serial{text-align:right;font-size:10px;color:#333;margin-bottom:10px;}
   .head-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
@@ -333,6 +335,21 @@ function bindMailSettings(){
   if(bcc)bcc.onchange=function(){settings.mailBcc=bcc.checked;wr(K.settings,settings);};
 }
 function sec(t,inner){return '<div class="sec"><h2>'+t+'</h2>'+inner+'</div>';}
+// SVG 데이터URI를 원본 마크업으로 디코드 (인쇄 시 벡터로 삽입 → 선명)
+function decodeSvgDataUri(uri){
+  try{
+    if(uri.indexOf("data:image/svg+xml;base64,")===0)return decodeURIComponent(escape(atob(uri.split(",")[1])));
+    if(uri.indexOf("data:image/svg+xml;utf8,")===0)return decodeURIComponent(uri.slice("data:image/svg+xml;utf8,".length));
+    if(uri.indexOf("data:image/svg+xml,")===0)return decodeURIComponent(uri.slice("data:image/svg+xml,".length));
+  }catch(e){}
+  return null;
+}
+// 로고 마크업: SVG면 인라인 벡터로, 아니면 img
+function logoMarkup(cls){
+  var lg=settings.logo; if(!lg) return "";
+  if(lg.indexOf("data:image/svg+xml")===0){var svg=decodeSvgDataUri(lg);if(svg)return '<div class="'+cls+'">'+svg+'</div>';}
+  return '<div class="'+cls+'"><img src="'+esc(lg)+'"></div>';
+}
 function stampHtml(placeholder){
   if(settings.stamp)return '<img class="stamp-img" src="'+esc(settings.stamp)+'" alt="도장">';
   return '<span class="stamp">'+esc(placeholder||"인")+'</span>';
@@ -408,7 +425,7 @@ function qsheet(){
       var lv=manual?usdWhole(Math.round(r.qty*r.usdPrice*vr/100)):fmtUSD(r.vat,rate);
       return '<tr><td class="c">'+(i+1)+'</td><td><span class="nm">'+esc(r.name)+'</span>'+(r.spec?'<div class="sp">['+esc(r.spec)+']</div>':'')+'</td><td class="c">'+fmt(r.qty)+' '+esc(r.unit)+'</td><td class="n">'+unit+'</td><td class="n">'+sup+'</td><td class="n">'+lv+'</td><td>'+esc(r.remark)+'</td></tr>';
     }).join("");
-    $("qsheet").innerHTML=(settings.logo?'<div class="sheet-logo"><img src="'+esc(settings.logo)+'"></div>':'')+
+    $("qsheet").innerHTML=logoMarkup("sheet-logo")+
       '<div class="doc-title" style="letter-spacing:8px">QUOTATION</div><div class="doc-serial">No. '+esc(sn)+' [ 1 / 1 ]</div>'+
       '<div class="head-grid"><table class="meta"><tbody><tr><th>To</th><td>'+esc(quote.recipient)+'&nbsp;</td></tr><tr><th>Attn</th><td>'+esc(quote.attn)+'&nbsp;</td></tr><tr><th>TEL / FAX</th><td>'+esc([quote.recipientTel,quote.recipientFax].filter(Boolean).join(" / "))+'&nbsp;</td></tr><tr><th>Payment</th><td>'+esc(quote.payment)+'</td></tr><tr><th>Validity</th><td>'+esc(quote.validity)+'</td></tr></tbody></table>'+
       '<table class="meta sup"><tbody><tr><th>Business Reg. No</th><td>'+esc(SUP.bizNo)+'</td></tr><tr><th>Company / CEO</th><td>'+esc(settings.supEnCompany||SUP.company)+' / '+esc(settings.supEnCeo||SUP.ceo)+''+stampHtml("Seal")+'</td></tr><tr><th>Address</th><td>'+esc(settings.supEnAddress||SUP.address)+'</td></tr><tr><th>Business Type</th><td>'+esc(settings.supEnType||SUP.bizType)+'</td></tr><tr><th>Contact (TEL)</th><td>'+esc(quote.manager)+' ('+esc(quote.companyTel)+')</td></tr></tbody></table></div>'+
@@ -420,7 +437,7 @@ function qsheet(){
       buildNotesHtml(quote,"en")+(quote.extraNotes?'<div class="foot">'+esc(quote.extraNotes)+'</div>':'');
     return;
   }
-  $("qsheet").innerHTML=(settings.logo?'<div class="sheet-logo"><img src="'+esc(settings.logo)+'"></div>':'')+
+  $("qsheet").innerHTML=logoMarkup("sheet-logo")+
     '<div class="doc-title">견 적 서</div><div class="doc-serial">일련번호 '+esc(sn)+' [ 1 / 1 ]</div>'+
     '<div class="head-grid"><table class="meta"><tbody><tr><th>수 신</th><td>'+esc(quote.recipient)+'&nbsp;</td></tr><tr><th>참 조</th><td>'+esc(quote.attn)+'&nbsp;</td></tr><tr><th>TEL / FAX</th><td>'+esc([quote.recipientTel,quote.recipientFax].filter(Boolean).join(" / "))+'&nbsp;</td></tr><tr><th>결제조건</th><td>'+esc(quote.payment)+'</td></tr><tr><th>유효기간</th><td>'+esc(quote.validity)+'</td></tr></tbody></table>'+
     '<table class="meta sup"><tbody><tr><th>사업자등록번호</th><td>'+esc(SUP.bizNo)+'</td></tr><tr><th>회사명/대표</th><td>'+esc(SUP.company)+' / '+esc(SUP.ceo)+''+stampHtml("인")+'</td></tr><tr><th>주 소</th><td>'+esc(SUP.address)+'</td></tr><tr><th>업태/종목</th><td>'+esc(SUP.bizType)+' / '+esc(SUP.bizItem)+'</td></tr><tr><th>담당자(TEL)</th><td>'+esc(quote.manager)+' ('+esc(quote.companyTel)+')</td></tr></tbody></table></div>'+
@@ -532,7 +549,7 @@ function csheet(){
   var dot=todayDot(cert.date);
   var rowSpecMeas=function(no,name,spec,meas,cls){return '<tr><td class="cc lbl" style="width:26px">'+no+'</td><td class="lbl" style="width:150px">'+esc(name)+'</td><td style="width:220px">'+esc(spec)+'</td><td class="cc" colspan="3"'+(cls?' class="'+cls+'"':'')+'>'+esc(meas)+'</td></tr>';};
   $("csheet").innerHTML=
-    '<div style="display:flex;justify-content:space-between;align-items:flex-start"><div class="cert-title">AC Reactor Test Certificate ('+esc(cert.phase||"3P")+')</div>'+(settings.logo?'<img src="'+esc(settings.logo)+'" style="height:26px">':'')+'</div>'+
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start"><div class="cert-title">AC Reactor Test Certificate ('+esc(cert.phase||"3P")+')</div>'+(settings.logo?logoMarkup("cert-logo"):"")+'</div>'+
     '<table><tbody>'+
     '<tr><td class="lbl" style="width:90px">Customer</td><td style="width:200px">'+esc(p.customer||"")+'</td><td class="lbl" style="width:110px">Product code</td><td style="width:140px">'+esc(p.productCode||"-")+'</td><td class="lbl">Ambient Temp(°C)</td><td class="cc" style="width:50px">'+esc(cert.ambient)+'</td><td class="lbl cc" style="width:70px">Tested</td><td class="lbl cc" style="width:70px">Approved</td></tr>'+
     '<tr><td class="lbl">Ratings</td><td>'+esc(p.ratings||"")+'</td><td class="lbl">KOSED Dwg. No</td><td>'+esc(p.kosedDwg||"-")+'</td><td class="lbl">Insul. Class</td><td class="cc">'+esc(p.insClass||"")+'</td><td class="cc stampcell" rowspan="2">'+esc(cert.testedName)+'</td><td class="cc stampcell" rowspan="2">'+esc(cert.approvedName)+'</td></tr>'+

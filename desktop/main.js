@@ -18,12 +18,19 @@ const backupPath = () => path.join(app.getPath('userData'), 'braumm-autobackup.j
 // - 실시간 백업 1개(braumm-autobackup.json) + 날짜별 백업(backups/braumm-YYYY-MM-DD.json, 최근 30일)
 const backupsDir = () => path.join(app.getPath('userData'), 'backups')
 
-// PDF 생성 공용: 인쇄 시 앱 배경(베이지)이 새지 않도록 흰 배경을 강제 주입 후 캡처
+// PDF 생성 공용: 인쇄 시 앱 배경(베이지)이 새지 않도록 흰 배경을 확실히 강제 후 캡처
 async function makePDF(wc, opts) {
+  // 1) 인라인 스타일로 html/body 배경을 흰색 강제 (모든 CSS/미디어쿼리보다 우선)
+  await wc
+    .executeJavaScript(
+      "(function(){var h=document.documentElement,b=document.body;window.__pbg=[h.getAttribute('style')||'',b.getAttribute('style')||''];h.style.setProperty('background','#ffffff','important');b.style.setProperty('background','#ffffff','important');})()"
+    )
+    .catch(() => {})
+  // 2) UI 숨김 보강
   let cssKey
   try {
     cssKey = await wc.insertCSS(
-      'html,body{background:#ffffff !important;} .topbar,.panel,.overlay,.toolbar,.no-print,.single .h1,.single .sub,.single .card{display:none !important;} .layout,.single{padding:0 !important;background:#fff !important;}'
+      '.topbar,.panel,.overlay,.toolbar,.no-print,.single .h1,.single .sub,.single .card{display:none !important;} .layout,.single{padding:0 !important;background:#fff !important;}'
     )
   } catch (e) {}
   try {
@@ -32,6 +39,12 @@ async function makePDF(wc, opts) {
     if (cssKey) {
       try { await wc.removeInsertedCSS(cssKey) } catch (e) {}
     }
+    // 원래 스타일 복원
+    await wc
+      .executeJavaScript(
+        "(function(){if(!window.__pbg)return;var h=document.documentElement,b=document.body;if(window.__pbg[0])h.setAttribute('style',window.__pbg[0]);else h.removeAttribute('style');if(window.__pbg[1])b.setAttribute('style',window.__pbg[1]);else b.removeAttribute('style');window.__pbg=null;})()"
+      )
+      .catch(() => {})
   }
 }
 ipcMain.handle('data:save', (evt, data) => {
