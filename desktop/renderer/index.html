@@ -74,14 +74,14 @@
   .doc-serial{text-align:right;font-size:10px;color:#333;margin-bottom:10px;}
   .head-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
   .meta{width:100%;border-collapse:collapse;} .meta th,.meta td{border:1px solid #333;padding:4px 6px;font-size:10.5px;text-align:left;vertical-align:middle;}
-  .meta th{background:#f1efe9;width:35%;font-weight:700;white-space:nowrap;} .meta.sup th{background:#fbf1dd;}
+  .meta th{background:#f3f4f6;width:35%;font-weight:700;white-space:nowrap;} .meta.sup th{background:#eef1f5;}
   .stamp{color:#c1121f;border:1px solid #c1121f;border-radius:50%;padding:1px 3px;font-size:9px;margin-left:4px;}
   .greeting{margin:8px 0;font-size:10.5px;line-height:1.6;}
   .amount{border:2px solid #111;padding:8px 10px;margin:8px 0 12px;display:flex;align-items:center;justify-content:space-between;font-weight:700;gap:10px;}
   .amount .krw{font-size:15px;} .amount .num{font-size:13px;font-variant-numeric:tabular-nums;} .amount .vat{font-size:10px;font-weight:600;color:#444;}
   .items{width:100%;border-collapse:collapse;margin-bottom:10px;} .items th,.items td{border:1px solid #333;padding:5px 6px;font-size:10px;vertical-align:middle;}
-  .items thead th{background:#e7e3da;text-align:center;font-weight:700;} .items td.n{text-align:right;font-variant-numeric:tabular-nums;} .items td.c{text-align:center;}
-  .items .nm{font-weight:600;} .items .sp{color:#333;font-size:9.5px;} .items tfoot td{background:#f1efe9;font-weight:800;}
+  .items thead th{background:#e9eaec;text-align:center;font-weight:700;} .items td.n{text-align:right;font-variant-numeric:tabular-nums;} .items td.c{text-align:center;}
+  .items .nm{font-weight:600;} .items .sp{color:#333;font-size:9.5px;} .items tfoot td{background:#f3f4f6;font-weight:800;}
   .foot{font-size:9.5px;line-height:1.6;color:#222;margin-top:8px;white-space:pre-wrap;} .empty-items{text-align:center;color:#999;padding:16px;}
 
   /* Cert (성적서) sheet */
@@ -362,7 +362,7 @@ function qSummaryHtml(c){
     '<tr><td style="border:0"></td><td class="n">할인 ('+c.rate+'%)</td><td class="n" style="color:#c0392b">-'+fmt(c.discount)+'</td></tr>'+
     '<tr><td style="border:0"></td><td class="n">할인후 공급가액</td><td class="n">'+fmt(c.netSupply)+'</td></tr>'+
     '<tr><td style="border:0"></td><td class="n">부가세</td><td class="n">'+fmt(c.vat)+'</td></tr>'+
-    '<tr><td style="border:0"></td><td class="n" style="font-weight:800;background:#f1efe9">합 계</td><td class="n" style="font-weight:800;background:#f1efe9">'+fmt(c.total)+'</td></tr>'+
+    '<tr><td style="border:0"></td><td class="n" style="font-weight:800;background:#f3f4f6">합 계</td><td class="n" style="font-weight:800;background:#f3f4f6">'+fmt(c.total)+'</td></tr>'+
     '</tbody></table>';
 }
 function qSummaryEN(calc,f){
@@ -372,7 +372,7 @@ function qSummaryEN(calc,f){
     '<tr><td style="border:0"></td><td class="n">Discount ('+calc.rate+'%)</td><td class="n" style="color:#c0392b">-'+f(calc.discount)+'</td></tr>'+
     '<tr><td style="border:0"></td><td class="n">Net Supply</td><td class="n">'+f(calc.netSupply)+'</td></tr>'+
     '<tr><td style="border:0"></td><td class="n">VAT ('+calc.vatRate+'%)</td><td class="n">'+f(calc.vat)+'</td></tr>'+
-    '<tr><td style="border:0"></td><td class="n" style="font-weight:800;background:#f1efe9">TOTAL</td><td class="n" style="font-weight:800;background:#f1efe9">'+f(calc.total)+'</td></tr>'+
+    '<tr><td style="border:0"></td><td class="n" style="font-weight:800;background:#f3f4f6">TOTAL</td><td class="n" style="font-weight:800;background:#f3f4f6">'+f(calc.total)+'</td></tr>'+
     '</tbody></table>';
 }
 function updateQBadge(){var b=$("qbadge");if(!b)return;if(qdirty){b.textContent="● 저장 안 됨";b.className="badge dirty";}else if(quote.savedAt){b.textContent="저장됨 · "+fmtTime(quote.savedAt);b.className="badge saved";}else{b.textContent="새 견적서";b.className="badge";}}
@@ -597,7 +597,7 @@ function ssheet(){
     '<table class="meta sup"><tbody><tr><th>일련번호</th><td>'+esc(String(s.date).replace(/-/g,"/")+" -"+s.seq)+'</td></tr><tr><th>사업자등록번호</th><td>'+esc(SUP.bizNo)+'</td></tr><tr><th>상호/성명</th><td>'+esc(SUP.company)+' / '+esc(SUP.ceo)+'<span class="stamp">인</span></td></tr><tr><th>주 소</th><td>'+esc(SUP.address)+'</td></tr><tr><th>TEL</th><td>'+esc(settings.companyTel)+'</td></tr></tbody></table></div>'+
     '<div class="amount"><span class="krw">금 액 : '+esc(won(g))+'</span><span class="num">(￦ '+fmt(g)+')</span></div>'+
     '<table class="items"><thead><tr><th style="width:66px">일자</th><th>품목명 [규격]</th><th style="width:60px">수량</th><th style="width:76px">단가</th><th style="width:82px">공급가액</th><th style="width:70px">부가세</th><th style="width:90px">적요</th></tr></thead><tbody>'+ir+'</tbody><tfoot><tr><td class="c" colspan="4">'+(sc.discount>0?"정가 소계":"합 계")+'</td><td class="n">'+fmt(ts)+'</td><td class="n">'+fmt(Math.round(ts*VAT))+'</td><td class="n">'+fmt(ts+Math.round(ts*VAT))+'</td></tr></tfoot></table>'+
-    (sc.discount>0?'<table class="items" style="margin-top:-6px"><tbody><tr><td style="border:0;width:calc(100% - 172px)"></td><td class="n" style="width:92px">할인 ('+sc.rate+'%)</td><td class="n" style="width:80px;color:#c0392b">-'+fmt(sc.discount)+'</td></tr><tr><td style="border:0"></td><td class="n">할인후 공급가액</td><td class="n">'+fmt(sc.netSupply)+'</td></tr><tr><td style="border:0"></td><td class="n">부가세</td><td class="n">'+fmt(sc.vat)+'</td></tr><tr><td style="border:0"></td><td class="n" style="font-weight:800;background:#f1efe9">합 계</td><td class="n" style="font-weight:800;background:#f1efe9">'+fmt(sc.total)+'</td></tr></tbody></table>':'');
+    (sc.discount>0?'<table class="items" style="margin-top:-6px"><tbody><tr><td style="border:0;width:calc(100% - 172px)"></td><td class="n" style="width:92px">할인 ('+sc.rate+'%)</td><td class="n" style="width:80px;color:#c0392b">-'+fmt(sc.discount)+'</td></tr><tr><td style="border:0"></td><td class="n">할인후 공급가액</td><td class="n">'+fmt(sc.netSupply)+'</td></tr><tr><td style="border:0"></td><td class="n">부가세</td><td class="n">'+fmt(sc.vat)+'</td></tr><tr><td style="border:0"></td><td class="n" style="font-weight:800;background:#f3f4f6">합 계</td><td class="n" style="font-weight:800;background:#f3f4f6">'+fmt(sc.total)+'</td></tr></tbody></table>':'');
 }
 
 // =========================================================== SALES (매출)

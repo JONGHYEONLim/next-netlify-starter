@@ -17,6 +17,23 @@ const backupPath = () => path.join(app.getPath('userData'), 'braumm-autobackup.j
 // ===== 자동 백업: 저장할 때마다 데이터 파일로 기록 (localStorage 유실 대비) =====
 // - 실시간 백업 1개(braumm-autobackup.json) + 날짜별 백업(backups/braumm-YYYY-MM-DD.json, 최근 30일)
 const backupsDir = () => path.join(app.getPath('userData'), 'backups')
+
+// PDF 생성 공용: 인쇄 시 앱 배경(베이지)이 새지 않도록 흰 배경을 강제 주입 후 캡처
+async function makePDF(wc, opts) {
+  let cssKey
+  try {
+    cssKey = await wc.insertCSS(
+      'html,body{background:#ffffff !important;} .topbar,.panel,.overlay,.toolbar,.no-print,.single .h1,.single .sub,.single .card{display:none !important;} .layout,.single{padding:0 !important;background:#fff !important;}'
+    )
+  } catch (e) {}
+  try {
+    return await wc.printToPDF(opts)
+  } finally {
+    if (cssKey) {
+      try { await wc.removeInsertedCSS(cssKey) } catch (e) {}
+    }
+  }
+}
 ipcMain.handle('data:save', (evt, data) => {
   try {
     const json = JSON.stringify(data)
@@ -64,7 +81,7 @@ ipcMain.handle('pdf:save', async (evt, opts) => {
     const pdfOpts = { printBackground: true, pageSize: 'A4', generateTaggedPDF: true }
     if (opts.landscape) pdfOpts.landscape = true
     else pdfOpts.preferCSSPageSize = true
-    const pdf = await wc.printToPDF(pdfOpts)
+    const pdf = await makePDF(wc, pdfOpts)
     const res = await dialog.showSaveDialog(BrowserWindow.fromWebContents(evt.sender), {
       title: 'PDF로 저장',
       defaultPath: (opts.filename || 'document') + '.pdf',
@@ -159,7 +176,7 @@ ipcMain.handle('mail:send', async (evt, p) => {
 
     // 현재 창을 인쇄용(@media print) 레이아웃으로 PDF 생성 → 시트만 담김
     const wc = BrowserWindow.fromWebContents(evt.sender).webContents
-    const pdf = await wc.printToPDF({
+    const pdf = await makePDF(wc, {
       printBackground: true,
       pageSize: 'A4',
       margins: { top: 0.4, bottom: 0.4, left: 0.4, right: 0.4 },
