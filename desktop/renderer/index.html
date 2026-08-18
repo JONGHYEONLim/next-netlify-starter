@@ -114,7 +114,7 @@
   .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;} .modal-head h2{margin:0;font-size:18px;}
 
   [hidden]{display:none !important;}
-  @media print{.topbar,.panel,.overlay,.no-print,.toolbar{display:none!important;}body{background:#fff;}.layout,.single{display:block;padding:0;}.preview-wrap{display:block;}.sheet,.cert{width:auto;min-height:auto;box-shadow:none;padding:0;}}
+  @media print{.topbar,.panel,.overlay,.no-print,.toolbar,.single .h1,.single .sub,.single .card{display:none!important;}body{background:#fff;}.layout,.single{display:block;padding:0;}.preview-wrap{display:block;}.sheet,.cert{width:auto;min-height:auto;box-shadow:none;padding:0;}}
   @page{size:A4;margin:12mm;}
   .toolbar{display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
 </style>
@@ -205,6 +205,18 @@ function printDoc(datePart,kind,who){
   var restore=function(){document.title=prev;window.removeEventListener("afterprint",restore);};
   window.addEventListener("afterprint",restore);
   setTimeout(function(){window.print();},30);
+}
+// 데스크톱: 앱이 직접 벡터 PDF로 저장 (글자 선명 + 시트만). 브라우저: 인쇄 대화상자.
+function doPrint(datePart,kind,who,landscape){
+  var fname=safeName(datePart)+"_"+kind+"_"+safeName(who);
+  if(isDesktop&&window.braumm.savePdf){
+    window.braumm.savePdf({filename:fname,landscape:!!landscape}).then(function(r){
+      if(r&&r.ok){/* 저장됨 */}
+      else if(r&&!r.canceled){alert("PDF 저장 실패: "+((r&&r.error)||""));}
+    });
+  } else {
+    printDoc(datePart,kind,who);
+  }
 }
 
 // ---- state ----
@@ -658,8 +670,8 @@ function wire(){
   if(b=$("gNew"))b.onclick=function(){if(qdirty&&!confirm("저장 안 된 변경이 있습니다. 새로 시작할까요?"))return;quote=newQuote();qdirty=false;wr(K.draft,quote);renderQuote();};
   if(b=$("gSave"))b.onclick=function(){if(quote.seq==null)quote.seq=nextQSeq(quote.date,quote.id);quote.savedAt=Date.now();var i=quotes.findIndex(function(q){return q.id===quote.id;});if(i>=0)quotes[i]=clone(quote);else quotes.push(clone(quote));wr(K.quotes,quotes);wr(K.draft,quote);var addedP=autoRegisterProducts(quote);qdirty=false;updateQBadge();autoBackup();setGlobalActions();if(addedP)alert("저장 완료. 신규 품목 "+addedP+"건이 제품 리스트에 자동 등록되었습니다.");};
   if(b=$("gPrint"))b.onclick=function(){
-    if(view==="cert"){var pp=products.find(function(x){return x.id===cert.productId;});printDoc(cert.date,"성적서",pp?pp.name:"제품");}
-    else{printDoc(quote.date,(quote.lang==="en"?"Quotation":"견적서"),quote.recipient);}
+    if(view==="cert"){var pp=products.find(function(x){return x.id===cert.productId;});doPrint(cert.date,"성적서",pp?pp.name:"제품",true);}
+    else{doPrint(quote.date,(quote.lang==="en"?"Quotation":"견적서"),quote.recipient,false);}
   };
   if(b=$("gBackup"))b.onclick=doBackup;
   if(b=$("gRestore"))b.onclick=function(){$("restorePick").click();};
@@ -768,7 +780,7 @@ document.addEventListener("click",function(e){
   if(d.copen){var c=certs.find(function(x){return x.id===d.copen;});if(c){cert=clone(c);cdirty=false;renderCertView();}}
   if(d.sopen){curStatement=statements.find(function(x){return x.id===d.sopen;});renderStatementView();}
   if(d.sdel){if(confirm("이 거래명세서를 삭제할까요?")){var del=statements.find(function(x){return x.id===d.sdel;});statements=statements.filter(function(x){return x.id!==d.sdel;});if(del){var q=quotes.find(function(x){return x.id===del.quoteId;});if(q){q.status=3;q.statementId=null;wr(K.quotes,quotes);}}wr(K.statements,statements);autoBackup();curStatement=null;renderStatementView();}}
-  if(t.id==="sprint"&&curStatement){printDoc(curStatement.date,"거래명세서",curStatement.recipient);}
+  if(t.id==="sprint"&&curStatement){doPrint(curStatement.date,"거래명세서",curStatement.recipient,false);}
   if(t.id==="sMail"){openMailDialog("statement");}
   if(t.id==="sdate"){}
 });

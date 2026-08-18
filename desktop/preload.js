@@ -11,4 +11,5 @@ contextBridge.exposeInMainWorld('braumm', {
   saveBackup: (data) => ipcRenderer.invoke('data:save', data),
   loadBackup: () => ipcRenderer.invoke('data:load'),
   openBackupFolder: () => ipcRenderer.invoke('data:folder'),
+  savePdf: (opts) => ipcRenderer.invoke('pdf:save', opts),
 })

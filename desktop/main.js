@@ -56,6 +56,28 @@ ipcMain.handle('data:load', () => {
     return null
   }
 })
+// ===== 벡터 PDF로 직접 저장 (Windows 인쇄 대화상자 우회 → 글자 벡터, 시트만 깔끔) =====
+ipcMain.handle('pdf:save', async (evt, opts) => {
+  try {
+    opts = opts || {}
+    const wc = BrowserWindow.fromWebContents(evt.sender).webContents
+    const pdfOpts = { printBackground: true, pageSize: 'A4', generateTaggedPDF: true }
+    if (opts.landscape) pdfOpts.landscape = true
+    else pdfOpts.preferCSSPageSize = true
+    const pdf = await wc.printToPDF(pdfOpts)
+    const res = await dialog.showSaveDialog(BrowserWindow.fromWebContents(evt.sender), {
+      title: 'PDF로 저장',
+      defaultPath: (opts.filename || 'document') + '.pdf',
+      filters: [{ name: 'PDF', extensions: ['pdf'] }],
+    })
+    if (res.canceled || !res.filePath) return { ok: false, canceled: true }
+    fs.writeFileSync(res.filePath, pdf)
+    shell.showItemInFolder(res.filePath)
+    return { ok: true, path: res.filePath }
+  } catch (e) {
+    return { ok: false, error: String(e && e.message ? e.message : e) }
+  }
+})
 ipcMain.handle('data:folder', () => {
   try {
     const dir = app.getPath('userData')
