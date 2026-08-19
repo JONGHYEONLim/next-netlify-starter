@@ -18,22 +18,30 @@ const backupPath = () => path.join(app.getPath('userData'), 'braumm-autobackup.j
 // - 실시간 백업 1개(braumm-autobackup.json) + 날짜별 백업(backups/braumm-YYYY-MM-DD.json, 최근 30일)
 const backupsDir = () => path.join(app.getPath('userData'), 'backups')
 
-// 인쇄용 전체덮기 CSS: 흰 시트가 A4 전체를 덮게 하여 뒤 배경(베이지)이 절대 안 보이게 함
-var PRINT_CSS =
-  'html,body{background:#fff !important;margin:0 !important;padding:0 !important;}' +
-  '.topbar,.panel,.overlay,.toolbar,.no-print,.single .h1,.single .sub,.single .card{display:none !important;}' +
-  '.layout,.single,.preview-wrap{padding:0 !important;margin:0 !important;background:#fff !important;display:block !important;}' +
-  '.sheet{width:210mm !important;min-height:297mm !important;padding:12mm !important;margin:0 !important;box-shadow:none !important;background:#fff !important;}' +
-  '.cert{width:297mm !important;min-height:210mm !important;padding:10mm !important;margin:0 !important;box-shadow:none !important;background:#fff !important;}'
+// 인쇄용 전체덮기 CSS: @page 여백 0 + 흰 시트가 용지 전체를 덮게 하여 베이지 테두리 제거
+function printCSS(landscape) {
+  return (
+    '@page{size:A4 ' + (landscape ? 'landscape' : 'portrait') + ';margin:0 !important;}' +
+    'html,body{background:#fff !important;margin:0 !important;padding:0 !important;}' +
+    '.topbar,.panel,.overlay,.toolbar,.no-print,.single .h1,.single .sub,.single .card{display:none !important;}' +
+    '.layout,.single,.preview-wrap{padding:0 !important;margin:0 !important;background:#fff !important;display:block !important;}' +
+    '.sheet{width:210mm !important;min-height:297mm !important;padding:12mm !important;margin:0 !important;box-shadow:none !important;background:#fff !important;}' +
+    '.cert{width:297mm !important;min-height:210mm !important;padding:10mm !important;margin:0 !important;box-shadow:none !important;background:#fff !important;}'
+  )
+}
 
-// PDF 생성 공용: 인쇄 시 앱 배경(베이지)이 새지 않도록 흰 시트로 전체를 덮은 뒤 캡처
-async function makePDF(wc, opts) {
+// PDF 생성 공용: @page CSS(여백0)를 주입하고 CSS 페이지 크기를 따르게 캡처 → 흰 배경 보장
+async function makePDF(wc, landscape) {
   let cssKey
   try {
-    cssKey = await wc.insertCSS(PRINT_CSS)
+    cssKey = await wc.insertCSS(printCSS(landscape))
   } catch (e) {}
   try {
-    return await wc.printToPDF(opts)
+    return await wc.printToPDF({
+      printBackground: true,
+      preferCSSPageSize: true,
+      generateTaggedPDF: true,
+    })
   } finally {
     if (cssKey) {
       try { await wc.removeInsertedCSS(cssKey) } catch (e) {}
@@ -84,14 +92,7 @@ ipcMain.handle('pdf:save', async (evt, opts) => {
   try {
     opts = opts || {}
     const wc = BrowserWindow.fromWebContents(evt.sender).webContents
-    const pdfOpts = {
-      printBackground: true,
-      pageSize: 'A4',
-      generateTaggedPDF: true,
-      margins: { top: 0, bottom: 0, left: 0, right: 0 },
-    }
-    if (opts.landscape) pdfOpts.landscape = true
-    const pdf = await makePDF(wc, pdfOpts)
+    const pdf = await makePDF(wc, !!opts.landscape)
     const res = await dialog.showSaveDialog(BrowserWindow.fromWebContents(evt.sender), {
       title: 'PDF로 저장',
       defaultPath: (opts.filename || 'document') + '.pdf',
@@ -184,14 +185,9 @@ ipcMain.handle('mail:send', async (evt, p) => {
     }
     const pass = safeStorage.decryptString(fs.readFileSync(credPath()))
 
-    // 현재 창을 인쇄용(@media print) 레이아웃으로 PDF 생성 → 시트만 담김
+    // 현재 창을 인쇄용 레이아웃으로 PDF 생성 → 시트만, 흰 배경
     const wc = BrowserWindow.fromWebContents(evt.sender).webContents
-    const pdf = await makePDF(wc, {
-      printBackground: true,
-      pageSize: 'A4',
-      margins: { top: 0, bottom: 0, left: 0, right: 0 },
-      generateTaggedPDF: true,
-    })
+    const pdf = await makePDF(wc, false)
 
     // nodemailer는 필요할 때만 로드
     const nodemailer = require('nodemailer')
