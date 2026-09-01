@@ -205,10 +205,15 @@ class FrameDrawer:
         _ctext(c, (TB_LBL_X + 30.5 + TB_PAGE_X - 1.5) / 2, TB_CODE_Y + 2.1,
                m.dwg_code2, FONT_REGULAR, 7.0)
 
-        # 도면번호 (크게)
+        # 도면번호 (크게, 칸을 넘치면 자동으로 줄인다)
         mid_y = (TB_OLD_Y + TB_CODE_Y) / 2 - 3.2
-        _ctext(c, TB_LBL_X + 14.0, mid_y, m.dwg_prefix, FONT_BOLD, 20.0)
-        _ctext(c, TB_LBL_X + 40.0, mid_y, m.dwg_no, FONT_BOLD, 20.0)
+        if m.dwg_prefix:
+            _ctext(c, TB_LBL_X + 12.0, mid_y, m.dwg_prefix, FONT_BOLD, 20.0)
+            no_x0, no_x1 = TB_LBL_X + 20.0, TB_PAGE_X
+        else:
+            no_x0, no_x1 = TB_LBL_X, TB_PAGE_X
+        _fit_text(c, (no_x0 + no_x1) / 2, mid_y, m.dwg_no, FONT_BOLD, 20.0,
+                  max_width=(no_x1 - no_x0) - 4.0, min_size=8.0)
 
         # OLD DWG.NO. 띠
         c.line(_x(TB_LBL_X + 12.0), _y(TB_BOT), _x(TB_LBL_X + 12.0), _y(TB_OLD_Y))
@@ -226,7 +231,7 @@ class FrameDrawer:
         _vtext_mid(c, (TB_PAGE_X + TB_PAGE_LBL_X) / 2, (TB_INDEX_Y + TB_PAGE_Y1) / 2,
                    "PAGE", FONT_REGULAR, 5.4)
         _vtext_mid(c, (TB_PAGE_X + TB_PAGE_LBL_X) / 2, (TB_BOT + TB_INDEX_Y) / 2,
-                   "INDEX", FONT_REGULAR, 5.4)
+                   "REV.", FONT_REGULAR, 5.4)
 
         page_no = self.meta.page_start + page_index - 1
         total = self.meta.page_total or (self._total() if self._total else 0)
@@ -234,8 +239,8 @@ class FrameDrawer:
                str(page_no), FONT_REGULAR, 9.0)
         _ctext(c, (TB_PAGE_LBL_X + OUT_R) / 2, (TB_PAGE_Y2 + TB_INDEX_Y) / 2 - 1.4,
                str(total) if total else "", FONT_REGULAR, 9.0)
-        _ctext(c, (TB_PAGE_LBL_X + OUT_R) / 2, (TB_INDEX_Y + TB_BOT) / 2 - 1.4,
-               self.meta.index, FONT_REGULAR, 8.0)
+        _ctext(c, (TB_PAGE_LBL_X + OUT_R) / 2, (TB_INDEX_Y + TB_BOT) / 2 - 1.8,
+               self.meta.revision or self.meta.index, FONT_BOLD, 11.0)
 
     def _footer_code(self, c: Canvas) -> None:
         if self.meta.footer_code:
@@ -262,6 +267,18 @@ def _vtext(c: Canvas, cx: float, y0: float, text: str, font: str, size: float,
     c.setFont(font, size)
     c.drawString(0, -size * 0.36, text) if anchor == "start" else c.drawCentredString(0, -size * 0.36, text)
     c.restoreState()
+
+
+def _fit_text(c: Canvas, cx: float, y: float, text: str, font: str, size: float,
+              max_width: float, min_size: float = 6.0) -> None:
+    """칸 폭을 넘으면 글자를 줄여서 한 줄에 맞춘다."""
+    if not text:
+        return
+    limit = max_width * mm
+    while size > min_size and pdfmetrics.stringWidth(text, font, size) > limit:
+        size -= 0.5
+    c.setFont(font, size)
+    c.drawCentredString(_x(cx), _y(y), text)
 
 
 def _vtext_mid(c: Canvas, cx: float, cy: float, text: str, font: str, size: float) -> None:

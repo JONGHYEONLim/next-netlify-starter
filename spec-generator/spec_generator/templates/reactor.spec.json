@@ -872,52 +872,58 @@
         {
           "indent": 1,
           "marker": "",
-          "ko": "아래 표의 최신 판수를 제품 명판에 표시할 것.",
+          "ko": "아래 표의 최신 리비전을 제품 명판에 표시할 것.",
           "en": ""
         },
         {
           "indent": 1,
           "marker": "",
-          "ko": "설계 변경 지시가 있을 경우 변경 내용과 함께 판수도 변경할 것.",
+          "ko": "설계 변경이 있을 경우 변경 내용과 함께 리비전도 올릴 것. (A → B → C)",
+          "en": ""
+        },
+        {
+          "indent": 1,
+          "marker": "",
+          "ko": "도면번호는 변경하지 않는다. 제품이 달라지면 새 도번을 부여한다.",
           "en": ""
         }
       ],
       "rows": [],
       "versions": [
         {
-          "rev": "신규",
-          "version": "00A",
+          "rev": "A",
+          "author": "",
           "date": "",
           "changed_ko": "신규 발행",
           "changed_en": "Newly issued."
         },
         {
           "rev": "",
-          "version": "",
           "date": "",
           "changed_ko": "",
-          "changed_en": ""
+          "changed_en": "",
+          "author": ""
         },
         {
           "rev": "",
-          "version": "",
           "date": "",
           "changed_ko": "",
-          "changed_en": ""
+          "changed_en": "",
+          "author": ""
         },
         {
           "rev": "",
-          "version": "",
           "date": "",
           "changed_ko": "",
-          "changed_en": ""
+          "changed_en": "",
+          "author": ""
         },
         {
           "rev": "",
-          "version": "",
           "date": "",
           "changed_ko": "",
-          "changed_en": ""
+          "changed_en": "",
+          "author": ""
         }
       ],
       "images": [],

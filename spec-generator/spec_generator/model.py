@@ -46,7 +46,14 @@ class Meta:
     use_name: str = ""            # 用途名称 / USE NAME
     doc_kind: str = "생산 사양서"   # 문서 종류
     dwg_prefix: str = "BR"        # 도면번호 접두
-    dwg_no: str = ""              # 도면번호
+    dwg_no: str = ""              # 도면번호 (접두 뒤 부분)
+    customer: str = ""            # 고객사 (한글, 폴더명·표기용)
+    customer_en: str = ""         # 고객사 (영문, 도번 생성용)
+    family: str = "RA"            # 제품군 코드 (docnumber.FAMILIES)
+    serial: str = "01"            # 도번 일련번호
+    rated_current: str = ""       # 도번 생성에 쓰는 정격전류
+    revision: str = "A"           # 리비전 — 도번은 그대로 두고 이것만 올린다
+    revision_date: str = ""       # 해당 리비전 발행일
     old_dwg_no: str = ""          # OLD DWG.NO.
     dwg_code: str = ""            # DWG CODE 좌측 칸
     dwg_code2: str = ""           # DWG CODE 우측 칸
@@ -95,7 +102,7 @@ class SpecRow:
 @dataclass
 class VersionRow:
     rev: str = ""
-    version: str = ""
+    author: str = ""
     date: str = ""
     changed_ko: str = ""
     changed_en: str = ""
@@ -205,7 +212,7 @@ class SpecDoc:
 # v1 에서 일본어 병기용으로 쓰던 키 → 현재 한국어 키
 _LEGACY_KEYS = {
     "ja": "ko", "item_ja": "item_ko", "changed_ja": "changed_ko",
-    "caption_ja": "caption_ko", "title_ja": "title_ko",
+    "caption_ja": "caption_ko", "title_ja": "title_ko", "version": "author",
 }
 
 

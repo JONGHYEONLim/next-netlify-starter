@@ -21,8 +21,8 @@ INDENT_STEP_MM = 9.0
 
 SPEC_HEADERS = ["항  목", "사  양", "비  고"]
 SPEC_WIDTHS = [37.0, 74.0, 59.0]
-VER_HEADERS = ["개정", "판수", "변경일자", "변  경  내  용"]
-VER_WIDTHS = [14.0, 17.0, 22.0, 117.0]
+VER_HEADERS = ["리비전", "작성자", "발행일", "변  경  내  용"]
+VER_WIDTHS = [16.0, 20.0, 24.0, 110.0]
 
 
 def make_styles():
@@ -175,7 +175,7 @@ def _version_table(section: Section, styles) -> List:
         changed = "<br/>".join(_esc(x) for x in (r.changed_ko, r.changed_en) if x)
         data.append([
             Paragraph(_esc(r.rev), styles["cell"]),
-            Paragraph(_esc(r.version), styles["cell"]),
+            Paragraph(_esc(r.author), styles["cell"]),
             Paragraph(_esc(r.date), styles["cell"]),
             Paragraph(changed or "&nbsp;", styles["cell_l"]),
         ])

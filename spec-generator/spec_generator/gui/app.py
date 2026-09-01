@@ -6,12 +6,14 @@ import json
 import os
 import subprocess
 import sys
+import datetime as _dt
 import tempfile
 import tkinter as tk
 import traceback
 from tkinter import filedialog, messagebox, ttk
 from typing import Dict, List, Optional
 
+from .. import docnumber as dn
 from .. import templates as tpl_pkg
 from ..fonts import active_font_description, register_fonts
 from ..importers import SUPPORTED_EXT, copy_into_project
@@ -19,7 +21,7 @@ from ..model import (KIND_IMAGE, KIND_LABELS, KIND_SPEC_TABLE, KIND_TEXT,
                      KIND_VERSION_TABLE, Block, ImageItem, Section, SpecDoc,
                      SpecRow, VersionRow)
 from ..render.build import build_pdf
-from .widgets import FieldGrid, GridEditor
+from .widgets import FieldGrid, GridEditor, HelpWindow, MultilineDialog
 
 APP_TITLE = "생산용 사양서 생성기"
 SETTINGS = os.path.join(os.path.expanduser("~"), ".spec_generator.json")
@@ -40,6 +42,15 @@ def save_settings(data: Dict[str, str]) -> None:
             json.dump(data, f, ensure_ascii=False, indent=2)
     except OSError:
         pass
+
+
+DEFAULT_PATTERN = "{도번}_Rev{리비전}_{날짜}"
+
+
+def safe_name(text: str) -> str:
+    """파일·폴더 이름으로 쓸 수 없는 글자를 걸러낸다."""
+    out = "".join("_" if ch in '\\/:*?"<>|' else ch for ch in (text or "").strip())
+    return out.strip(" .") or "무제"
 
 
 def open_with_os(path: str) -> None:
@@ -85,6 +96,8 @@ class App(tk.Tk):
         m.add_command(label="빈 문서로 새로 만들기", command=self.new_empty)
         m.add_separator()
         m.add_command(label="열기...", accelerator="Ctrl+O", command=self.open_file)
+        self.recent_menu = tk.Menu(m, tearoff=0)
+        m.add_cascade(label="최근에 연 문서", menu=self.recent_menu)
         m.add_command(label="저장", accelerator="Ctrl+S", command=self.save)
         m.add_command(label="다른 이름으로 저장...", command=self.save_as)
         m.add_separator()
@@ -95,7 +108,13 @@ class App(tk.Tk):
 
         o = tk.Menu(bar, tearoff=0)
         o.add_command(label="PDF 미리보기", accelerator="F5", command=self.preview)
-        o.add_command(label="PDF로 내보내기...", accelerator="Ctrl+P", command=self.export)
+        o.add_command(label="고객사 폴더에 저장", accelerator="Ctrl+E",
+                      command=self.export_to_customer_folder)
+        o.add_command(label="PDF로 내보내기 (위치 지정)...", accelerator="Ctrl+P",
+                      command=self.export)
+        o.add_separator()
+        o.add_command(label="출력 폴더 설정...", command=self.set_output_root)
+        o.add_command(label="파일 이름 규칙...", command=self.set_filename_pattern)
         bar.add_cascade(label="출력", menu=o)
 
         t = tk.Menu(bar, tearoff=0)
@@ -112,7 +131,9 @@ class App(tk.Tk):
         self.bind_all("<Control-o>", lambda e: self.open_file())
         self.bind_all("<Control-s>", lambda e: self.save())
         self.bind_all("<Control-p>", lambda e: self.export())
+        self.bind_all("<Control-e>", lambda e: self.export_to_customer_folder())
         self.bind_all("<F5>", lambda e: self.preview())
+        self._rebuild_recent_menu()
 
     def _build_body(self) -> None:
         nb = ttk.Notebook(self)
@@ -127,6 +148,38 @@ class App(tk.Tk):
 
     def _build_meta_tab(self) -> None:
         f = self.tab_meta
+
+        g0 = ttk.LabelFrame(f, text="도면번호 · 리비전   (여기부터 채우세요)")
+        g0.pack(fill="x", padx=10, pady=(10, 6))
+        r1 = ttk.Frame(g0)
+        r1.pack(fill="x", padx=6, pady=(6, 2))
+        self.no_fields = FieldGrid(r1, columns=3)
+        self.no_fields.pack(fill="x")
+        nf = self.no_fields
+        nf.add("customer", "고객사 (한글)", 18)
+        nf.add("customer_en", "고객사 (영문)", 18)
+        nf.add("family", "제품군", 24, kind="combo", values=dn.family_choices())
+        nf.add("rated_current", "정격 전류", 18)
+        nf.add("serial", "일련번호", 8)
+        nf.add("dwg_no", "도면번호", 22)
+        r2 = ttk.Frame(g0)
+        r2.pack(fill="x", padx=12, pady=(0, 6))
+        ttk.Button(r2, text="도번 자동 생성", command=self.generate_doc_no).pack(side="left")
+        ttk.Label(r2, text="  형식:  BR-제품군-고객코드-정격전류-일련번호",
+                  foreground="#666").pack(side="left")
+        ttk.Separator(r2, orient="vertical").pack(side="left", fill="y", padx=10)
+        ttk.Label(r2, text="리비전").pack(side="left")
+        self.rev_var = tk.StringVar(value="A")
+        ttk.Entry(r2, textvariable=self.rev_var, width=5).pack(side="left", padx=4)
+        self.rev_date_var = tk.StringVar()
+        ttk.Label(r2, text="발행일").pack(side="left", padx=(6, 2))
+        ttk.Entry(r2, textvariable=self.rev_date_var, width=12).pack(side="left")
+        ttk.Button(r2, text="▲ 리비전 올리기", command=self.bump_revision).pack(side="left", padx=8)
+        self.rev_var.trace_add("write", lambda *a: self.mark_dirty())
+        self.rev_date_var.trace_add("write", lambda *a: self.mark_dirty())
+        for var in nf.vars.values():
+            var.trace_add("write", lambda *a: self.mark_dirty())
+
         g1 = ttk.LabelFrame(f, text="제품 / 도면")
         g1.pack(fill="x", padx=10, pady=(10, 6))
         self.meta_fields = FieldGrid(g1, columns=2)
@@ -137,7 +190,6 @@ class App(tk.Tk):
         mf.add("doc_kind", "문서종류", 34)
         mf.add("company", "회사명", 34)
         mf.add("dwg_prefix", "도면번호 접두", 12)
-        mf.add("dwg_no", "도면번호", 20)
         mf.add("old_dwg_no", "구 도면번호", 20)
         mf.add("standard", "STANDARD 표기", 20)
         mf.add("dwg_code", "DWG CODE (좌)", 20)
@@ -268,8 +320,11 @@ class App(tk.Tk):
         bar.pack(fill="x", side="bottom")
         self.status = tk.StringVar(value="준비됨")
         ttk.Label(bar, textvariable=self.status, anchor="w").pack(side="left", padx=10, pady=4)
-        ttk.Button(bar, text="PDF 미리보기 (F5)", command=self.preview).pack(side="right", padx=(4, 10), pady=4)
-        ttk.Button(bar, text="PDF로 내보내기", command=self.export).pack(side="right", pady=4)
+        ttk.Button(bar, text="PDF 미리보기 (F5)", command=self.preview).pack(
+            side="right", padx=(4, 10), pady=4)
+        ttk.Button(bar, text="고객사 폴더에 저장 (Ctrl+E)",
+                   command=self.export_to_customer_folder).pack(side="right", padx=4, pady=4)
+        ttk.Button(bar, text="저장 (Ctrl+S)", command=self.save).pack(side="right", pady=4)
 
     # ── 상태 ────────────────────────────────────────────────
     def mark_dirty(self, dirty: bool = True) -> None:
@@ -286,11 +341,17 @@ class App(tk.Tk):
         self.doc = doc
         m = doc.meta
         for key in ("product_name", "use_name", "doc_kind", "company", "dwg_prefix",
-                    "dwg_no", "old_dwg_no", "standard", "dwg_code", "dwg_code2",
+                    "old_dwg_no", "standard", "dwg_code", "dwg_code2",
                     "index", "footer_code", "label_product", "label_use", "label_kind"):
             self.meta_fields.set(key, getattr(m, key))
         self.logo_var.set(m.logo_path)
         self.logo_h_var.set(str(m.logo_height_mm))
+        for key in ("customer", "customer_en", "rated_current", "serial", "dwg_no"):
+            self.no_fields.set(key, getattr(m, key))
+        self.no_fields.set("family", next(
+            (c for c in dn.family_choices() if c.startswith(m.family)), dn.family_choices()[0]))
+        self.rev_var.set(m.revision)
+        self.rev_date_var.set(m.revision_date)
         self.sign_fields.set("drawn_date", m.drawn.date)
         self.sign_fields.set("drawn_name", m.drawn.name)
         self.sign_fields.set("checked_date", m.checked.date)
@@ -311,11 +372,16 @@ class App(tk.Tk):
     def collect_meta(self) -> None:
         m = self.doc.meta
         for key in ("product_name", "use_name", "doc_kind", "company", "dwg_prefix",
-                    "dwg_no", "old_dwg_no", "standard", "dwg_code", "dwg_code2",
+                    "old_dwg_no", "standard", "dwg_code", "dwg_code2",
                     "index", "footer_code", "label_product", "label_use", "label_kind"):
             setattr(m, key, self.meta_fields.get(key))
         m.logo_path = self.logo_var.get()
         m.logo_height_mm = _float(self.logo_h_var.get(), 8.5)
+        for key in ("customer", "customer_en", "rated_current", "serial", "dwg_no"):
+            setattr(m, key, self.no_fields.get(key))
+        m.family = dn.family_from_choice(self.no_fields.get("family"))
+        m.revision = (self.rev_var.get() or "A").upper()
+        m.revision_date = self.rev_date_var.get()
         m.drawn.date = self.sign_fields.get("drawn_date")
         m.drawn.name = self.sign_fields.get("drawn_name")
         m.checked.date = self.sign_fields.get("checked_date")
@@ -390,79 +456,83 @@ class App(tk.Tk):
         self._current = section
 
     # ── 항목 종류별 편집 화면 ────────────────────────────────
+    # 표 / 도면 / 설명글을 탭으로 나눠 각각 넉넉한 높이를 갖게 한다.
     def _changed(self):
         return lambda: self._commit_current(mark=True)
 
-    def _blocks_grid(self, parent, section: Section, title: str, hint: str,
-                     weight: int) -> GridEditor:
-        box = ttk.LabelFrame(parent, text=title)
+    def _notebook(self) -> ttk.Notebook:
+        nb = ttk.Notebook(self.body_area)
+        nb.pack(fill="both", expand=True, padx=4, pady=4)
+        self.body_nb = nb
+        return nb
+
+    def _tab(self, nb: ttk.Notebook, label: str, hint: str = "") -> ttk.Frame:
+        page = ttk.Frame(nb)
+        nb.add(page, text=f"  {label}  ")
         if hint:
-            ttk.Label(box, text=hint, foreground="#555", justify="left").pack(
-                anchor="w", padx=6, pady=(4, 0))
-        g = GridEditor(box, columns=[("indent", "들여쓰기", 70), ("marker", "머리기호", 80),
-                                     ("ko", "내용", 520), ("en", "영문(선택)", 300)],
-                       multiline=("ko", "en"), on_change=self._changed())
-        g.pack(fill="both", expand=True, padx=6, pady=6)
+            ttk.Label(page, text=hint, foreground="#555", justify="left").pack(
+                anchor="w", padx=8, pady=(6, 0))
+        return page
+
+    def _blocks_grid(self, page, section: Section, main: bool) -> GridEditor:
+        g = GridEditor(page, columns=[("indent", "들여쓰기", 70), ("marker", "머리기호", 80),
+                                      ("ko", "내용", 520), ("en", "영문(선택)", 300)],
+                       multiline=("ko", "en"), on_change=self._changed(),
+                       tree_height=10 if main else 5,
+                       panel_text_height=3 if main else 2)
+        g.pack(fill="both", expand=True, padx=8, pady=8)
         g.set_rows([{"indent": str(b.indent), "marker": b.marker, "ko": b.ko, "en": b.en}
                     for b in section.blocks])
-        parent.add(box, weight=weight)
         return g
 
-    def _image_grid(self, parent, section: Section, weight: int) -> GridEditor:
-        box = ttk.LabelFrame(parent, text="첨부 도면 (PNG / JPG / PDF)")
-        ttk.Label(box, foreground="#555", justify="left",
-                  text="PDF 를 넣으면 첫 페이지가 그림으로 들어갑니다. "
-                       "폭은 mm 단위이고 본문 최대 폭은 170mm 입니다.").pack(
-            anchor="w", padx=6, pady=(4, 0))
-        g = GridEditor(box, columns=[("path", "파일", 380), ("width_mm", "폭(mm)", 70),
-                                     ("align", "정렬", 80),
-                                     ("caption_ko", "도면 설명", 260),
-                                     ("caption_en", "설명(영문·선택)", 180)],
+    def _image_grid(self, page, section: Section, main: bool) -> GridEditor:
+        g = GridEditor(page, columns=[("path", "파일", 380), ("width_mm", "폭(mm)", 70),
+                                      ("align", "정렬", 80),
+                                      ("caption_ko", "도면 설명", 260),
+                                      ("caption_en", "설명(영문·선택)", 180)],
                        multiline=("caption_ko", "caption_en"), on_change=self._changed(),
-                       extra_buttons=(("도면 파일 추가...", self._add_image_file),))
-        g.pack(fill="both", expand=True, padx=6, pady=6)
+                       extra_buttons=(("＋ 도면 파일 추가...", self._add_image_file),),
+                       tree_height=10 if main else 5,
+                       panel_text_height=2)
+        g.pack(fill="both", expand=True, padx=8, pady=8)
         g.set_rows([{"path": i.path, "width_mm": str(i.width_mm), "align": i.align,
                      "caption_ko": i.caption_ko, "caption_en": i.caption_en}
                     for i in section.images])
-        parent.add(box, weight=weight)
         return g
 
-    def _pane(self) -> ttk.PanedWindow:
-        p = ttk.PanedWindow(self.body_area, orient="vertical")
-        p.pack(fill="both", expand=True, padx=4, pady=4)
-        return p
+    IMG_HINT = ("[＋ 도면 파일 추가...] 로 PNG / JPG / PDF 를 고르세요. "
+                "PDF 는 첫 페이지가 그림으로 들어갑니다. 폭은 mm, 본문 최대 폭 170mm.")
+    BLK_HINT = ("한 줄에 한 문장씩 적습니다. 영문 칸은 비워 두어도 됩니다. "
+                "들여쓰기 0~3 단계, 머리기호는 (1) ① · 등을 그대로 넣으세요.")
 
     def _pane_text(self, section: Section) -> None:
-        p = self._pane()
-        self.blocks_editor = self._blocks_grid(
-            p, section, "본문",
-            "한 줄에 한 문장씩. 영문 칸은 비워 두어도 됩니다. "
-            "들여쓰기 0~3 단계, 머리기호는 (1) ① · 등을 그대로 넣으세요.", 3)
-        self.image_editor = self._image_grid(p, section, 2)
+        nb = self._notebook()
+        self.blocks_editor = self._blocks_grid(self._tab(nb, "본문", self.BLK_HINT), section, True)
+        self.image_editor = self._image_grid(self._tab(nb, "첨부 도면", self.IMG_HINT), section, False)
 
     def _pane_spec(self, section: Section) -> None:
-        p = self._pane()
-        box = ttk.LabelFrame(p, text="사양표")
-        ttk.Label(box, foreground="#555", justify="left",
-                  text="엑셀에서 [항목 / 항목(영문) / 사양 / 비고] 4열을 복사한 뒤 "
-                       "‘엑셀에서 붙여넣기’ 를 누르면 한 번에 채워집니다.").pack(
-            anchor="w", padx=6, pady=(4, 0))
-        g = GridEditor(box, columns=[("item_ko", "항목", 200),
-                                     ("item_en", "항목(영문·선택)", 160),
-                                     ("spec", "사양", 330), ("remark", "비고", 260)],
-                       multiline=("spec", "remark"), on_change=self._changed())
-        g.pack(fill="both", expand=True, padx=6, pady=6)
+        nb = self._notebook()
+        page = self._tab(nb, "사양표",
+                         "엑셀에서 [항목 / 항목(영문) / 사양 / 비고] 4열을 복사한 뒤 "
+                         "[엑셀에서 붙여넣기] 를 누르면 한 번에 채워집니다.")
+        g = GridEditor(page, columns=[("item_ko", "항목", 190),
+                                      ("item_en", "항목(영문·선택)", 150),
+                                      ("spec", "사양", 320), ("remark", "비고", 240)],
+                       multiline=("spec", "remark"), on_change=self._changed(),
+                       tree_height=11, panel_text_height=3)
+        g.pack(fill="both", expand=True, padx=8, pady=8)
         g.set_rows([{"item_ko": r.item_ko, "item_en": r.item_en,
                      "spec": r.spec, "remark": r.remark} for r in section.rows])
-        p.add(box, weight=4)
         self.rows_editor = g
-        self.blocks_editor = self._blocks_grid(p, section, "표 위에 붙일 설명글 (선택)", "", 1)
-        self.image_editor = self._image_grid(p, section, 3)
+        self.image_editor = self._image_grid(self._tab(nb, "첨부 도면", self.IMG_HINT), section, False)
+        self.blocks_editor = self._blocks_grid(
+            self._tab(nb, "표 위 설명글", self.BLK_HINT), section, False)
 
     def _pane_image(self, section: Section) -> None:
-        p = self._pane()
-        self.image_editor = self._image_grid(p, section, 4)
-        self.blocks_editor = self._blocks_grid(p, section, "도면 위에 붙일 설명글 (선택)", "", 2)
+        nb = self._notebook()
+        self.image_editor = self._image_grid(self._tab(nb, "도면", self.IMG_HINT), section, True)
+        self.blocks_editor = self._blocks_grid(
+            self._tab(nb, "도면 위 설명글", self.BLK_HINT), section, False)
 
     def _pane_version(self, section: Section) -> None:
         top = ttk.Frame(self.body_area)
@@ -471,22 +541,25 @@ class App(tk.Tk):
         self.extra_fields.pack(fill="x")
         self.extra_fields.add("part_no", "파트번호 표기 (◇ 파트번호 : ○○)", 20)
         self.extra_fields.set("part_no", section.part_no)
-        self.extra_fields.vars["part_no"].trace_add("write", lambda *a: self._commit_current(mark=True))
+        self.extra_fields.vars["part_no"].trace_add(
+            "write", lambda *a: self._commit_current(mark=True))
 
-        p = self._pane()
-        box = ttk.LabelFrame(p, text="개정 이력")
-        g = GridEditor(box, columns=[("rev", "개정", 70), ("version", "판수", 70),
-                                     ("date", "변경일자", 110),
-                                     ("changed_ko", "변경 내용", 460),
-                                     ("changed_en", "변경 내용(영문·선택)", 260)],
-                       multiline=("changed_ko", "changed_en"), on_change=self._changed())
-        g.pack(fill="both", expand=True, padx=6, pady=6)
-        g.set_rows([{"rev": r.rev, "version": r.version, "date": r.date,
+        nb = self._notebook()
+        page = self._tab(nb, "개정 이력",
+                         "기본정보 탭의 [▲ 리비전 올리기] 를 쓰면 이 표에 자동으로 한 줄이 기록됩니다.")
+        g = GridEditor(page, columns=[("rev", "리비전", 70), ("author", "작성자", 90),
+                                      ("date", "발행일", 110),
+                                      ("changed_ko", "변경 내용", 420),
+                                      ("changed_en", "변경 내용(영문·선택)", 240)],
+                       multiline=("changed_ko", "changed_en"), on_change=self._changed(),
+                       tree_height=11, panel_text_height=3)
+        g.pack(fill="both", expand=True, padx=8, pady=8)
+        g.set_rows([{"rev": r.rev, "author": r.author, "date": r.date,
                      "changed_ko": r.changed_ko, "changed_en": r.changed_en}
                     for r in section.versions])
-        p.add(box, weight=4)
         self.rows_editor = g
-        self.blocks_editor = self._blocks_grid(p, section, "표 위에 붙일 설명글 (선택)", "", 1)
+        self.blocks_editor = self._blocks_grid(
+            self._tab(nb, "표 위 설명글", self.BLK_HINT), section, False)
 
     def _add_image_file(self) -> None:
         g = self.image_editor
@@ -538,7 +611,7 @@ class App(tk.Tk):
                 s.rows = [SpecRow(r.get("item_ko", ""), r.get("item_en", ""),
                                   r.get("spec", ""), r.get("remark", "")) for r in rows]
             elif s.kind == KIND_VERSION_TABLE:
-                s.versions = [VersionRow(r.get("rev", ""), r.get("version", ""),
+                s.versions = [VersionRow(r.get("rev", ""), r.get("author", ""),
                                          r.get("date", ""), r.get("changed_ko", ""),
                                          r.get("changed_en", "")) for r in rows]
                 if self.extra_fields:
@@ -654,6 +727,7 @@ class App(tk.Tk):
     def open_path(self, path: str) -> None:
         try:
             self.load_doc(SpecDoc.load(path))
+            self.remember_recent(path)
             self.set_status(f"열었습니다: {path}")
         except Exception as exc:
             messagebox.showerror("열기 실패", f"{exc}")
@@ -664,10 +738,47 @@ class App(tk.Tk):
         return self._write(self.doc.source_path)
 
     def save_as(self) -> bool:
-        name = (self.doc.meta.dwg_no or "사양서") + ".spec.json"
+        self._commit_current()
+        self.collect_meta()
+        folder = self.customer_dir()
+        try:
+            os.makedirs(folder, exist_ok=True)
+        except OSError:
+            folder = self.output_root()
         path = filedialog.asksaveasfilename(title="다른 이름으로 저장", defaultextension=".spec.json",
-                                            initialfile=name, filetypes=FILETYPES)
+                                            initialdir=folder,
+                                            initialfile=self.output_basename() + ".spec.json",
+                                            filetypes=FILETYPES)
         return self._write(path) if path else False
+
+    def remember_recent(self, path: str) -> None:
+        recent = [p for p in self.settings.get("recent", []) if p != path]
+        recent.insert(0, path)
+        self.settings["recent"] = recent[:12]
+        save_settings(self.settings)
+        self._rebuild_recent_menu()
+
+    def _rebuild_recent_menu(self) -> None:
+        menu = self.recent_menu
+        menu.delete(0, "end")
+        recent = [p for p in self.settings.get("recent", []) if os.path.exists(p)]
+        if not recent:
+            menu.add_command(label="(최근에 연 문서가 없습니다)", state="disabled")
+            return
+        for path in recent:
+            label = f"{os.path.basename(path)}   —   {os.path.dirname(path)}"
+            menu.add_command(label=label, command=lambda p=path: self._open_recent(p))
+        menu.add_separator()
+        menu.add_command(label="목록 지우기", command=self._clear_recent)
+
+    def _open_recent(self, path: str) -> None:
+        if self._confirm_discard():
+            self.open_path(path)
+
+    def _clear_recent(self) -> None:
+        self.settings["recent"] = []
+        save_settings(self.settings)
+        self._rebuild_recent_menu()
 
     def _write(self, path: str) -> bool:
         self._commit_current()
@@ -678,6 +789,7 @@ class App(tk.Tk):
             messagebox.showerror("저장 실패", f"{exc}")
             return False
         self.mark_dirty(False)
+        self.remember_recent(path)
         self.set_status(f"저장했습니다: {path}")
         return True
 
@@ -696,6 +808,69 @@ class App(tk.Tk):
             messagebox.showerror("저장 실패", f"{exc}")
 
     # ── 출력 ────────────────────────────────────────────────
+    # ── 저장 위치 · 파일 이름 ────────────────────────────────
+    def output_root(self) -> str:
+        return self.settings.get("output_root") or os.path.join(
+            os.path.expanduser("~"), "Documents", "Braumm 사양서")
+
+    def customer_dir(self) -> str:
+        """{출력 폴더}/{고객사} — 고객사가 비면 출력 폴더 그대로."""
+        m = self.doc.meta
+        customer = m.customer or m.customer_en
+        root = self.output_root()
+        return os.path.join(root, safe_name(customer)) if customer else root
+
+    def output_basename(self) -> str:
+        m = self.doc.meta
+        doc_no = f"{m.dwg_prefix}-{m.dwg_no}" if m.dwg_prefix and m.dwg_no else (m.dwg_no or "사양서")
+        pattern = self.settings.get("filename_pattern") or DEFAULT_PATTERN
+        name = (pattern
+                .replace("{도번}", doc_no)
+                .replace("{리비전}", m.revision or "A")
+                .replace("{날짜}", _dt.date.today().strftime("%Y%m%d"))
+                .replace("{발행일}", (m.revision_date or "").replace("-", ""))
+                .replace("{고객사}", m.customer or m.customer_en)
+                .replace("{제품명}", m.product_name))
+        return safe_name(name)
+
+    def set_output_root(self) -> None:
+        path = filedialog.askdirectory(title="사양서를 모아 둘 폴더를 고르세요",
+                                       initialdir=self.output_root())
+        if not path:
+            return
+        self.settings["output_root"] = path
+        save_settings(self.settings)
+        self.set_status(f"출력 폴더: {path}   (고객사별 하위 폴더가 자동으로 만들어집니다)")
+
+    def set_filename_pattern(self) -> None:
+        dlg = MultilineDialog(
+            self, "PDF 파일 이름 규칙",
+            self.settings.get("filename_pattern") or DEFAULT_PATTERN)
+        if dlg.result is None:
+            return
+        self.settings["filename_pattern"] = dlg.result.strip().splitlines()[0] if dlg.result.strip() else DEFAULT_PATTERN
+        save_settings(self.settings)
+        self.set_status(f"파일 이름 예시: {self.output_basename()}.pdf")
+
+    def export_to_customer_folder(self) -> None:
+        """고객사 폴더에 곧바로 저장한다(파일 이름 자동)."""
+        self._commit_current()
+        self.collect_meta()
+        folder = self.customer_dir()
+        try:
+            os.makedirs(folder, exist_ok=True)
+        except OSError as exc:
+            messagebox.showerror("폴더 생성 실패", f"{folder}\n{exc}")
+            return
+        path = os.path.join(folder, self.output_basename() + ".pdf")
+        if os.path.exists(path) and not messagebox.askyesno(
+                "덮어쓰기", f"같은 이름의 파일이 이미 있습니다.\n\n{path}\n\n덮어쓸까요?"):
+            return
+        if self._make_pdf(path):
+            self.set_status(f"저장했습니다: {path}")
+            if messagebox.askyesno("완료", f"저장했습니다.\n\n{path}\n\n폴더를 열어볼까요?"):
+                open_with_os(folder)
+
     def _make_pdf(self, out_path: str) -> Optional[str]:
         self._commit_current()
         self.collect_meta()
@@ -717,9 +892,13 @@ class App(tk.Tk):
             open_with_os(tmp)
 
     def export(self) -> None:
-        base = f"{self.doc.meta.dwg_prefix}{self.doc.meta.dwg_no}".strip() or "사양서"
+        self._commit_current()
+        self.collect_meta()
+        folder = self.customer_dir()
+        os.makedirs(folder, exist_ok=True)
         path = filedialog.asksaveasfilename(title="PDF로 내보내기", defaultextension=".pdf",
-                                            initialfile=base + ".pdf",
+                                            initialdir=folder,
+                                            initialfile=self.output_basename() + ".pdf",
                                             filetypes=[("PDF", "*.pdf")])
         if not path:
             return
@@ -727,6 +906,64 @@ class App(tk.Tk):
             open_with_os(path)
 
     # ── 도구 ────────────────────────────────────────────────
+    def generate_doc_no(self) -> None:
+        """입력한 고객사·제품군·정격전류로 도번을 만든다."""
+        nf = self.no_fields
+        customer_en = nf.get("customer_en").strip()
+        if not customer_en:
+            messagebox.showinfo("도번 생성",
+                                "고객사(영문)를 먼저 입력해 주세요.\n"
+                                "예) Hyundai Electric → 고객코드 HYU")
+            return
+        family = dn.family_from_choice(nf.get("family"))
+        number = dn.build(family, customer_en, nf.get("rated_current"), nf.get("serial") or "1")
+        prefix, rest = dn.split(number)
+        nf.set("dwg_no", rest)
+        self.meta_fields.set("dwg_prefix", prefix)
+        if not self.rev_var.get().strip():
+            self.rev_var.set("A")
+        if not self.rev_date_var.get().strip():
+            self.rev_date_var.set(_dt.date.today().isoformat())
+        self.mark_dirty()
+        self.set_status(f"도번을 만들었습니다: {number}   (고객코드 {dn.customer_code(customer_en)})")
+
+    def bump_revision(self) -> None:
+        """리비전을 한 단계 올리고 개정 이력에 한 줄 남긴다."""
+        self._commit_current()
+        self.collect_meta()
+        current = self.doc.meta.revision or "A"
+        nxt = dn.next_revision(current)
+        dlg = MultilineDialog(self, f"Rev.{current} → Rev.{nxt}  변경 내용을 적어 주세요", "")
+        if dlg.result is None:
+            return
+        note = dlg.result.strip()
+        if not note:
+            messagebox.showinfo("리비전", "변경 내용을 적어야 이력에 남길 수 있습니다.")
+            return
+        today = _dt.date.today().isoformat()
+        self.rev_var.set(nxt)
+        self.rev_date_var.set(today)
+
+        author = self.doc.meta.drawn.name or self.doc.meta.checked.name or ""
+        target = next((s for s in self.doc.sections if s.kind == KIND_VERSION_TABLE), None)
+        if target is None:
+            target = Section(kind=KIND_VERSION_TABLE, title_ko="개정 이력",
+                             page_break_before=True)
+            self.doc.sections.append(target)
+        # 비어 있는 줄이 있으면 거기에, 없으면 새 줄로
+        row = VersionRow(nxt, author, today, note, "")
+        empty = next((i for i, r in enumerate(target.versions)
+                      if not (r.rev or r.date or r.changed_ko)), None)
+        if empty is None:
+            target.versions.append(row)
+        else:
+            target.versions[empty] = row
+        self.collect_meta()
+        self._current = None
+        self.refresh_section_list()
+        self.mark_dirty()
+        self.set_status(f"Rev.{current} → Rev.{nxt} 로 올리고 개정 이력에 기록했습니다.")
+
     def choose_logo(self) -> None:
         path = filedialog.askopenfilename(
             title="회사 로고 선택",
@@ -757,15 +994,7 @@ class App(tk.Tk):
         messagebox.showinfo("폰트", "기본 폰트 자동 선택으로 되돌렸습니다.")
 
     def show_help(self) -> None:
-        messagebox.showinfo(
-            "사용 방법",
-            "1) ‘① 기본정보’ 에서 도면번호·제품명·서명란을 채웁니다.\n"
-            "2) ‘② 문서 구성’ 에서 항목을 고르고 내용을 입력합니다.\n"
-            "   · 사양표는 엑셀에서 4열을 복사해 붙여넣을 수 있습니다.\n"
-            "   · 도면은 ‘도면/그림’ 항목에 PNG/JPG/PDF 를 추가합니다.\n"
-            "3) F5 로 미리보기, Ctrl+P 로 PDF 내보내기.\n\n"
-            "항목 번호(1. 2. 3. …)와 PAGE n/N 은 자동으로 다시 매겨집니다.\n"
-            f"현재 PDF 폰트: {active_font_description()}")
+        HelpWindow(self)
 
     def on_close(self) -> None:
         self._commit_current()
