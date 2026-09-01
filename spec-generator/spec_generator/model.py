@@ -126,6 +126,7 @@ class ImageItem:
 @dataclass
 class Section:
     id: str = field(default_factory=_new_id)
+    key: str = ""                 # 템플릿과 짝을 맞추는 고정 이름 (업데이트 반영용)
     kind: str = KIND_TEXT
     numbered: bool = True         # True 면 1. 2. 3. 자동 번호
     no_override: str = ""         # 번호를 직접 지정할 때
@@ -154,6 +155,7 @@ class Section:
 class SpecDoc:
     schema: int = SCHEMA_VERSION
     app_version: str = ""      # 이 파일을 마지막으로 저장한 프로그램 판
+    template: str = ""         # 이 문서를 시작할 때 쓴 템플릿 이름
     meta: Meta = field(default_factory=Meta)
     sections: List[Section] = field(default_factory=list)
     source_path: str = ""   # 저장 경로(직렬화 제외). 상대 이미지 경로 해석 기준.
@@ -188,7 +190,8 @@ class SpecDoc:
             sd["versions"] = [VersionRow(**_pick(r, VersionRow)) for r in sd.get("versions") or []]
             sd["images"] = [ImageItem(**_pick(i, ImageItem)) for i in sd.get("images") or []]
             sections.append(Section(**_pick(sd, Section)))
-        return cls(schema=SCHEMA_VERSION, meta=meta, sections=sections)
+        return cls(schema=SCHEMA_VERSION, app_version=str(d.get("app_version") or ""),
+                   template=str(d.get("template") or ""), meta=meta, sections=sections)
 
     @classmethod
     def load(cls, path: str) -> "SpecDoc":

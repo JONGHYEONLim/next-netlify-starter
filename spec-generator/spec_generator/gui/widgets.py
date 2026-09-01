@@ -563,3 +563,112 @@ class RegistryWindow(tk.Toplevel):
                 subprocess.Popen(["xdg-open", path])
         except Exception:
             pass
+
+
+class UpdateWindow(tk.Toplevel):
+    """템플릿에서 새로 생긴 것들을 골라서 문서에 반영하는 창."""
+
+    def __init__(self, master, doc, template_names, load_template, plan_fn, apply_fn,
+                 current_template: str = ""):
+        super().__init__(master)
+        self.title("최신 템플릿의 추가 항목 가져오기")
+        self.geometry("880x600")
+        self.transient(master)
+        self.doc = doc
+        self.load_template = load_template
+        self.plan_fn = plan_fn
+        self.apply_fn = apply_fn
+        self.applied = 0
+        self._plan = None
+        self._checked: Dict[str, bool] = {}
+
+        head = ttk.Frame(self)
+        head.pack(fill="x", padx=12, pady=(12, 4))
+        ttk.Label(head, text="비교할 템플릿").pack(side="left")
+        self.tpl = tk.StringVar(value=current_template or (template_names[0] if template_names else ""))
+        ttk.Combobox(head, textvariable=self.tpl, values=list(template_names),
+                     state="readonly", width=24).pack(side="left", padx=6)
+        ttk.Button(head, text="다시 비교", command=self.refresh).pack(side="left")
+        self.summary = ttk.Label(head, text="", foreground="#333")
+        self.summary.pack(side="left", padx=12)
+
+        ttk.Label(self, foreground="#555", justify="left",
+                  text="이미 적어 둔 값은 절대 덮어쓰지 않습니다. 더하기만 합니다.\n"
+                       "줄을 클릭하면 가져올지 말지 켜고 끌 수 있습니다.").pack(
+            anchor="w", padx=14, pady=(0, 6))
+
+        wrap = ttk.Frame(self)
+        wrap.pack(fill="both", expand=True, padx=12)
+        cols = [("on", "가져오기", 70), ("kind", "종류", 110),
+                ("where", "위치", 200), ("what", "내용", 420)]
+        self.tree = ttk.Treeview(wrap, columns=[c[0] for c in cols], show="headings")
+        for key, label, width in cols:
+            self.tree.heading(key, text=label)
+            self.tree.column(key, width=width, anchor="center" if key == "on" else "w")
+        vs = ttk.Scrollbar(wrap, orient="vertical", command=self.tree.yview)
+        self.tree.configure(yscrollcommand=vs.set)
+        self.tree.pack(side="left", fill="both", expand=True)
+        vs.pack(side="right", fill="y")
+        self.tree.bind("<Button-1>", self._toggle)
+        self.tree.bind("<space>", lambda e: self._toggle_selected())
+
+        bar = ttk.Frame(self)
+        bar.pack(fill="x", padx=12, pady=10)
+        ttk.Button(bar, text="전체 켜기", command=lambda: self._set_all(True)).pack(side="left")
+        ttk.Button(bar, text="전체 끄기", command=lambda: self._set_all(False)).pack(side="left", padx=4)
+        ttk.Button(bar, text="닫기", command=self.destroy).pack(side="right")
+        self.ok = ttk.Button(bar, text="선택한 것 가져오기", command=self._apply)
+        self.ok.pack(side="right", padx=6)
+
+        self.bind("<Escape>", lambda e: self.destroy())
+        self.refresh()
+        self.grab_set()
+        self.wait_window(self)
+
+    def refresh(self) -> None:
+        template = self.load_template(self.tpl.get())
+        self._plan = self.plan_fn(self.doc, template)
+        self._checked = {str(i): True for i in range(len(self._plan.changes))}
+        self._fill()
+
+    def _fill(self) -> None:
+        from ..updater import KIND_LABEL, summary
+        self.tree.delete(*self.tree.get_children())
+        for i, c in enumerate(self._plan.changes):
+            self.tree.insert("", "end", iid=str(i), values=(
+                "☑" if self._checked[str(i)] else "☐",
+                KIND_LABEL.get(c.kind, c.kind), c.where, c.label))
+        self.summary.configure(text=summary(self._plan))
+        self.ok.configure(state="normal" if self._plan.changes else "disabled")
+
+    def _toggle(self, event) -> None:
+        if self.tree.identify_region(event.x, event.y) != "cell":
+            return
+        row = self.tree.identify_row(event.y)
+        if row:
+            self._checked[row] = not self._checked[row]
+            vals = list(self.tree.item(row)["values"])
+            vals[0] = "☑" if self._checked[row] else "☐"
+            self.tree.item(row, values=vals)
+
+    def _toggle_selected(self) -> None:
+        for row in self.tree.selection():
+            self._checked[row] = not self._checked[row]
+            vals = list(self.tree.item(row)["values"])
+            vals[0] = "☑" if self._checked[row] else "☐"
+            self.tree.item(row, values=vals)
+
+    def _set_all(self, on: bool) -> None:
+        for key in self._checked:
+            self._checked[key] = on
+        self._fill()
+
+    def _apply(self) -> None:
+        picked = [c for i, c in enumerate(self._plan.changes) if self._checked.get(str(i))]
+        if not picked:
+            messagebox.showinfo("가져오기", "선택한 것이 없습니다.", parent=self)
+            return
+        self.applied = self.apply_fn(self.doc, picked)
+        messagebox.showinfo("가져오기", f"{self.applied}건을 문서에 반영했습니다.\n"
+                                        "내용을 확인한 뒤 저장하세요.", parent=self)
+        self.destroy()

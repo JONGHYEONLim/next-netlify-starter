@@ -1,13 +1,13 @@
 {
   "schema": 1,
   "meta": {
-    "product_name": "AC Reactor 475A",
-    "use_name": "UPS7500WX-T4 / 정류기용",
+    "product_name": "AC Reactor (예시)",
+    "use_name": "예시용 / 정류기용",
     "doc_kind": "생산 사양서",
     "dwg_prefix": "BR",
-    "dwg_no": "RA-HYU-0475-01",
-    "customer": "현대일렉트릭",
-    "customer_en": "Hyundai Electric",
+    "dwg_no": "RA-EXA-0475-01",
+    "customer": "예시전자",
+    "customer_en": "Example Electric",
     "family": "RA",
     "serial": "01",
     "rated_current": "475 Arms",
@@ -26,17 +26,17 @@
     "label_kind": "문서종류",
     "drawn": {
       "date": "2026-09-01",
-      "name": "홍길동"
+      "name": "작성자"
     },
     "checked": {
       "date": "2026-09-01",
-      "name": "김철수"
+      "name": "검토자"
     },
     "renewal": {
       "date": "",
       "name": ""
     },
-    "approved": "박영희",
+    "approved": "승인자",
     "footer_code": "Braumm-SPEC-A4",
     "confidential_note": "본 문서 및 여기에 포함된 정보는 Braumm 의 자산입니다. Braumm 의 서면 동의 없이 복제, 복사, 대여하거나 제3자에게 어떠한 방법으로도 공개할 수 없으며, 승인된 생산 목적 외에는 사용할 수 없습니다.",
     "page_start": 1,
@@ -116,13 +116,13 @@
         {
           "item_ko": "인덕턴스",
           "item_en": "Inductance",
-          "spec": "90 μH",
+          "spec": "○○ μH",
           "remark": "허용오차 ±10%"
         },
         {
           "item_ko": "정격 전압",
           "item_en": "Rated voltage",
-          "spec": "380 VAC",
+          "spec": "○○○ VAC",
           "remark": ""
         },
         {
@@ -134,43 +134,43 @@
         {
           "item_ko": "상 수",
           "item_en": "Phase",
-          "spec": "3상 4선",
+          "spec": "3상",
           "remark": ""
         },
         {
           "item_ko": "철심 구조",
           "item_en": "Core structure",
-          "spec": "3상 5각 (5-leg)",
+          "spec": "3상 5각",
           "remark": ""
         },
         {
           "item_ko": "절연 등급",
           "item_en": "Insulation class",
-          "spec": "H종",
+          "spec": "○종",
           "remark": ""
         },
         {
           "item_ko": "내전압",
           "item_en": "Withstand voltage",
-          "spec": "AC 2500V / 1분",
+          "spec": "AC ○○○○V / 1분",
           "remark": "권선-철심 간"
         },
         {
           "item_ko": "절연 저항",
           "item_en": "Insulation resistance",
-          "spec": "100 MΩ 이상",
+          "spec": "○○ MΩ 이상",
           "remark": "DC500V 메거"
         },
         {
           "item_ko": "냉각 방식",
           "item_en": "Cooling method",
-          "spec": "건식 풍냉 (표면 풍속 3.0 m/s)",
+          "spec": "건식 풍냉",
           "remark": ""
         },
         {
           "item_ko": "사용 주위온도",
           "item_en": "Ambient temperature",
-          "spec": "0 ℃ ~ +50 ℃",
+          "spec": "0 ℃ ~ +○○ ℃",
           "remark": ""
         },
         {
@@ -217,7 +217,7 @@
         {
           "path": "figures/외형도.png",
           "width_mm": 165.0,
-          "caption_ko": "P1 (정격 전류 475 Arms)",
+          "caption_ko": "예시 도면",
           "caption_en": "",
           "align": "CENTER"
         }
@@ -242,19 +242,19 @@
         {
           "item_ko": "권선 턴수",
           "item_en": "Turns",
-          "spec": "20.5 T",
+          "spec": "○○ T",
           "remark": "T"
         },
         {
           "item_ko": "전선 재질",
           "item_en": "Wire material",
-          "spec": "알루미늄 (Al foil)",
+          "spec": "알루미늄",
           "remark": ""
         },
         {
           "item_ko": "전선 규격",
           "item_en": "Wire size",
-          "spec": "t 0.5 mm",
+          "spec": "t ○.○ mm",
           "remark": ""
         },
         {
@@ -299,7 +299,7 @@
         {
           "path": "figures/결선도.png",
           "width_mm": 155.0,
-          "caption_ko": "결선도 및 단자 기호",
+          "caption_ko": "예시 도면",
           "caption_en": "",
           "align": "CENTER"
         }
@@ -324,7 +324,7 @@
         {
           "item_ko": "재질",
           "item_en": "Material",
-          "spec": "B23R085 (Bao Steel)",
+          "spec": "○○○○ (전기강판)",
           "remark": ""
         },
         {
@@ -380,7 +380,7 @@
         {
           "item_ko": "재질",
           "item_en": "Material",
-          "spec": "B23R085 (Bao Steel)",
+          "spec": "○○○○ (전기강판)",
           "remark": ""
         },
         {
@@ -604,7 +604,7 @@
         {
           "item_ko": "볼트 규격",
           "item_en": "Bolt size",
-          "spec": "M8 × 30",
+          "spec": "M○ × ○○",
           "remark": "예: M8 × 30"
         },
         {
@@ -915,10 +915,10 @@
       "versions": [
         {
           "rev": "A",
-          "author": "홍길동",
+          "author": "작성자",
           "date": "2026-09-01",
           "changed_ko": "신규 발행",
-          "changed_en": "Newly issued."
+          "changed_en": ""
         },
         {
           "rev": "",
@@ -950,7 +950,7 @@
         }
       ],
       "images": [],
-      "part_no": "P1",
+      "part_no": "",
       "headers": [],
       "col_widths_mm": []
     }

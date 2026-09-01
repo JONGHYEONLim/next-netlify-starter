@@ -15,6 +15,7 @@ from typing import Dict, List, Optional
 
 from .. import docnumber as dn
 from .. import placeholders as ph
+from .. import updater
 from .. import templates as tpl_pkg
 from ..registry import Registry
 from ..fonts import active_font_description, register_fonts
@@ -24,7 +25,7 @@ from ..model import (file_is_newer, KIND_IMAGE, KIND_LABELS, KIND_SPEC_TABLE, KI
                      SpecRow, VersionRow)
 from ..render.build import build_pdf
 from .widgets import (FieldGrid, GridEditor, HelpWindow, MultilineDialog,
-                      RegistryWindow)
+                      RegistryWindow, UpdateWindow)
 
 APP_TITLE = "생산용 사양서 생성기"
 SETTINGS = os.path.join(os.path.expanduser("~"), ".spec_generator.json")
@@ -121,6 +122,8 @@ class App(tk.Tk):
         bar.add_cascade(label="출력", menu=o)
 
         t = tk.Menu(bar, tearoff=0)
+        t.add_command(label="최신 템플릿의 추가 항목 가져오기...", command=self.pull_template_updates)
+        t.add_separator()
         t.add_command(label="도번 대장 보기...", command=self.show_registry)
         t.add_command(label="쓸 수 있는 자동 입력 항목...", command=self.show_placeholders)
         t.add_separator()
@@ -711,6 +714,7 @@ class App(tk.Tk):
             return
         doc = tpl_pkg.load_template("reactor")
         doc.source_path = ""
+        doc.template = "reactor"
         self.load_doc(doc)
         self.set_status("표준 템플릿(리액터 생산 사양서)에서 새 문서를 시작했습니다.")
 
@@ -906,8 +910,11 @@ class App(tk.Tk):
             return None
 
     def preview(self) -> None:
-        tmp = os.path.join(tempfile.gettempdir(),
-                           f"미리보기_{self.doc.meta.dwg_no or 'spec'}.pdf")
+        # 공용 임시 폴더에 예측 가능한 이름으로 쓰지 않도록, 이 실행 전용 폴더를 쓴다
+        if not getattr(self, "_preview_dir", None):
+            self._preview_dir = tempfile.mkdtemp(prefix="specgen_preview_")
+        tmp = os.path.join(self._preview_dir,
+                           f"미리보기_{safe_name(self.doc.meta.dwg_no or 'spec')}.pdf")
         if self._make_pdf(tmp):
             open_with_os(tmp)
 
@@ -1050,6 +1057,23 @@ class App(tk.Tk):
         self.settings.pop("font_path", None)
         save_settings(self.settings)
         messagebox.showinfo("폰트", "기본 폰트 자동 선택으로 되돌렸습니다.")
+
+    def pull_template_updates(self) -> None:
+        """예전에 만든 문서에 템플릿의 새 항목·새 줄을 가져온다."""
+        self._commit_current()
+        self.collect_meta()
+        names = tpl_pkg.template_names()
+        if not names:
+            messagebox.showinfo("가져오기", "쓸 수 있는 템플릿이 없습니다.")
+            return
+        win = UpdateWindow(self, self.doc, names, tpl_pkg.load_template,
+                           updater.plan, updater.apply,
+                           current_template=self.doc.template or names[0])
+        if win.applied:
+            self._current = None
+            self.refresh_section_list()
+            self.mark_dirty()
+            self.set_status(f"템플릿에서 {win.applied}건을 가져왔습니다. 확인 후 저장하세요.")
 
     def show_placeholders(self) -> None:
         messagebox.showinfo(

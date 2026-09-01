@@ -143,6 +143,64 @@ def run() -> int:
         assert reg.save(), "대장 저장 실패"
         assert Registry(root).count() == 3
 
+    @check("템플릿의 새 항목을 예전 문서가 가져온다")
+    def _():
+        from . import updater
+        from .model import Section, SpecRow, KIND_SPEC_TABLE
+        old = templates.load_template("reactor")
+        for sec in old.sections:
+            sec.key = ""                                  # 예전 파일에는 key 가 없다
+        removed = old.sections.pop(7)                     # 그때는 없던 항목
+        basic = next(s for s in old.sections if s.title_ko == "기본 사양")
+        keep = "사용자가 적어 둔 값"
+        basic.rows[4].spec = keep
+        dropped_item = basic.rows.pop(3).item_ko          # 그때는 없던 줄
+        mine = Section(title_ko="우리 공장 특기사항")
+        old.sections.append(mine)
+
+        tpl = templates.load_template("reactor")
+        tpl.sections.append(Section(kind=KIND_SPEC_TABLE, key="_new",
+                                    title_ko="나중에 생긴 항목",
+                                    rows=[SpecRow("새 줄", "", "", "")]))
+        p = updater.plan(old, tpl)
+        assert p, "가져올 것을 하나도 찾지 못했습니다"
+        updater.apply(old, p.changes)
+
+        titles = [s.title_ko for s in old.sections]
+        assert removed.title_ko in titles, "빠져 있던 항목이 복구되지 않았습니다"
+        assert "나중에 생긴 항목" in titles, "새로 생긴 항목이 들어오지 않았습니다"
+        assert "우리 공장 특기사항" in titles, "사용자가 만든 항목이 사라졌습니다"
+        basic2 = next(s for s in old.sections if s.title_ko == "기본 사양")
+        assert any(r.item_ko == dropped_item for r in basic2.rows), "표의 줄이 복구되지 않았습니다"
+        assert any(r.spec == keep for r in basic2.rows), "사용자가 적은 값이 덮어써졌습니다"
+        assert not updater.plan(old, tpl), "두 번 실행하면 중복으로 들어갑니다"
+
+    @check("업데이트한 문서도 PDF 가 나온다")
+    def _(out=out):
+        from . import updater
+        doc = SpecDoc.load(files[-1])
+        updater.apply(doc, updater.plan(doc, templates.load_template("reactor")).changes)
+        build_pdf(doc, os.path.join(out, "updated.pdf"))
+
+    @check("바깥으로 나가는 코드가 없다 (로컬 전용)")
+    def _():
+        import re
+        root = os.path.dirname(os.path.abspath(__file__))
+        bad = re.compile(r"\b(socket|urllib|requests|httplib|ftplib|smtplib|telnetlib)\b"
+                         r"|\beval\s*\(|\bexec\s*\(|\bpickle\b|shell\s*=\s*True")
+        hits = []
+        for dirpath, _, names in os.walk(root):
+            for n in names:
+                if not n.endswith(".py") or n == "selftest.py":   # 이 파일의 검사 패턴 자체는 제외
+                    continue
+                fp = os.path.join(dirpath, n)
+                for i, line in enumerate(open(fp, encoding="utf-8"), 1):
+                    if line.lstrip().startswith("#"):
+                        continue
+                    if bad.search(line):
+                        hits.append(f"{n}:{i}")
+        assert not hits, "네트워크/위험 호출이 발견되었습니다: " + ", ".join(hits)
+
     print()
     for name in _PASS:
         print(f"  통과   {name}")
@@ -150,7 +208,7 @@ def run() -> int:
         print(f"  실패   {name}\n         {err.splitlines()[0]}")
     print(f"\n  {len(_PASS)}건 통과, {len(_FAIL)}건 실패\n")
     if _FAIL:
-        print("  ※ 실패한 항목이 있으면 예전에 저장한 문서가 안 열릴 수 있습니다.")
+        print("  ※ 실패한 항목이 있으면 예전 문서가 안 열리거나 기능이 깨진 상태입니다.")
         for name, err in _FAIL:
             print(f"\n--- {name} ---\n{err}")
     return 1 if _FAIL else 0
