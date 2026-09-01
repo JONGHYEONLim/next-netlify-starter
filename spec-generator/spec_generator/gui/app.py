@@ -132,18 +132,40 @@ class App(tk.Tk):
         self.meta_fields = FieldGrid(g1, columns=2)
         self.meta_fields.pack(fill="x", padx=6, pady=6)
         mf = self.meta_fields
-        mf.add("product_name", "제품명 (DESCRIPTION)", 34)
-        mf.add("use_name", "용도명 (USE NAME)", 34)
-        mf.add("doc_kind", "도면종류 (DWG.CODE)", 34)
+        mf.add("product_name", "제품명", 34)
+        mf.add("use_name", "용도 / 고객사", 34)
+        mf.add("doc_kind", "문서종류", 34)
         mf.add("company", "회사명", 34)
         mf.add("dwg_prefix", "도면번호 접두", 12)
         mf.add("dwg_no", "도면번호", 20)
-        mf.add("old_dwg_no", "OLD DWG.NO.", 20)
+        mf.add("old_dwg_no", "구 도면번호", 20)
         mf.add("standard", "STANDARD 표기", 20)
         mf.add("dwg_code", "DWG CODE (좌)", 20)
         mf.add("dwg_code2", "DWG CODE (우)", 20)
         mf.add("index", "INDEX", 12)
         mf.add("footer_code", "용지 하단 코드", 24)
+        mf.newline()
+        mf.add("label_product", "좌측 라벨 ①", 16)
+        mf.add("label_use", "좌측 라벨 ②", 16)
+        mf.add("label_kind", "좌측 라벨 ③", 16)
+
+        logo = ttk.LabelFrame(f, text="회사 로고 (표제란 하단)")
+        logo.pack(fill="x", padx=10, pady=6)
+        row = ttk.Frame(logo)
+        row.pack(fill="x", padx=6, pady=6)
+        ttk.Label(row, text="로고 파일").pack(side="left", padx=(6, 4))
+        self.logo_var = tk.StringVar()
+        ttk.Entry(row, textvariable=self.logo_var).pack(side="left", fill="x", expand=True)
+        ttk.Button(row, text="찾아보기...", command=self.choose_logo).pack(side="left", padx=4)
+        ttk.Button(row, text="지우기", command=lambda: self.logo_var.set("")).pack(side="left")
+        ttk.Label(row, text="높이(mm)").pack(side="left", padx=(10, 4))
+        self.logo_h_var = tk.StringVar(value="8.5")
+        ttk.Entry(row, textvariable=self.logo_h_var, width=6).pack(side="left")
+        ttk.Label(logo, foreground="#666",
+                  text="비워 두면 문서 파일과 같은 폴더의 logo.png 를 자동으로 사용합니다.").pack(
+            anchor="w", padx=12, pady=(0, 6))
+        self.logo_var.trace_add("write", lambda *a: self.mark_dirty())
+        self.logo_h_var.trace_add("write", lambda *a: self.mark_dirty())
 
         g2 = ttk.LabelFrame(f, text="표제란 서명")
         g2.pack(fill="x", padx=10, pady=6)
@@ -167,7 +189,7 @@ class App(tk.Tk):
         pf.add("page_total", "전체 페이지 수 (0=자동)", 10)
         pf.add("revision_rows", "REVISIONS 칸 수", 10)
 
-        g4 = ttk.LabelFrame(f, text="좌측 기밀 문구")
+        g4 = ttk.LabelFrame(f, text="좌측 기밀 문구 (세로쓰기)")
         g4.pack(fill="both", expand=True, padx=10, pady=(6, 10))
         self.note_text = tk.Text(g4, height=5, wrap="word")
         self.note_text.pack(fill="both", expand=True, padx=6, pady=6)
@@ -223,8 +245,8 @@ class App(tk.Tk):
         self.sec_fields = FieldGrid(head, columns=2)
         self.sec_fields.pack(fill="x", padx=6, pady=6)
         sfg = self.sec_fields
-        sfg.add("title_ja", "제목(일본어)", 34)
-        sfg.add("title_en", "제목(영어)", 34)
+        sfg.add("title_ko", "제목", 34)
+        sfg.add("title_en", "제목(영문·선택)", 34)
         sfg.add("numbered", "번호 자동부여", kind="check")
         sfg.add("no_override", "번호 직접지정", 10)
         sfg.add("bullet", "번호 대신 기호(예: ○)", 10)
@@ -236,8 +258,9 @@ class App(tk.Tk):
 
         self.body_area = ttk.LabelFrame(right, text="내용")
         self.body_area.pack(fill="both", expand=True, pady=(6, 0))
-        self.body_widget: Optional[tk.Widget] = None
-        self.grid_editor: Optional[GridEditor] = None
+        self.rows_editor: Optional[GridEditor] = None
+        self.blocks_editor: Optional[GridEditor] = None
+        self.image_editor: Optional[GridEditor] = None
         self.extra_fields: Optional[FieldGrid] = None
 
     def _build_status(self) -> None:
@@ -264,8 +287,10 @@ class App(tk.Tk):
         m = doc.meta
         for key in ("product_name", "use_name", "doc_kind", "company", "dwg_prefix",
                     "dwg_no", "old_dwg_no", "standard", "dwg_code", "dwg_code2",
-                    "index", "footer_code"):
+                    "index", "footer_code", "label_product", "label_use", "label_kind"):
             self.meta_fields.set(key, getattr(m, key))
+        self.logo_var.set(m.logo_path)
+        self.logo_h_var.set(str(m.logo_height_mm))
         self.sign_fields.set("drawn_date", m.drawn.date)
         self.sign_fields.set("drawn_name", m.drawn.name)
         self.sign_fields.set("checked_date", m.checked.date)
@@ -287,8 +312,10 @@ class App(tk.Tk):
         m = self.doc.meta
         for key in ("product_name", "use_name", "doc_kind", "company", "dwg_prefix",
                     "dwg_no", "old_dwg_no", "standard", "dwg_code", "dwg_code2",
-                    "index", "footer_code"):
+                    "index", "footer_code", "label_product", "label_use", "label_kind"):
             setattr(m, key, self.meta_fields.get(key))
+        m.logo_path = self.logo_var.get()
+        m.logo_height_mm = _float(self.logo_h_var.get(), 8.5)
         m.drawn.date = self.sign_fields.get("drawn_date")
         m.drawn.name = self.sign_fields.get("drawn_name")
         m.checked.date = self.sign_fields.get("checked_date")
@@ -308,7 +335,7 @@ class App(tk.Tk):
         for s in self.doc.sections:
             head = numbers.get(s.id) or ""
             head = f"{head}." if s.numbered and head else head
-            title = "/".join(x for x in (s.title_ja, s.title_en) if x)
+            title = "/".join(x for x in (s.title_ko, s.title_en) if x)
             self.sec_list.insert("end", f"{head} {title}   〔{KIND_LABELS.get(s.kind, s.kind)}〕")
         if self.doc.sections:
             idx = 0 if keep is None else max(0, min(int(keep), len(self.doc.sections) - 1))
@@ -334,13 +361,15 @@ class App(tk.Tk):
     def _clear_body(self) -> None:
         for child in self.body_area.winfo_children():
             child.destroy()
-        self.grid_editor = None
-        self.extra_fields = None
+        self.rows_editor: Optional[GridEditor] = None
+        self.blocks_editor: Optional[GridEditor] = None
+        self.image_editor: Optional[GridEditor] = None
+        self.extra_fields: Optional[FieldGrid] = None
 
     def show_section(self, section: Section) -> None:
         self._current = None   # 값 세팅 중 trace 로 되쓰이는 것 방지
         sfg = self.sec_fields
-        sfg.set("title_ja", section.title_ja)
+        sfg.set("title_ko", section.title_ko)
         sfg.set("title_en", section.title_en)
         sfg.set("numbered", section.numbered)
         sfg.set("no_override", section.no_override)
@@ -351,98 +380,117 @@ class App(tk.Tk):
 
         self._clear_body()
         if section.kind == KIND_SPEC_TABLE:
-            self._build_spec_editor(section)
+            self._pane_spec(section)
         elif section.kind == KIND_VERSION_TABLE:
-            self._build_version_editor(section)
+            self._pane_version(section)
         elif section.kind == KIND_IMAGE:
-            self._build_image_editor(section)
+            self._pane_image(section)
         else:
-            self._build_text_editor(section)
+            self._pane_text(section)
         self._current = section
 
-    def _build_text_editor(self, section: Section) -> None:
-        ttk.Label(self.body_area, justify="left", foreground="#555",
-                  text="본문 한 줄마다 일본어/영어를 나란히 적습니다. "
-                       "들여쓰기 0~3, 머리기호는 (1) ① 등을 그대로 넣으면 됩니다.").pack(
-            anchor="w", padx=6, pady=(6, 2))
-        g = GridEditor(self.body_area,
-                       columns=[("indent", "들여쓰기", 70), ("marker", "머리기호", 80),
-                                ("ja", "일본어", 420), ("en", "영어", 420)],
-                       multiline=("ja", "en"), on_change=lambda: self._commit_current(mark=True))
-        g.pack(fill="both", expand=True, padx=6, pady=(0, 6))
-        g.set_rows([{"indent": str(b.indent), "marker": b.marker, "ja": b.ja, "en": b.en}
+    # ── 항목 종류별 편집 화면 ────────────────────────────────
+    def _changed(self):
+        return lambda: self._commit_current(mark=True)
+
+    def _blocks_grid(self, parent, section: Section, title: str, hint: str,
+                     weight: int) -> GridEditor:
+        box = ttk.LabelFrame(parent, text=title)
+        if hint:
+            ttk.Label(box, text=hint, foreground="#555", justify="left").pack(
+                anchor="w", padx=6, pady=(4, 0))
+        g = GridEditor(box, columns=[("indent", "들여쓰기", 70), ("marker", "머리기호", 80),
+                                     ("ko", "내용", 520), ("en", "영문(선택)", 300)],
+                       multiline=("ko", "en"), on_change=self._changed())
+        g.pack(fill="both", expand=True, padx=6, pady=6)
+        g.set_rows([{"indent": str(b.indent), "marker": b.marker, "ko": b.ko, "en": b.en}
                     for b in section.blocks])
-        self.grid_editor = g
+        parent.add(box, weight=weight)
+        return g
 
-    def _build_spec_editor(self, section: Section) -> None:
-        ttk.Label(self.body_area, justify="left", foreground="#555",
-                  text="엑셀에서 [항목(일)/항목(영)/사양/비고] 4열을 복사해 "
-                       "‘엑셀에서 붙여넣기’ 를 누르면 한 번에 채워집니다. "
-                       "셀 안에서 줄을 바꾸려면 더블클릭 후 Enter 로 줄바꿈하세요.").pack(
-            anchor="w", padx=6, pady=(6, 2))
-        g = GridEditor(self.body_area,
-                       columns=[("item_ja", "항목(일본어)", 170), ("item_en", "항목(영어)", 190),
-                                ("spec", "사양", 330), ("remark", "비고", 300)],
-                       multiline=("spec", "remark"),
-                       on_change=lambda: self._commit_current(mark=True))
-        g.pack(fill="both", expand=True, padx=6, pady=(0, 6))
-        g.set_rows([{"item_ja": r.item_ja, "item_en": r.item_en,
+    def _image_grid(self, parent, section: Section, weight: int) -> GridEditor:
+        box = ttk.LabelFrame(parent, text="첨부 도면 (PNG / JPG / PDF)")
+        ttk.Label(box, foreground="#555", justify="left",
+                  text="PDF 를 넣으면 첫 페이지가 그림으로 들어갑니다. "
+                       "폭은 mm 단위이고 본문 최대 폭은 170mm 입니다.").pack(
+            anchor="w", padx=6, pady=(4, 0))
+        g = GridEditor(box, columns=[("path", "파일", 380), ("width_mm", "폭(mm)", 70),
+                                     ("align", "정렬", 80),
+                                     ("caption_ko", "도면 설명", 260),
+                                     ("caption_en", "설명(영문·선택)", 180)],
+                       multiline=("caption_ko", "caption_en"), on_change=self._changed(),
+                       extra_buttons=(("도면 파일 추가...", self._add_image_file),))
+        g.pack(fill="both", expand=True, padx=6, pady=6)
+        g.set_rows([{"path": i.path, "width_mm": str(i.width_mm), "align": i.align,
+                     "caption_ko": i.caption_ko, "caption_en": i.caption_en}
+                    for i in section.images])
+        parent.add(box, weight=weight)
+        return g
+
+    def _pane(self) -> ttk.PanedWindow:
+        p = ttk.PanedWindow(self.body_area, orient="vertical")
+        p.pack(fill="both", expand=True, padx=4, pady=4)
+        return p
+
+    def _pane_text(self, section: Section) -> None:
+        p = self._pane()
+        self.blocks_editor = self._blocks_grid(
+            p, section, "본문",
+            "한 줄에 한 문장씩. 영문 칸은 비워 두어도 됩니다. "
+            "들여쓰기 0~3 단계, 머리기호는 (1) ① · 등을 그대로 넣으세요.", 3)
+        self.image_editor = self._image_grid(p, section, 2)
+
+    def _pane_spec(self, section: Section) -> None:
+        p = self._pane()
+        box = ttk.LabelFrame(p, text="사양표")
+        ttk.Label(box, foreground="#555", justify="left",
+                  text="엑셀에서 [항목 / 항목(영문) / 사양 / 비고] 4열을 복사한 뒤 "
+                       "‘엑셀에서 붙여넣기’ 를 누르면 한 번에 채워집니다.").pack(
+            anchor="w", padx=6, pady=(4, 0))
+        g = GridEditor(box, columns=[("item_ko", "항목", 200),
+                                     ("item_en", "항목(영문·선택)", 160),
+                                     ("spec", "사양", 330), ("remark", "비고", 260)],
+                       multiline=("spec", "remark"), on_change=self._changed())
+        g.pack(fill="both", expand=True, padx=6, pady=6)
+        g.set_rows([{"item_ko": r.item_ko, "item_en": r.item_en,
                      "spec": r.spec, "remark": r.remark} for r in section.rows])
-        self.grid_editor = g
+        p.add(box, weight=4)
+        self.rows_editor = g
+        self.blocks_editor = self._blocks_grid(p, section, "표 위에 붙일 설명글 (선택)", "", 1)
+        self.image_editor = self._image_grid(p, section, 3)
 
-    def _build_version_editor(self, section: Section) -> None:
+    def _pane_image(self, section: Section) -> None:
+        p = self._pane()
+        self.image_editor = self._image_grid(p, section, 4)
+        self.blocks_editor = self._blocks_grid(p, section, "도면 위에 붙일 설명글 (선택)", "", 2)
+
+    def _pane_version(self, section: Section) -> None:
         top = ttk.Frame(self.body_area)
         top.pack(fill="x", padx=6, pady=(6, 0))
         self.extra_fields = FieldGrid(top, columns=1)
         self.extra_fields.pack(fill="x")
-        self.extra_fields.add("part_no", "파트번호 표기 (＜PartNo. ○○＞)", 20)
+        self.extra_fields.add("part_no", "파트번호 표기 (◇ 파트번호 : ○○)", 20)
         self.extra_fields.set("part_no", section.part_no)
-        self.extra_fields.vars["part_no"].trace_add(
-            "write", lambda *a: self._commit_current(mark=True))
-        g = GridEditor(self.body_area,
-                       columns=[("rev", "기호", 70), ("version", "판수", 70),
-                                ("date", "변경일자", 110),
-                                ("changed_ja", "변경내용(일본어)", 380),
-                                ("changed_en", "변경내용(영어)", 380)],
-                       multiline=("changed_ja", "changed_en"),
-                       on_change=lambda: self._commit_current(mark=True))
+        self.extra_fields.vars["part_no"].trace_add("write", lambda *a: self._commit_current(mark=True))
+
+        p = self._pane()
+        box = ttk.LabelFrame(p, text="개정 이력")
+        g = GridEditor(box, columns=[("rev", "개정", 70), ("version", "판수", 70),
+                                     ("date", "변경일자", 110),
+                                     ("changed_ko", "변경 내용", 460),
+                                     ("changed_en", "변경 내용(영문·선택)", 260)],
+                       multiline=("changed_ko", "changed_en"), on_change=self._changed())
         g.pack(fill="both", expand=True, padx=6, pady=6)
         g.set_rows([{"rev": r.rev, "version": r.version, "date": r.date,
-                     "changed_ja": r.changed_ja, "changed_en": r.changed_en}
+                     "changed_ko": r.changed_ko, "changed_en": r.changed_en}
                     for r in section.versions])
-        self.grid_editor = g
-
-    def _build_image_editor(self, section: Section) -> None:
-        ttk.Label(self.body_area, justify="left", foreground="#555",
-                  text="도면 파일(PNG/JPG/PDF)을 추가하세요. PDF는 첫 페이지가 그림으로 들어갑니다. "
-                       "폭은 mm 단위이며 본문 최대 폭은 170mm 입니다.").pack(
-            anchor="w", padx=6, pady=(6, 2))
-        g = GridEditor(self.body_area,
-                       columns=[("path", "파일 경로", 420), ("width_mm", "폭(mm)", 80),
-                                ("align", "정렬", 90),
-                                ("caption_ja", "설명(일본어)", 220),
-                                ("caption_en", "설명(영어)", 220)],
-                       multiline=("caption_ja", "caption_en"),
-                       on_change=lambda: self._commit_current(mark=True),
-                       extra_buttons=(("도면 파일 추가...", self._add_image_file),))
-        g.pack(fill="both", expand=True, padx=6, pady=(0, 4))
-        g.set_rows([{"path": i.path, "width_mm": str(i.width_mm), "align": i.align,
-                     "caption_ja": i.caption_ja, "caption_en": i.caption_en}
-                    for i in section.images])
-        self.grid_editor = g
-
-        ttk.Label(self.body_area, text="그림 위에 붙일 설명글 (선택)").pack(anchor="w", padx=6)
-        g2 = GridEditor(self.body_area,
-                        columns=[("indent", "들여쓰기", 70), ("marker", "머리기호", 80),
-                                 ("ja", "일본어", 380), ("en", "영어", 380)],
-                        multiline=("ja", "en"), on_change=lambda: self._commit_current(mark=True))
-        g2.pack(fill="both", expand=True, padx=6, pady=(0, 6))
-        g2.set_rows([{"indent": str(b.indent), "marker": b.marker, "ja": b.ja, "en": b.en}
-                     for b in section.blocks])
-        self.image_blocks_editor = g2
+        p.add(box, weight=4)
+        self.rows_editor = g
+        self.blocks_editor = self._blocks_grid(p, section, "표 위에 붙일 설명글 (선택)", "", 1)
 
     def _add_image_file(self) -> None:
-        if not self.grid_editor:
+        g = self.image_editor
+        if g is None:
             return
         paths = filedialog.askopenfilenames(
             title="도면 파일 선택",
@@ -450,26 +498,25 @@ class App(tk.Tk):
                        ("모든 파일", "*.*")])
         if not paths:
             return
-        project_dir = self.doc.base_dir()
-        rows = self.grid_editor.get_rows()
-        for p in paths:
+        rows = g.get_rows()
+        for path in paths:
             try:
-                rel = copy_into_project(p, project_dir) if self.doc.source_path else p
+                rel = copy_into_project(path, self.doc.base_dir()) if self.doc.source_path else path
             except OSError:
-                rel = p
-            rows.append({"path": rel, "width_mm": "165", "align": "CENTER",
-                         "caption_ja": "", "caption_en": ""})
-        self.grid_editor.set_rows(rows)
+                rel = path
+            rows.append({"path": rel, "width_mm": "150", "align": "CENTER",
+                         "caption_ko": "", "caption_en": ""})
+        g.set_rows(rows)
         self._commit_current(mark=True)
         if not self.doc.source_path:
-            self.set_status("먼저 문서를 저장하면 도면 파일이 프로젝트 폴더로 복사됩니다.")
+            self.set_status("문서를 먼저 저장하면 도면 파일이 프로젝트 폴더로 복사됩니다.")
 
     def _commit_current(self, mark: bool = False) -> None:
         s = self._current
         if s is None:
             return
         sfg = self.sec_fields
-        s.title_ja = sfg.get("title_ja")
+        s.title_ko = sfg.get("title_ko")
         s.title_en = sfg.get("title_en")
         s.numbered = bool(sfg.get("numbered"))
         s.no_override = sfg.get("no_override")
@@ -478,27 +525,24 @@ class App(tk.Tk):
         s.page_break_before = bool(sfg.get("page_break_before"))
         s.note = sfg.get("note")
 
-        g = self.grid_editor
-        if g is not None:
-            rows = g.get_rows()
+        if self.blocks_editor is not None:
+            s.blocks = _blocks_from(self.blocks_editor.get_rows())
+        if self.image_editor is not None:
+            s.images = [ImageItem(r.get("path", ""), _float(r.get("width_mm"), 150.0),
+                                  r.get("caption_ko", ""), r.get("caption_en", ""),
+                                  (r.get("align") or "CENTER").upper())
+                        for r in self.image_editor.get_rows() if r.get("path")]
+        if self.rows_editor is not None:
+            rows = self.rows_editor.get_rows()
             if s.kind == KIND_SPEC_TABLE:
-                s.rows = [SpecRow(r.get("item_ja", ""), r.get("item_en", ""),
+                s.rows = [SpecRow(r.get("item_ko", ""), r.get("item_en", ""),
                                   r.get("spec", ""), r.get("remark", "")) for r in rows]
             elif s.kind == KIND_VERSION_TABLE:
                 s.versions = [VersionRow(r.get("rev", ""), r.get("version", ""),
-                                         r.get("date", ""), r.get("changed_ja", ""),
+                                         r.get("date", ""), r.get("changed_ko", ""),
                                          r.get("changed_en", "")) for r in rows]
                 if self.extra_fields:
                     s.part_no = self.extra_fields.get("part_no")
-            elif s.kind == KIND_IMAGE:
-                s.images = [ImageItem(r.get("path", ""), _float(r.get("width_mm"), 150.0),
-                                      r.get("caption_ja", ""), r.get("caption_en", ""),
-                                      (r.get("align") or "CENTER").upper()) for r in rows]
-                blocks = getattr(self, "image_blocks_editor", None)
-                if blocks is not None:
-                    s.blocks = _blocks_from(blocks.get_rows())
-            else:
-                s.blocks = _blocks_from(rows)
         if mark:
             self.mark_dirty()
             self._refresh_list_labels()
@@ -510,7 +554,7 @@ class App(tk.Tk):
         for i, s in enumerate(self.doc.sections):
             head = numbers.get(s.id) or ""
             head = f"{head}." if s.numbered and head else head
-            title = "/".join(x for x in (s.title_ja, s.title_en) if x)
+            title = "/".join(x for x in (s.title_ko, s.title_en) if x)
             label = f"{head} {title}   〔{KIND_LABELS.get(s.kind, s.kind)}〕"
             if self.sec_list.get(i) != label:
                 self.sec_list.delete(i)
@@ -525,7 +569,7 @@ class App(tk.Tk):
         kind = next((k for k, v in KIND_LABELS.items() if v == self.new_kind.get()), KIND_TEXT)
         sel = self.sec_list.curselection()
         pos = (sel[0] + 1) if sel else len(self.doc.sections)
-        section = Section(kind=kind, title_ja="새 항목")
+        section = Section(kind=kind, title_ko="새 항목")
         if kind == KIND_TEXT:
             section.blocks = [Block(indent=1)]
         elif kind == KIND_SPEC_TABLE:
@@ -586,16 +630,16 @@ class App(tk.Tk):
     def new_from_template(self, silent: bool = False) -> None:
         if not silent and not self._confirm_discard():
             return
-        doc = tpl_pkg.load_template("ac_reactor")
+        doc = tpl_pkg.load_template("reactor")
         doc.source_path = ""
         self.load_doc(doc)
-        self.set_status("표준 템플릿(AC Reactor 注文仕様書)에서 새 문서를 시작했습니다.")
+        self.set_status("표준 템플릿(리액터 생산 사양서)에서 새 문서를 시작했습니다.")
 
     def new_empty(self) -> None:
         if not self._confirm_discard():
             return
         doc = SpecDoc()
-        doc.sections = [Section(kind=KIND_TEXT, title_ja="適用範囲", title_en="Scope",
+        doc.sections = [Section(kind=KIND_TEXT, title_ko="적용 범위", title_en="Scope",
                                 blocks=[Block(indent=1)])]
         self.load_doc(doc)
         self.set_status("빈 문서를 시작했습니다.")
@@ -683,6 +727,19 @@ class App(tk.Tk):
             open_with_os(path)
 
     # ── 도구 ────────────────────────────────────────────────
+    def choose_logo(self) -> None:
+        path = filedialog.askopenfilename(
+            title="회사 로고 선택",
+            filetypes=[("이미지", "*.png *.jpg *.jpeg *.gif *.bmp"), ("모든 파일", "*.*")])
+        if not path:
+            return
+        if self.doc.source_path:
+            try:
+                path = copy_into_project(path, self.doc.base_dir(), subdir=".")
+            except OSError:
+                pass
+        self.logo_var.set(path)
+
     def choose_font(self) -> None:
         path = filedialog.askopenfilename(
             title="PDF에 사용할 폰트 선택",
@@ -718,7 +775,7 @@ class App(tk.Tk):
 
 def _blocks_from(rows: List[Dict[str, str]]) -> List[Block]:
     return [Block(_int(r.get("indent"), 1), r.get("marker", ""),
-                  r.get("ja", ""), r.get("en", "")) for r in rows]
+                  r.get("ko", ""), r.get("en", "")) for r in rows]
 
 
 def _int(value, default: int) -> int:

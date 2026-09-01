@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """A4 도면 양식(외곽선·좌측 표제란·하단 표제란)을 캔버스에 직접 그린다.
 
-치수는 모두 mm 이며, 첨부해 주신 HG564145 도면을 실측해서 맞춘 값이다.
-양식을 손보고 싶으면 이 파일 위쪽의 상수만 고치면 된다.
+치수는 모두 mm 단위 상수다. 양식을 손보고 싶으면 아래 상수만 고치면 된다.
+표제란 하단에는 회사 로고를 넣을 수 있다(Meta.logo_path).
 """
 from __future__ import annotations
 
+import os
 from typing import Optional
 
 from reportlab.lib.units import mm
@@ -55,9 +56,11 @@ def _y(v: float) -> float:
 class FrameDrawer:
     """SimpleDocTemplate 의 onPage 콜백으로 쓰인다."""
 
-    def __init__(self, meta: Meta, total_pages_getter=None):
+    def __init__(self, meta: Meta, total_pages_getter=None, base_dir: str = ""):
         self.meta = meta
         self._total = total_pages_getter
+        self.base_dir = base_dir or os.getcwd()
+        self._logo = _find_logo(meta.logo_path, self.base_dir)
 
     # ── public ──────────────────────────────────────────────
     def __call__(self, canvas: Canvas, doc) -> None:
@@ -88,12 +91,12 @@ class FrameDrawer:
             c.line(_x(gx), _y(LS_BOT), _x(gx), _y(LS_TOP))
         c.line(_x(LS_X0), _y(LS_SEP), _x(LS_X1), _y(LS_SEP))
 
-        labels = ("DESCRIPTION", "USE NAME", "DWG.CODE")
+        labels = (m.label_product, m.label_use, m.label_kind)
         values = (m.product_name, m.use_name, m.doc_kind)
         for i, (lab, val) in enumerate(zip(labels, values)):
             cx = LS_X0 + w * (i + 0.5)
             _vtext(c, cx, LS_SEP + 1.5, val, FONT_REGULAR, 7.2, anchor="start")
-            _vtext(c, cx, LS_BOT + 1.5, lab, FONT_BOLD, 6.2, anchor="start")
+            _vtext(c, cx, LS_BOT + 1.5, lab, FONT_BOLD, 6.6, anchor="start")
 
         # 기밀 문구 (세로쓰기, 여러 줄)
         if m.confidential_note:
@@ -152,7 +155,32 @@ class FrameDrawer:
         _ctext(c, (TB_COL[3] + TB_COL[4]) / 2, top - TB_ROW_H + 1.5, "APPROVED", FONT_REGULAR, 6.6)
         _ctext(c, (TB_COL[3] + TB_COL[4]) / 2,
                (bot_rows + top - TB_ROW_H) / 2 - 1.4, m.approved, FONT_REGULAR, 9.0)
-        _ctext(c, (TB_COL[0] + TB_COL[-1]) / 2, TB_BOT + 4.2, m.company, FONT_BOLD, 12.0)
+        self._company_cell(c, TB_COL[0], TB_COL[-1], TB_BOT, TB_COMPANY_TOP)
+
+    def _company_cell(self, c: Canvas, x0: float, x1: float, y0: float, y1: float) -> None:
+        """회사 로고(있으면)와 회사명을 표제란 하단 칸에 배치한다."""
+        m = self.meta
+        cy = (y0 + y1) / 2
+        if not self._logo:
+            _ctext(c, (x0 + x1) / 2, cy - 2.1, m.company, FONT_BOLD, 12.0)
+            return
+
+        path, iw, ih = self._logo
+        h = min(float(m.logo_height_mm or 8.5), (y1 - y0) - 2.5)
+        w = h * (iw / float(ih or 1))
+        max_w = (x1 - x0) - 6.0
+        if w > max_w:
+            w, h = max_w, max_w * (ih / float(iw or 1))
+
+        if m.company:
+            # 로고를 왼쪽에, 회사명을 남은 칸 가운데에
+            lx = x0 + 4.0
+            c.drawImage(path, _x(lx), _y(cy - h / 2), _x(w), _y(h),
+                        mask="auto", preserveAspectRatio=True, anchor="c")
+            _ctext(c, (lx + w + x1) / 2, cy - 2.1, m.company, FONT_BOLD, 12.0)
+        else:
+            c.drawImage(path, _x((x0 + x1 - w) / 2), _y(cy - h / 2), _x(w), _y(h),
+                        mask="auto", preserveAspectRatio=True, anchor="c")
 
     def _drawing_no_block(self, c: Canvas, page_index: int) -> None:
         m = self.meta
@@ -276,6 +304,24 @@ def _vparagraph(c: Canvas, x0: float, x1: float, y0: float, y1: float, text: str
         c.restoreState()
         cx -= leading * 0.353  # pt → mm
     c.restoreState()
+
+
+def _find_logo(logo_path: str, base_dir: str):
+    """로고 파일을 찾아 (경로, 폭, 높이) 를 돌려준다. 없으면 None.
+
+    Meta.logo_path 가 비어 있으면 문서 폴더의 logo.* → 프로그램 assets/logo.* 순으로 찾는다.
+    """
+    from ..importers import find_default_logo, resolve_image
+    path = resolve_image(logo_path, base_dir) if logo_path else find_default_logo(base_dir)
+    if not path:
+        return None
+    try:
+        from reportlab.lib.utils import ImageReader
+        reader = ImageReader(path)
+        w, h = reader.getSize()
+        return reader, w, h
+    except Exception:
+        return None
 
 
 def content_frame_rect():

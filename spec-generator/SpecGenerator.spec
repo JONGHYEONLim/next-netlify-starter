@@ -4,7 +4,7 @@ import os
 
 datas = [
     ("spec_generator/templates/*.spec.json", "spec_generator/templates"),
-    ("assets/fonts", "assets/fonts"),
+    ("assets", "assets"),
 ]
 
 hiddenimports = [

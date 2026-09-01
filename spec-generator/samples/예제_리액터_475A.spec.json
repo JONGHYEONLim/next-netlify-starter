@@ -1,0 +1,945 @@
+{
+  "schema": 1,
+  "meta": {
+    "product_name": "AC Reactor 475A",
+    "use_name": "UPS7500WX-T4 / 정류기용",
+    "doc_kind": "생산 사양서",
+    "dwg_prefix": "BR",
+    "dwg_no": "250901",
+    "old_dwg_no": "",
+    "dwg_code": "REACTOR",
+    "dwg_code2": "",
+    "standard": "STANDARD",
+    "index": "",
+    "company": "Braumm",
+    "logo_path": "",
+    "logo_height_mm": 8.5,
+    "label_product": "제품명",
+    "label_use": "용도",
+    "label_kind": "문서종류",
+    "drawn": {
+      "date": "2026-09-01",
+      "name": "홍길동"
+    },
+    "checked": {
+      "date": "2026-09-01",
+      "name": "김철수"
+    },
+    "renewal": {
+      "date": "",
+      "name": ""
+    },
+    "approved": "박영희",
+    "footer_code": "Braumm-SPEC-A4",
+    "confidential_note": "본 문서 및 여기에 포함된 정보는 Braumm 의 자산입니다. Braumm 의 서면 동의 없이 복제, 복사, 대여하거나 제3자에게 어떠한 방법으로도 공개할 수 없으며, 승인된 생산 목적 외에는 사용할 수 없습니다.",
+    "page_start": 1,
+    "page_total": 0,
+    "revision_rows": 5
+  },
+  "sections": [
+    {
+      "id": "a76707d6",
+      "kind": "text",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "적용 범위",
+      "title_en": "",
+      "underline": true,
+      "page_break_before": false,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "",
+          "ko": "본 사양서는 Braumm 에서 생산하는 리액터의 생산 사양을 정한다.",
+          "en": ""
+        },
+        {
+          "indent": 1,
+          "marker": "",
+          "ko": "본 사양서에 정하지 않은 사항은 사내 표준 및 고객 승인 도면에 따른다.",
+          "en": ""
+        }
+      ],
+      "rows": [],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "72de9eb9",
+      "kind": "spec_table",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "기본 사양",
+      "title_en": "",
+      "underline": true,
+      "page_break_before": false,
+      "note": "※ 값은 고객 승인 사양에 따른다",
+      "blocks": [],
+      "rows": [
+        {
+          "item_ko": "고객사",
+          "item_en": "Customer",
+          "spec": "○○전자",
+          "remark": ""
+        },
+        {
+          "item_ko": "품명",
+          "item_en": "Product name",
+          "spec": "AC Reactor",
+          "remark": ""
+        },
+        {
+          "item_ko": "모델 / 형번",
+          "item_en": "Model",
+          "spec": "BR-ACR-475",
+          "remark": ""
+        },
+        {
+          "item_ko": "정격 전류",
+          "item_en": "Rated current",
+          "spec": "475 Arms",
+          "remark": "Arms"
+        },
+        {
+          "item_ko": "인덕턴스",
+          "item_en": "Inductance",
+          "spec": "90 μH",
+          "remark": "허용오차 ±10%"
+        },
+        {
+          "item_ko": "정격 전압",
+          "item_en": "Rated voltage",
+          "spec": "380 VAC",
+          "remark": ""
+        },
+        {
+          "item_ko": "주파수",
+          "item_en": "Frequency",
+          "spec": "50 / 60 Hz",
+          "remark": "Hz"
+        },
+        {
+          "item_ko": "상 수",
+          "item_en": "Phase",
+          "spec": "3상 4선",
+          "remark": ""
+        },
+        {
+          "item_ko": "철심 구조",
+          "item_en": "Core structure",
+          "spec": "3상 5각 (5-leg)",
+          "remark": ""
+        },
+        {
+          "item_ko": "절연 등급",
+          "item_en": "Insulation class",
+          "spec": "H종",
+          "remark": ""
+        },
+        {
+          "item_ko": "내전압",
+          "item_en": "Withstand voltage",
+          "spec": "AC 2500V / 1분",
+          "remark": "권선-철심 간"
+        },
+        {
+          "item_ko": "절연 저항",
+          "item_en": "Insulation resistance",
+          "spec": "100 MΩ 이상",
+          "remark": "DC500V 메거"
+        },
+        {
+          "item_ko": "냉각 방식",
+          "item_en": "Cooling method",
+          "spec": "건식 풍냉 (표면 풍속 3.0 m/s)",
+          "remark": ""
+        },
+        {
+          "item_ko": "사용 주위온도",
+          "item_en": "Ambient temperature",
+          "spec": "0 ℃ ~ +50 ℃",
+          "remark": ""
+        },
+        {
+          "item_ko": "사용 주위습도",
+          "item_en": "Humidity",
+          "spec": "5 % ~ 95 %",
+          "remark": "결로 없을 것"
+        },
+        {
+          "item_ko": "총 중량",
+          "item_en": "Total weight",
+          "spec": "",
+          "remark": "kg"
+        }
+      ],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "178be316",
+      "kind": "image",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "외형도",
+      "title_en": "Outline drawing",
+      "underline": true,
+      "page_break_before": true,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "",
+          "ko": "치수 공차는 도면 표기에 따른다.",
+          "en": ""
+        }
+      ],
+      "rows": [],
+      "versions": [],
+      "images": [
+        {
+          "path": "figures/외형도.png",
+          "width_mm": 165.0,
+          "caption_ko": "P1 (정격 전류 475 Arms)",
+          "caption_en": "",
+          "align": "CENTER"
+        }
+      ],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "4ad09922",
+      "kind": "spec_table",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "권선 사양",
+      "title_en": "",
+      "underline": true,
+      "page_break_before": true,
+      "note": "",
+      "blocks": [],
+      "rows": [
+        {
+          "item_ko": "권선 턴수",
+          "item_en": "Turns",
+          "spec": "20.5 T",
+          "remark": "T"
+        },
+        {
+          "item_ko": "전선 재질",
+          "item_en": "Wire material",
+          "spec": "알루미늄 (Al foil)",
+          "remark": ""
+        },
+        {
+          "item_ko": "전선 규격",
+          "item_en": "Wire size",
+          "spec": "t 0.5 mm",
+          "remark": ""
+        },
+        {
+          "item_ko": "병렬 수",
+          "item_en": "Parallel",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ko": "권선 층수",
+          "item_en": "Layers",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ko": "권선 방향",
+          "item_en": "Winding direction",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ko": "층간 절연",
+          "item_en": "Interlayer insulation",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ko": "인출선 길이",
+          "item_en": "Lead length",
+          "spec": "",
+          "remark": "mm"
+        },
+        {
+          "item_ko": "단자 형태",
+          "item_en": "Terminal type",
+          "spec": "",
+          "remark": ""
+        }
+      ],
+      "versions": [],
+      "images": [
+        {
+          "path": "figures/결선도.png",
+          "width_mm": 155.0,
+          "caption_ko": "결선도 및 단자 기호",
+          "caption_en": "",
+          "align": "CENTER"
+        }
+      ],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "9b4dd212",
+      "kind": "spec_table",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "요크 코어",
+      "title_en": "",
+      "underline": true,
+      "page_break_before": true,
+      "note": "※ 상세 치수는 아래 도면 참조",
+      "blocks": [],
+      "rows": [
+        {
+          "item_ko": "재질",
+          "item_en": "Material",
+          "spec": "B23R085 (Bao Steel)",
+          "remark": ""
+        },
+        {
+          "item_ko": "두께 (t)",
+          "item_en": "Thickness",
+          "spec": "",
+          "remark": "mm"
+        },
+        {
+          "item_ko": "폭 (W)",
+          "item_en": "Width",
+          "spec": "",
+          "remark": "mm"
+        },
+        {
+          "item_ko": "길이 (L)",
+          "item_en": "Length",
+          "spec": "",
+          "remark": "mm"
+        },
+        {
+          "item_ko": "적층 높이",
+          "item_en": "Stack height",
+          "spec": "",
+          "remark": "mm"
+        },
+        {
+          "item_ko": "매 수",
+          "item_en": "Quantity",
+          "spec": "",
+          "remark": "EA"
+        }
+      ],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "57f8fe22",
+      "kind": "spec_table",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "다리 코어",
+      "title_en": "",
+      "underline": true,
+      "page_break_before": false,
+      "note": "※ 요크 코어와 동일 도면 참조",
+      "blocks": [],
+      "rows": [
+        {
+          "item_ko": "재질",
+          "item_en": "Material",
+          "spec": "B23R085 (Bao Steel)",
+          "remark": ""
+        },
+        {
+          "item_ko": "두께 (t)",
+          "item_en": "Thickness",
+          "spec": "",
+          "remark": "mm"
+        },
+        {
+          "item_ko": "폭 (W)",
+          "item_en": "Width",
+          "spec": "",
+          "remark": "mm"
+        },
+        {
+          "item_ko": "길이 (L)",
+          "item_en": "Length",
+          "spec": "",
+          "remark": "mm"
+        },
+        {
+          "item_ko": "적층 높이",
+          "item_en": "Stack height",
+          "spec": "",
+          "remark": "mm"
+        },
+        {
+          "item_ko": "매 수",
+          "item_en": "Quantity",
+          "spec": "",
+          "remark": "EA"
+        },
+        {
+          "item_ko": "다리 개수",
+          "item_en": "Number of legs",
+          "spec": "5",
+          "remark": ""
+        }
+      ],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "f9fd3174",
+      "kind": "spec_table",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "갭 (Gap)",
+      "title_en": "",
+      "underline": true,
+      "page_break_before": true,
+      "note": "※ 갭 위치와 개수는 아래 도면 참조",
+      "blocks": [],
+      "rows": [
+        {
+          "item_ko": "갭 재질",
+          "item_en": "Gap material",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ko": "갭 두께",
+          "item_en": "Gap thickness",
+          "spec": "",
+          "remark": "mm"
+        },
+        {
+          "item_ko": "갭 개수",
+          "item_en": "Number of gaps",
+          "spec": "",
+          "remark": "EA / 다리당"
+        },
+        {
+          "item_ko": "총 갭 길이",
+          "item_en": "Total gap length",
+          "spec": "",
+          "remark": "mm"
+        },
+        {
+          "item_ko": "갭 위치",
+          "item_en": "Gap position",
+          "spec": "",
+          "remark": ""
+        }
+      ],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "598cebd1",
+      "kind": "spec_table",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "SUS 부품",
+      "title_en": "",
+      "underline": true,
+      "page_break_before": false,
+      "note": "",
+      "blocks": [],
+      "rows": [
+        {
+          "item_ko": "재질",
+          "item_en": "Material",
+          "spec": "",
+          "remark": "예: SUS304"
+        },
+        {
+          "item_ko": "두께 (t)",
+          "item_en": "Thickness",
+          "spec": "",
+          "remark": "mm"
+        },
+        {
+          "item_ko": "폭 (W)",
+          "item_en": "Width",
+          "spec": "",
+          "remark": "mm"
+        },
+        {
+          "item_ko": "길이 (L)",
+          "item_en": "Length",
+          "spec": "",
+          "remark": "mm"
+        },
+        {
+          "item_ko": "수 량",
+          "item_en": "Quantity",
+          "spec": "",
+          "remark": "EA"
+        },
+        {
+          "item_ko": "표면 처리",
+          "item_en": "Surface treatment",
+          "spec": "",
+          "remark": ""
+        }
+      ],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "10fedd45",
+      "kind": "spec_table",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "보빈",
+      "title_en": "",
+      "underline": true,
+      "page_break_before": true,
+      "note": "",
+      "blocks": [],
+      "rows": [
+        {
+          "item_ko": "보빈 품번",
+          "item_en": "Bobbin part no.",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ko": "재질",
+          "item_en": "Material",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ko": "내경 (가로 × 세로)",
+          "item_en": "Inner size",
+          "spec": "",
+          "remark": "mm"
+        },
+        {
+          "item_ko": "높이",
+          "item_en": "Height",
+          "spec": "",
+          "remark": "mm"
+        },
+        {
+          "item_ko": "두께",
+          "item_en": "Thickness",
+          "spec": "",
+          "remark": "mm"
+        },
+        {
+          "item_ko": "수 량",
+          "item_en": "Quantity",
+          "spec": "",
+          "remark": "EA"
+        }
+      ],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "88870c68",
+      "kind": "spec_table",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "체결 부품 (볼트 · 너트 · 와셔)",
+      "title_en": "",
+      "underline": true,
+      "page_break_before": false,
+      "note": "",
+      "blocks": [],
+      "rows": [
+        {
+          "item_ko": "볼트 규격",
+          "item_en": "Bolt size",
+          "spec": "M8 × 30",
+          "remark": "예: M8 × 30"
+        },
+        {
+          "item_ko": "볼트 재질 / 등급",
+          "item_en": "Material / grade",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ko": "볼트 수량",
+          "item_en": "Quantity",
+          "spec": "",
+          "remark": "EA"
+        },
+        {
+          "item_ko": "너트 규격",
+          "item_en": "Nut size",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ko": "와셔 종류",
+          "item_en": "Washer type",
+          "spec": "",
+          "remark": "평와셔 / 스프링와셔"
+        },
+        {
+          "item_ko": "체결 토크",
+          "item_en": "Tightening torque",
+          "spec": "",
+          "remark": "N·m"
+        }
+      ],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "fb6eff80",
+      "kind": "spec_table",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "판금물",
+      "title_en": "",
+      "underline": true,
+      "page_break_before": true,
+      "note": "",
+      "blocks": [],
+      "rows": [
+        {
+          "item_ko": "품 명",
+          "item_en": "Part name",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ko": "재질",
+          "item_en": "Material",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ko": "두께 (t)",
+          "item_en": "Thickness",
+          "spec": "",
+          "remark": "mm"
+        },
+        {
+          "item_ko": "전개 치수",
+          "item_en": "Blank size",
+          "spec": "",
+          "remark": "mm"
+        },
+        {
+          "item_ko": "완성 치수",
+          "item_en": "Finished size",
+          "spec": "",
+          "remark": "mm"
+        },
+        {
+          "item_ko": "표면 처리",
+          "item_en": "Surface treatment",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ko": "수 량",
+          "item_en": "Quantity",
+          "spec": "",
+          "remark": "EA"
+        }
+      ],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "a337fee2",
+      "kind": "text",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "조립 및 작업 지시",
+      "title_en": "",
+      "underline": true,
+      "page_break_before": true,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "(1)",
+          "ko": "코어 적층 시 이물 혼입이 없도록 하고, 적층 높이를 확인한다.",
+          "en": ""
+        },
+        {
+          "indent": 1,
+          "marker": "(2)",
+          "ko": "갭재는 지정 위치에 지정 개수만큼 삽입하고, 총 갭 길이를 실측 확인한다.",
+          "en": ""
+        },
+        {
+          "indent": 1,
+          "marker": "(3)",
+          "ko": "권선은 지정 턴수를 준수하며, 층간 절연을 빠짐없이 시공한다.",
+          "en": ""
+        },
+        {
+          "indent": 1,
+          "marker": "(4)",
+          "ko": "볼트는 지정 토크로 체결하고, 체결 후 풀림 방지 표시를 한다.",
+          "en": ""
+        },
+        {
+          "indent": 1,
+          "marker": "(5)",
+          "ko": "조립 완료 후 외관에 손상·오염·버(burr)가 없는지 확인한다.",
+          "en": ""
+        },
+        {
+          "indent": 1,
+          "marker": "",
+          "ko": "※ 작업 방법을 변경할 경우 사전에 Braumm 의 승인을 받는다.",
+          "en": ""
+        }
+      ],
+      "rows": [],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "4ab995ca",
+      "kind": "text",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "시험 · 검사",
+      "title_en": "",
+      "underline": true,
+      "page_break_before": false,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "(1)",
+          "ko": "전수 검사",
+          "en": ""
+        },
+        {
+          "indent": 2,
+          "marker": "①",
+          "ko": "권선 저항 측정",
+          "en": ""
+        },
+        {
+          "indent": 2,
+          "marker": "②",
+          "ko": "인덕턴스 측정",
+          "en": ""
+        },
+        {
+          "indent": 2,
+          "marker": "③",
+          "ko": "내전압 시험 및 절연저항 측정",
+          "en": ""
+        },
+        {
+          "indent": 2,
+          "marker": "④",
+          "ko": "외관 및 치수 검사",
+          "en": ""
+        },
+        {
+          "indent": 1,
+          "marker": "(2)",
+          "ko": "초품 / 형식 시험",
+          "en": ""
+        },
+        {
+          "indent": 2,
+          "marker": "①",
+          "ko": "온도 상승 시험",
+          "en": ""
+        },
+        {
+          "indent": 2,
+          "marker": "②",
+          "ko": "포화 특성 확인",
+          "en": ""
+        },
+        {
+          "indent": 2,
+          "marker": "③",
+          "ko": "소음 측정",
+          "en": ""
+        },
+        {
+          "indent": 1,
+          "marker": "(3)",
+          "ko": "검사 성적서는 납품 시 함께 제출한다.",
+          "en": ""
+        }
+      ],
+      "rows": [],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "18c78f5a",
+      "kind": "text",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "포장 · 표시 · 취급",
+      "title_en": "",
+      "underline": true,
+      "page_break_before": false,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "(1)",
+          "ko": "운송 중 진동 등으로 외관 및 성능에 변화가 없도록 포장한다.",
+          "en": ""
+        },
+        {
+          "indent": 1,
+          "marker": "(2)",
+          "ko": "제품 표면에는 품명, 형번, 제조일자, 제조번호, 판수를 표시한다.",
+          "en": ""
+        },
+        {
+          "indent": 1,
+          "marker": "(3)",
+          "ko": "인출선 및 단자부가 눌리거나 변형되지 않도록 보호한다.",
+          "en": ""
+        }
+      ],
+      "rows": [],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "67fcc4dd",
+      "kind": "version_table",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "개정 이력",
+      "title_en": "",
+      "underline": true,
+      "page_break_before": true,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "",
+          "ko": "아래 표의 최신 판수를 제품 명판에 표시할 것.",
+          "en": ""
+        },
+        {
+          "indent": 1,
+          "marker": "",
+          "ko": "설계 변경 지시가 있을 경우 변경 내용과 함께 판수도 변경할 것.",
+          "en": ""
+        }
+      ],
+      "rows": [],
+      "versions": [
+        {
+          "rev": "신규",
+          "version": "00A",
+          "date": "2026-09-01",
+          "changed_ko": "신규 발행",
+          "changed_en": "Newly issued."
+        },
+        {
+          "rev": "",
+          "version": "",
+          "date": "",
+          "changed_ko": "",
+          "changed_en": ""
+        },
+        {
+          "rev": "",
+          "version": "",
+          "date": "",
+          "changed_ko": "",
+          "changed_en": ""
+        },
+        {
+          "rev": "",
+          "version": "",
+          "date": "",
+          "changed_ko": "",
+          "changed_en": ""
+        },
+        {
+          "rev": "",
+          "version": "",
+          "date": "",
+          "changed_ko": "",
+          "changed_en": ""
+        }
+      ],
+      "images": [],
+      "part_no": "P1",
+      "headers": [],
+      "col_widths_mm": []
+    }
+  ]
+}

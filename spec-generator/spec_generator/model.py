@@ -44,26 +44,30 @@ class Person:
 class Meta:
     product_name: str = ""        # 製品名称 / DESCRIPTION
     use_name: str = ""            # 用途名称 / USE NAME
-    doc_kind: str = "注文仕様書"   # 図面種類名称
-    dwg_prefix: str = "HG"        # 도면번호 접두
+    doc_kind: str = "생산 사양서"   # 문서 종류
+    dwg_prefix: str = "BR"        # 도면번호 접두
     dwg_no: str = ""              # 도면번호
     old_dwg_no: str = ""          # OLD DWG.NO.
     dwg_code: str = ""            # DWG CODE 좌측 칸
     dwg_code2: str = ""           # DWG CODE 우측 칸
     standard: str = "STANDARD"
     index: str = ""
-    company: str = "Fuji Electric Co.,Ltd."
+    company: str = "Braumm"
+    logo_path: str = ""           # 표제란에 넣을 로고 이미지(PNG/JPG). 비우면 자동 탐색
+    logo_height_mm: float = 8.5
+    label_product: str = "제품명"   # 좌측 세로 표제란 라벨
+    label_use: str = "용도"
+    label_kind: str = "문서종류"
     drawn: Person = field(default_factory=Person)
     checked: Person = field(default_factory=Person)
     renewal: Person = field(default_factory=Person)
     approved: str = ""
     footer_code: str = ""         # 용지 좌측 하단 코드 (예: A4V-21_DOC _03)
     confidential_note: str = (
-        "This material and the information herein is the property of "
-        "Fuji Electric Co.,Ltd. They shall be neither reproduced, copied, "
-        "lent, or disclosed in any way whatsoever for the use of any "
-        "third party, nor used for the manufacturing purposes without "
-        "the express written consent of Fuji Electric Co., Ltd."
+        "본 문서 및 여기에 포함된 정보는 Braumm 의 자산입니다. "
+        "Braumm 의 서면 동의 없이 복제, 복사, 대여하거나 제3자에게 "
+        "어떠한 방법으로도 공개할 수 없으며, 승인된 생산 목적 외에는 "
+        "사용할 수 없습니다."
     )
     page_start: int = 1           # 첫 페이지에 찍히는 PAGE 번호
     page_total: int = 0           # 0 이면 실제 생성 페이지 수로 자동 계산
@@ -72,17 +76,17 @@ class Meta:
 
 @dataclass
 class Block:
-    """본문 한 줄(문단). 일본어/영어를 위아래로 병기한다."""
+    """본문 한 줄(문단). 한국어(필수) 아래에 영문(선택)을 병기한다."""
     indent: int = 1     # 0=제목과 같은 위치, 1,2,3... 단계별 들여쓰기
     marker: str = ""    # "(1)", "①" 등 머리기호
-    ja: str = ""
+    ko: str = ""
     en: str = ""
 
 
 @dataclass
 class SpecRow:
     """사양표 한 행. spec/remark 는 줄바꿈으로 여러 줄 입력 가능."""
-    item_ja: str = ""
+    item_ko: str = ""
     item_en: str = ""
     spec: str = ""
     remark: str = ""
@@ -93,7 +97,7 @@ class VersionRow:
     rev: str = ""
     version: str = ""
     date: str = ""
-    changed_ja: str = ""
+    changed_ko: str = ""
     changed_en: str = ""
 
 
@@ -101,7 +105,7 @@ class VersionRow:
 class ImageItem:
     path: str = ""
     width_mm: float = 150.0
-    caption_ja: str = ""
+    caption_ko: str = ""
     caption_en: str = ""
     align: str = "CENTER"   # LEFT / CENTER / RIGHT
 
@@ -113,7 +117,7 @@ class Section:
     numbered: bool = True         # True 면 1. 2. 3. 자동 번호
     no_override: str = ""         # 번호를 직접 지정할 때
     bullet: str = ""              # 번호 대신 쓸 기호 (예: "○")
-    title_ja: str = ""
+    title_ko: str = ""
     title_en: str = ""
     underline: bool = True
     page_break_before: bool = False
@@ -128,7 +132,7 @@ class Section:
 
     def display_name(self) -> str:
         head = self.no_override or self.bullet or ""
-        title = " / ".join(x for x in (self.title_ja, self.title_en) if x)
+        title = " / ".join(x for x in (self.title_ko, self.title_en) if x)
         label = f"{head} {title}".strip() or KIND_LABELS.get(self.kind, self.kind)
         return f"[{KIND_LABELS.get(self.kind, self.kind)}] {label}"
 
@@ -198,7 +202,19 @@ class SpecDoc:
         return out
 
 
+# v1 에서 일본어 병기용으로 쓰던 키 → 현재 한국어 키
+_LEGACY_KEYS = {
+    "ja": "ko", "item_ja": "item_ko", "changed_ja": "changed_ko",
+    "caption_ja": "caption_ko", "title_ja": "title_ko",
+}
+
+
 def _pick(d: Dict[str, Any], klass) -> Dict[str, Any]:
     """알 수 없는 키는 버리고 dataclass 가 받는 필드만 남긴다(하위호환)."""
     names = {f for f in klass.__dataclass_fields__}
-    return {k: v for k, v in d.items() if k in names}
+    out: Dict[str, Any] = {}
+    for k, v in d.items():
+        k = _LEGACY_KEYS.get(k, k)
+        if k in names and k not in out:
+            out[k] = v
+    return out

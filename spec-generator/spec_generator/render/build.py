@@ -15,7 +15,7 @@ from . import flow, frame
 
 
 class _Doc(BaseDocTemplate):
-    def __init__(self, target, meta, total_getter):
+    def __init__(self, target, meta, total_getter, base_dir=""):
         super().__init__(target, pagesize=A4,
                          leftMargin=0, rightMargin=0, topMargin=0, bottomMargin=0,
                          title=f"{meta.dwg_prefix} {meta.dwg_no}".strip(),
@@ -23,8 +23,9 @@ class _Doc(BaseDocTemplate):
         x, y, w, h = frame.content_frame_rect()
         f = Frame(x, y, w, h, leftPadding=0, rightPadding=0,
                   topPadding=0, bottomPadding=0, id="content")
-        self.addPageTemplates([PageTemplate(id="std", frames=[f],
-                                            onPage=frame.FrameDrawer(meta, total_getter))])
+        self.addPageTemplates([PageTemplate(
+            id="std", frames=[f],
+            onPage=frame.FrameDrawer(meta, total_getter, base_dir))])
 
 
 def _story(doc: SpecDoc, styles):
@@ -48,13 +49,13 @@ def build_pdf(doc: SpecDoc, out_path: str, font_path: Optional[str] = None) -> s
 
     total = {"n": doc.meta.page_total or 0}
     if not doc.meta.page_total:
-        probe = _Doc(io.BytesIO(), doc.meta, lambda: 0)
+        probe = _Doc(io.BytesIO(), doc.meta, lambda: 0, doc.base_dir())
         probe.build(_story(doc, styles))
         total["n"] = probe.page + max(0, doc.meta.page_start - 1)
 
     out_dir = os.path.dirname(os.path.abspath(out_path))
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
-    final = _Doc(out_path, doc.meta, lambda: total["n"])
+    final = _Doc(out_path, doc.meta, lambda: total["n"], doc.base_dir())
     final.build(_story(doc, styles))
     return os.path.abspath(out_path)

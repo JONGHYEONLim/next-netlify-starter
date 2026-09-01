@@ -19,9 +19,9 @@ from ..model import KIND_IMAGE, KIND_SPEC_TABLE, KIND_TEXT, KIND_VERSION_TABLE, 
 CONTENT_W_MM = 170.0
 INDENT_STEP_MM = 9.0
 
-SPEC_HEADERS = ["項目/\nItem", "仕様/\nSpecification", "備考/\nRemark"]
+SPEC_HEADERS = ["항  목", "사  양", "비  고"]
 SPEC_WIDTHS = [37.0, 74.0, 59.0]
-VER_HEADERS = ["記号\nRev.", "版数\nVersion", "変更日付\nDate", "変　更　内　容\nChanged contents"]
+VER_HEADERS = ["개정", "판수", "변경일자", "변  경  내  용"]
 VER_WIDTHS = [14.0, 17.0, 22.0, 117.0]
 
 
@@ -72,7 +72,7 @@ def section_flowables(section: Section, number: str, styles, base_dir: str) -> L
 
 
 def _heading(section: Section, number: str, styles) -> Optional[Paragraph]:
-    title = "/".join(x for x in (section.title_ja, section.title_en) if x)
+    title = "/".join(x for x in (section.title_ko, section.title_en) if x)
     if not title:
         return None
     prefix = ""
@@ -88,13 +88,27 @@ def _heading(section: Section, number: str, styles) -> Optional[Paragraph]:
 
 
 def _body(section: Section, styles, base_dir: str) -> List:
-    if section.kind == KIND_SPEC_TABLE:
-        return [_spec_table(section, styles)]
+    """어떤 종류의 항목이든 [설명글] → [표] → [첨부 도면] 순서로 쌓는다.
+
+    덕분에 '요크코어 사이즈 + 도면' 처럼 표와 도면이 함께 있는 항목을
+    하나로 관리할 수 있다.
+    """
+    out: List = []
     if section.kind == KIND_VERSION_TABLE:
-        return _version_table(section, styles)
-    if section.kind == KIND_IMAGE:
-        return _images(section, styles, base_dir)
-    return _text_blocks(section, styles)
+        out.extend(_version_table(section, styles))
+    elif section.kind == KIND_IMAGE:
+        out.extend(_text_blocks(section, styles))
+    else:
+        out.extend(_text_blocks(section, styles))
+        if section.kind == KIND_SPEC_TABLE and section.rows:
+            if out:
+                out.append(Spacer(1, 2 * mm))
+            out.append(_spec_table(section, styles))
+    if section.images:
+        if out:
+            out.append(Spacer(1, 4 * mm))
+        out.extend(_images(section, styles, base_dir))
+    return out
 
 
 def _text_blocks(section: Section, styles) -> List:
@@ -105,14 +119,14 @@ def _text_blocks(section: Section, styles) -> List:
                             leftIndent=indent + (7 * mm if b.marker else 0),
                             bulletIndent=indent,
                             spaceAfter=1.5)
-        if b.ja:
-            out.append(Paragraph(_multiline(b.ja), st,
+        if b.ko:
+            out.append(Paragraph(_multiline(b.ko), st,
                                  bulletText=b.marker or None))
         if b.en:
             st_en = ParagraphStyle(f"e{id(b)}", parent=st, spaceAfter=4)
             out.append(Paragraph(_multiline(b.en), st_en,
-                                 bulletText=None if b.ja else (b.marker or None)))
-        if not b.ja and not b.en:
+                                 bulletText=None if b.ko else (b.marker or None)))
+        if not b.ko and not b.en:
             out.append(Spacer(1, 3 * mm))
     return out
 
@@ -129,7 +143,7 @@ def _spec_table(section: Section, styles) -> Table:
     headers = section.headers or SPEC_HEADERS
     data = [[Paragraph(_multiline(h), styles["cell_h"]) for h in headers]]
     for r in section.rows:
-        item = "<br/>".join(_esc(x) for x in (r.item_ja, r.item_en) if x)
+        item = "<br/>".join(_esc(x) for x in (r.item_ko, r.item_en) if x)
         data.append([
             Paragraph(item, styles["cell"]),
             Paragraph(_multiline(r.spec), styles["cell"]),
@@ -153,12 +167,12 @@ def _version_table(section: Section, styles) -> List:
     if section.part_no:
         st = ParagraphStyle("partno", parent=styles["body"], spaceBefore=3, spaceAfter=2,
                             leftIndent=INDENT_STEP_MM * mm)
-        out.append(Paragraph(_esc(f"＜PartNo. {section.part_no}＞"), st))
+        out.append(Paragraph(_esc(f"◇ 파트번호 : {section.part_no}"), st))
 
     headers = section.headers or VER_HEADERS
     data = [[Paragraph(_multiline(h), styles["cell_h"]) for h in headers]]
     for r in section.versions:
-        changed = "<br/>".join(_esc(x) for x in (r.changed_ja, r.changed_en) if x)
+        changed = "<br/>".join(_esc(x) for x in (r.changed_ko, r.changed_en) if x)
         data.append([
             Paragraph(_esc(r.rev), styles["cell"]),
             Paragraph(_esc(r.version), styles["cell"]),
@@ -180,7 +194,6 @@ def _version_table(section: Section, styles) -> List:
 def _images(section: Section, styles, base_dir: str) -> List:
     from ..importers import resolve_image
     out: List = []
-    out.extend(_text_blocks(section, styles))
     for item in section.images:
         path = resolve_image(item.path, base_dir)
         if not path or not os.path.exists(path):
@@ -196,7 +209,7 @@ def _images(section: Section, styles, base_dir: str) -> List:
         except Exception as exc:  # 손상된 이미지도 문서 생성을 막지 않는다
             out.append(Paragraph(_esc(f"[이미지 오류: {item.path} — {exc}]"), styles["caption"]))
             continue
-        cap = "<br/>".join(_esc(x) for x in (item.caption_ja, item.caption_en) if x)
+        cap = "<br/>".join(_esc(x) for x in (item.caption_ko, item.caption_en) if x)
         if cap:
             out.append(Spacer(1, 1.5 * mm))
             out.append(Paragraph(cap, styles["caption"]))

@@ -88,6 +88,25 @@ def _same_file(a: str, b: str) -> bool:
         return False
 
 
+def find_default_logo(base_dir: str) -> Optional[str]:
+    """로고를 따로 지정하지 않았을 때 자동으로 찾는다.
+
+    1) 문서 파일과 같은 폴더의 logo.png / logo.jpg ...
+    2) 프로그램에 함께 들어 있는 assets/logo.*
+    """
+    import glob as _glob
+    from .fonts import bundled_font_dir
+    assets = os.path.dirname(bundled_font_dir())
+    for d in (base_dir, os.path.join(base_dir, "figures"), assets):
+        if not d or not os.path.isdir(d):
+            continue
+        for ext in (".png", ".jpg", ".jpeg", ".gif", ".bmp"):
+            hits = sorted(_glob.glob(os.path.join(d, f"logo{ext}")))
+            if hits:
+                return hits[0]
+    return None
+
+
 def parse_pasted_table(text: str, ncols: int) -> List[List[str]]:
     """엑셀/시트에서 복사한 내용(탭 구분)을 표 행 리스트로 바꾼다.
 

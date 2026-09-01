@@ -27,7 +27,7 @@ jobs:
           python -m pip install -r requirements.txt
 
       - name: Smoke test (render the sample without a GUI)
-        run: python -m spec_generator build samples/HG564145.spec.json -o build-check.pdf
+        run: python -m spec_generator build "samples/예제_리액터_475A.spec.json" -o build-check.pdf
 
       - name: Build exe
         run: python -m PyInstaller --clean --noconfirm SpecGenerator.spec
