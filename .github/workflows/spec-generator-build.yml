@@ -1,0 +1,40 @@
+name: Build Spec Generator (Windows exe)
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "spec-generator/**"
+      - ".github/workflows/spec-generator-build.yml"
+  workflow_dispatch:
+
+jobs:
+  windows-exe:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: spec-generator
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Smoke test (render the sample without a GUI)
+        run: python -m spec_generator build samples/HG564145.spec.json -o build-check.pdf
+
+      - name: Build exe
+        run: python -m PyInstaller --clean --noconfirm SpecGenerator.spec
+
+      - name: Upload exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: SpecGenerator-exe
+          path: spec-generator/dist/SpecGenerator.exe
+          if-no-files-found: error

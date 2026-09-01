@@ -1,0 +1,9 @@
+# 필수
+reportlab>=4.0
+pillow>=10.0
+
+# 선택 — 도면을 PDF 로 받는 경우 첫 페이지를 그림으로 넣기 위해 필요
+pymupdf>=1.24
+
+# 선택 — exe 빌드용
+pyinstaller>=6.3

@@ -1,0 +1,861 @@
+{
+  "schema": 1,
+  "meta": {
+    "product_name": "",
+    "use_name": "",
+    "doc_kind": "注文仕様書",
+    "dwg_prefix": "HG",
+    "dwg_no": "",
+    "old_dwg_no": "",
+    "dwg_code": "",
+    "dwg_code2": "",
+    "standard": "STANDARD",
+    "index": "",
+    "company": "Fuji Electric Co.,Ltd.",
+    "drawn": {
+      "date": "",
+      "name": ""
+    },
+    "checked": {
+      "date": "",
+      "name": ""
+    },
+    "renewal": {
+      "date": "",
+      "name": ""
+    },
+    "approved": "",
+    "footer_code": "A4V-21_DOC _03",
+    "confidential_note": "This material and the information herein is the property of Fuji Electric Co.,Ltd. They shall be neither reproduced, copied, lent, or disclosed in any way whatsoever for the use of any third party, nor used for the manufacturing purposes without the express written consent of Fuji Electric Co., Ltd.",
+    "page_start": 1,
+    "page_total": 0,
+    "revision_rows": 5
+  },
+  "sections": [
+    {
+      "id": "dd9acd68",
+      "kind": "text",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ja": "適用範囲",
+      "title_en": "Scope",
+      "underline": true,
+      "page_break_before": false,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "",
+          "ja": "",
+          "en": ""
+        }
+      ],
+      "rows": [],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "25161e33",
+      "kind": "text",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ja": "適用規格",
+      "title_en": "Applicable standard",
+      "underline": true,
+      "page_break_before": false,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "",
+          "ja": "",
+          "en": ""
+        }
+      ],
+      "rows": [],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "5e31cb39",
+      "kind": "text",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ja": "使用条件",
+      "title_en": "Operating condition",
+      "underline": true,
+      "page_break_before": false,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "",
+          "ja": "",
+          "en": ""
+        }
+      ],
+      "rows": [],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "39e54caa",
+      "kind": "spec_table",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ja": "仕様",
+      "title_en": "Specification",
+      "underline": true,
+      "page_break_before": true,
+      "note": "",
+      "blocks": [],
+      "rows": [
+        {
+          "item_ja": "パート番号",
+          "item_en": "part No.",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ja": "周囲温度",
+          "item_en": "Ambient temperature",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ja": "周囲湿度",
+          "item_en": "Surrounding humidity",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ja": "標高",
+          "item_en": "Altitude",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ja": "使用回路",
+          "item_en": "Circuit",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ja": "相数",
+          "item_en": "phase",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ja": "鉄心構造",
+          "item_en": "Core structure",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ja": "各相インダクタンス",
+          "item_en": "Inductance",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ja": "定格電流",
+          "item_en": "Rated current",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ja": "高周波電流",
+          "item_en": "High frequency current",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ja": "零相電流",
+          "item_en": "Zero-phase current",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ja": "飽和特性",
+          "item_en": "saturation characteristics",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ja": "絶縁耐圧",
+          "item_en": "Insulation voltage",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ja": "絶縁抵抗",
+          "item_en": "Insulation resistance",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ja": "絶縁種別",
+          "item_en": "Insulation class",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ja": "冷却方式",
+          "item_en": "Cooling method",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ja": "発生損失制約",
+          "item_en": "loss restriction",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ja": "騒音",
+          "item_en": "Noise",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ja": "騒音",
+          "item_en": "Noise",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ja": "設計寿命",
+          "item_en": "Design life",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ja": "鉄心素材",
+          "item_en": "Core material",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ja": "電線素材",
+          "item_en": "Wire material",
+          "spec": "",
+          "remark": ""
+        },
+        {
+          "item_ja": "絶縁距離",
+          "item_en": "Isolation distance",
+          "spec": "",
+          "remark": ""
+        }
+      ],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "bea8fd8d",
+      "kind": "text",
+      "numbered": false,
+      "no_override": "",
+      "bullet": "○",
+      "title_ja": "鉄心仕様",
+      "title_en": " Core specification",
+      "underline": false,
+      "page_break_before": true,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "",
+          "ja": "鉄心構造：三相 5 脚/Core structure: 5-leg core",
+          "en": ""
+        },
+        {
+          "indent": 1,
+          "marker": "",
+          "ja": "※Gap value: Maker design value",
+          "en": ""
+        }
+      ],
+      "rows": [],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "c642571e",
+      "kind": "image",
+      "numbered": false,
+      "no_override": "",
+      "bullet": "○",
+      "title_ja": "冷却方式",
+      "title_en": " Cooling method",
+      "underline": false,
+      "page_break_before": false,
+      "note": "",
+      "blocks": [],
+      "rows": [],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "2835e97b",
+      "kind": "image",
+      "numbered": false,
+      "no_override": "",
+      "bullet": "○",
+      "title_ja": "外形図",
+      "title_en": " Outline drawing",
+      "underline": false,
+      "page_break_before": true,
+      "note": "",
+      "blocks": [],
+      "rows": [],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "f208389f",
+      "kind": "image",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ja": "結線図及び端子記号",
+      "title_en": "Circuit diagram and terminal sign",
+      "underline": true,
+      "page_break_before": false,
+      "note": "",
+      "blocks": [],
+      "rows": [],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "7c837bfe",
+      "kind": "text",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ja": "外形",
+      "title_en": "Form",
+      "underline": true,
+      "page_break_before": true,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "",
+          "ja": "製造メーカ殿による。",
+          "en": "It depends on the manufacturing maker."
+        }
+      ],
+      "rows": [],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "f9e15500",
+      "kind": "text",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ja": "製造方法",
+      "title_en": "Process of manufacture",
+      "underline": true,
+      "page_break_before": false,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "",
+          "ja": "適用規格を満足すること。製造方法を変更する場合は、弊社の了解を得るものとする。",
+          "en": "Satisfy the applicable standard. Obtain our consent when you change the process of manufacture."
+        }
+      ],
+      "rows": [],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "54aa33b5",
+      "kind": "text",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ja": "試験・検査",
+      "title_en": "Test・inspection",
+      "underline": true,
+      "page_break_before": false,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "(1)",
+          "ja": "製造者社内試験/ Manufacturer in-house test  :",
+          "en": ""
+        },
+        {
+          "indent": 2,
+          "marker": "",
+          "ja": "①巻線抵抗測定/ Winding resistance measurement",
+          "en": ""
+        },
+        {
+          "indent": 2,
+          "marker": "",
+          "ja": "②耐圧試験・絶縁抵抗測定/ A resisting pressure test and insulation resistance measurement",
+          "en": ""
+        },
+        {
+          "indent": 2,
+          "marker": "",
+          "ja": "③インダクタンス測定/ Inductance measurement",
+          "en": ""
+        },
+        {
+          "indent": 2,
+          "marker": "",
+          "ja": "④飽和特性確認(型式試験のみ)/ Saturation characteristics(Type test only)",
+          "en": ""
+        },
+        {
+          "indent": 2,
+          "marker": "",
+          "ja": "⑤騒音試験(型式試験のみ)/ Noise test(Type test only)",
+          "en": ""
+        },
+        {
+          "indent": 2,
+          "marker": "",
+          "ja": "⑥インパルス試験/ Impulse test",
+          "en": ""
+        },
+        {
+          "indent": 1,
+          "marker": "(2)",
+          "ja": "受入れ検査　　　　　　　　　:弊社受入試験規定による。",
+          "en": "Acceptance inspection　　  : at our receipt test regulations."
+        }
+      ],
+      "rows": [],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "7dee8c5f",
+      "kind": "text",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ja": "梱包・包装・輸送",
+      "title_en": "Packing・wrapping・transportation",
+      "underline": true,
+      "page_break_before": false,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "",
+          "ja": "輸送時の振動等により、外観および性能に変化のないこと。",
+          "en": "There must not be change in externals and the performance by the vibration etc. when it transports it."
+        }
+      ],
+      "rows": [],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "37b94f8f",
+      "kind": "text",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ja": "表示",
+      "title_en": "Display",
+      "underline": true,
+      "page_break_before": false,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "",
+          "ja": "製造メーカー殿標準",
+          "en": "Manufacturer standard"
+        }
+      ],
+      "rows": [],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "35499823",
+      "kind": "text",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ja": "提出書類",
+      "title_en": "Document to be submitted",
+      "underline": true,
+      "page_break_before": true,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "(1)",
+          "ja": "納入仕様書/ delivery specifications",
+          "en": ""
+        },
+        {
+          "indent": 2,
+          "marker": "",
+          "ja": "記載内容　　　:版数管理表、外形図、重量、損失、インダクタンス値、温度上昇値、騒音、接続図、試験仕様",
+          "en": "Content of description：revision status table、form diagram、Weight、loss、inductance value、temperature rise value、noise 、circuit diagram、test specification."
+        },
+        {
+          "indent": 2,
+          "marker": "",
+          "ja": "部数　　　:4 部",
+          "en": "Number of copies：4"
+        },
+        {
+          "indent": 2,
+          "marker": "",
+          "ja": "提出時期　　　　　:初回納入時及び仕様変更時",
+          "en": "Submitting time　 :When it delivers first time and the specification is changed."
+        },
+        {
+          "indent": 1,
+          "marker": "(2)",
+          "ja": "試験成績表/test record",
+          "en": ""
+        },
+        {
+          "indent": 2,
+          "marker": "",
+          "ja": "記載内容　　　　　:試験仕様による。",
+          "en": "Content of description：at test specification."
+        },
+        {
+          "indent": 2,
+          "marker": "",
+          "ja": "部数　　　:1 部",
+          "en": "Number of copies：1"
+        },
+        {
+          "indent": 2,
+          "marker": "",
+          "ja": "提出時期　　　　　:製品納入時",
+          "en": "Submitting time　:When product is delivered."
+        }
+      ],
+      "rows": [],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "85e65bd6",
+      "kind": "text",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ja": "質管理の遵守事項",
+      "title_en": "Conditions of release of quality control",
+      "underline": true,
+      "page_break_before": false,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "",
+          "ja": "品質管理の要事項については、別途、弊社、品質保証部門から提示される。",
+          "en": "The matter of the quality control necessary is separately presented from our company and the quality assurance unit."
+        }
+      ],
+      "rows": [],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "ec27fa9b",
+      "kind": "text",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ja": "取引後の遵守事項",
+      "title_en": "Conditions of release after it has dealings",
+      "underline": true,
+      "page_break_before": false,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "(1)",
+          "ja": "品質保証/Quality assurance",
+          "en": ""
+        },
+        {
+          "indent": 1,
+          "marker": "①",
+          "ja": "無償保証期間(以下、保証期間とする。)は、当工場納入後 1 年間とする。",
+          "en": "A free guaranteed term (Hereafter, make it to the guaranteed term) is assumed to be one year after this factory is delivered."
+        },
+        {
+          "indent": 1,
+          "marker": "②",
+          "ja": "保証期間において、製造者の責任に起因する故障が発生した場合は、無償にて修理・交換を行うものとする。",
+          "en": "Repair and exchange it free of charge when the breakdown that originates in manufacturer's responsibility occurs at the guaranteed term."
+        },
+        {
+          "indent": 1,
+          "marker": "③",
+          "ja": "保証期間後に発生した故障に対する修理・交換は有償とする。",
+          "en": "The repair and the exchange for the breakdown that occurred after the guaranteed term are assumed for a fee."
+        },
+        {
+          "indent": 2,
+          "marker": "",
+          "ja": "ただし、設計又は製造の不適切に基づく欠陥については、製造者と当工場が協議し原因を明らかにした後、製造者に原因がある場合は保障期間後といえど無償修理・交換するものとする",
+          "en": "However, free repair and exchange the defect based on the inadequacy of the design or manufacturing after the guaranteed term when the manufacturer has the cause ,after the manufacturer's conferring with this factory and clarifying the cause."
+        },
+        {
+          "indent": 1,
+          "marker": "(2)",
+          "ja": "保守/ Maintenance",
+          "en": ""
+        },
+        {
+          "indent": 2,
+          "marker": "",
+          "ja": "保守は原則として当社(保守会社を含む)で行う。",
+          "en": "As a rule, our company (The maintenance company is included) maintains it."
+        },
+        {
+          "indent": 1,
+          "marker": "(3)",
+          "ja": "仕様変更/Specification change",
+          "en": ""
+        },
+        {
+          "indent": 2,
+          "marker": "",
+          "ja": "製造者は、本仕様書の内容及び本仕様書の規定無き事項でも、性能・外観・保守等に影響を及ぼす部分を変更する場合は、事前に当工場に通知し承認を得るものとする。",
+          "en": "The manufacturer must notify this factory beforehand and obtain approval , When the part that influences the performance, externals, and maintenance, etc. is changed, even the matter in which the content of this specifications and this specifications are not provided"
+        },
+        {
+          "indent": 2,
+          "marker": "",
+          "ja": "なおこの通知は、当工場における充分な評価期間 6 ヶ月以上を見込むものとする。",
+          "en": "As for this notification, expect enough evaluation period in this factory six months or more."
+        },
+        {
+          "indent": 1,
+          "marker": "(4)",
+          "ja": "販売業務/Sales task",
+          "en": ""
+        },
+        {
+          "indent": 2,
+          "marker": "",
+          "ja": "製造者は、当工場から購入中止の通知がある迄、本仕様書対象品の納入を継続するものとする。",
+          "en": "The manufacturer must continue the delivery of this specifications object goods from this factory to the notification of the purchase discontinuance."
+        },
+        {
+          "indent": 2,
+          "marker": "",
+          "ja": "ただし、部品入手不可・物量減等やむを得ない事情にて納入できない事態が考えられる場合は、事前に当工場に通知するものとする。",
+          "en": "However, notify this factory beforehand, when the situation that cannot be delivered by unavoidable circumstances such as cannot obtain parts and the physical superiority decreases is thought."
+        },
+        {
+          "indent": 2,
+          "marker": "",
+          "ja": "なおこの通知は，当工場における充分な検討期間 3 ヶ月以上を見込んで行い対応については両者が協議のうえ決定するものとする。",
+          "en": "Decide this notification of the doing correspondence expecting enough examination period in this factory three months or more after both confer."
+        },
+        {
+          "indent": 2,
+          "marker": "",
+          "ja": "また、製造者は対応が決定する迄は本仕様書対象品の納入を継続するものとする。",
+          "en": "Moreover, the manufacturer must continue the delivery of this specifications object goods until correspondence is decided."
+        },
+        {
+          "indent": 1,
+          "marker": "(5)",
+          "ja": "廃形後の部品供給・修理実施/ Part presentation and repair execution after type of abolition",
+          "en": ""
+        },
+        {
+          "indent": 2,
+          "marker": "",
+          "ja": "製造者は、本仕様書対象品の当工場から購入中止通知後 15 年間の保守部品の納入及び本仕様書対象品の最終納入後 15 年間の修理対応を実施するものとする。",
+          "en": "The manufacturer must execute the repair correspondence for 15 years the delivery of service parts of 15 years and after this specifications object goods are finally delivered after the purchase discontinuance is notified from this factory of this specifications object goods."
+        },
+        {
+          "indent": 2,
+          "marker": "",
+          "ja": "ただし、その時点で製造者入手不可能なものについては両者協議のうえ代替え品をもって代えることができる。",
+          "en": "However, the one that the manufacturer cannot be obtained at that time can be substituted with the replacement after it confers on both."
+        }
+      ],
+      "rows": [],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "6e476379",
+      "kind": "text",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ja": "その他の事項",
+      "title_en": "Other",
+      "underline": true,
+      "page_break_before": false,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "",
+          "ja": "特に取り決めない事項は、『取引基本契約書』による。",
+          "en": "Especially, the matter not decided depends on 'Basic contract document'."
+        }
+      ],
+      "rows": [],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "35da128c",
+      "kind": "version_table",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ja": "版数管理表",
+      "title_en": "Version List",
+      "underline": true,
+      "page_break_before": true,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "",
+          "ja": "以下表に記載の最新版数を銘版に記載のこと。",
+          "en": ""
+        },
+        {
+          "indent": 1,
+          "marker": "",
+          "ja": "弊社より設計変更指示があった場合、その変更内容とともに版数も変更すること。",
+          "en": ""
+        },
+        {
+          "indent": 1,
+          "marker": "",
+          "ja": "",
+          "en": "Indicate the number of the latest versions given in a table for the version below."
+        },
+        {
+          "indent": 1,
+          "marker": "",
+          "ja": "",
+          "en": "When there are change-of-design directions from our company, also change the number of versions with the changes."
+        }
+      ],
+      "rows": [],
+      "versions": [
+        {
+          "rev": "New",
+          "version": "00A",
+          "date": "",
+          "changed_ja": "新規発行",
+          "changed_en": "Newly-issued."
+        },
+        {
+          "rev": "",
+          "version": "",
+          "date": "",
+          "changed_ja": "",
+          "changed_en": ""
+        },
+        {
+          "rev": "",
+          "version": "",
+          "date": "",
+          "changed_ja": "",
+          "changed_en": ""
+        },
+        {
+          "rev": "",
+          "version": "",
+          "date": "",
+          "changed_ja": "",
+          "changed_en": ""
+        },
+        {
+          "rev": "",
+          "version": "",
+          "date": "",
+          "changed_ja": "",
+          "changed_en": ""
+        }
+      ],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    }
+  ]
+}
