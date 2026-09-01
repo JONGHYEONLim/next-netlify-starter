@@ -5,6 +5,7 @@
   python -m spec_generator file.spec.json      해당 문서를 열고 GUI 실행
   python -m spec_generator build in.spec.json -o out.pdf     GUI 없이 PDF 생성
   python -m spec_generator templates           사용 가능한 템플릿 목록
+  python -m spec_generator selftest            호환성 자체 점검 (예전 문서가 열리는지)
 """
 from __future__ import annotations
 
@@ -15,6 +16,10 @@ import sys
 
 def main(argv=None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
+
+    if argv and argv[0] == "selftest":
+        from .selftest import run
+        return run()
 
     if argv and argv[0] == "templates":
         from . import templates

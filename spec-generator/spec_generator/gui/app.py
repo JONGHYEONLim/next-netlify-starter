@@ -14,14 +14,17 @@ from tkinter import filedialog, messagebox, ttk
 from typing import Dict, List, Optional
 
 from .. import docnumber as dn
+from .. import placeholders as ph
 from .. import templates as tpl_pkg
+from ..registry import Registry
 from ..fonts import active_font_description, register_fonts
 from ..importers import SUPPORTED_EXT, copy_into_project
-from ..model import (KIND_IMAGE, KIND_LABELS, KIND_SPEC_TABLE, KIND_TEXT,
+from ..model import (file_is_newer, KIND_IMAGE, KIND_LABELS, KIND_SPEC_TABLE, KIND_TEXT,
                      KIND_VERSION_TABLE, Block, ImageItem, Section, SpecDoc,
                      SpecRow, VersionRow)
 from ..render.build import build_pdf
-from .widgets import FieldGrid, GridEditor, HelpWindow, MultilineDialog
+from .widgets import (FieldGrid, GridEditor, HelpWindow, MultilineDialog,
+                      RegistryWindow)
 
 APP_TITLE = "생산용 사양서 생성기"
 SETTINGS = os.path.join(os.path.expanduser("~"), ".spec_generator.json")
@@ -118,6 +121,9 @@ class App(tk.Tk):
         bar.add_cascade(label="출력", menu=o)
 
         t = tk.Menu(bar, tearoff=0)
+        t.add_command(label="도번 대장 보기...", command=self.show_registry)
+        t.add_command(label="쓸 수 있는 자동 입력 항목...", command=self.show_placeholders)
+        t.add_separator()
         t.add_command(label="PDF 폰트 지정...", command=self.choose_font)
         t.add_command(label="폰트 설정 초기화", command=self.reset_font)
         bar.add_cascade(label="도구", menu=t)
@@ -725,6 +731,13 @@ class App(tk.Tk):
             self.open_path(path)
 
     def open_path(self, path: str) -> None:
+        newer = file_is_newer(path)
+        if newer:
+            messagebox.showwarning(
+                "새 버전에서 만든 문서",
+                "이 문서는 지금 쓰는 것보다 새 버전의 프로그램에서 만들어졌습니다.\n"
+                "열어는 보겠지만 일부 내용이 빠질 수 있습니다.\n"
+                "가능하면 프로그램을 최신판으로 바꿔 주세요.")
         try:
             self.load_doc(SpecDoc.load(path))
             self.remember_recent(path)
@@ -789,6 +802,7 @@ class App(tk.Tk):
             messagebox.showerror("저장 실패", f"{exc}")
             return False
         self.mark_dirty(False)
+        self.register_current()
         self.remember_recent(path)
         self.set_status(f"저장했습니다: {path}")
         return True
@@ -856,6 +870,11 @@ class App(tk.Tk):
         """고객사 폴더에 곧바로 저장한다(파일 이름 자동)."""
         self._commit_current()
         self.collect_meta()
+        if not self.doc.meta.dwg_no:
+            if messagebox.askyesno("도번 없음",
+                                   "아직 도번이 없습니다.\n지금 자동으로 발급할까요?"):
+                self.generate_doc_no()
+                self.collect_meta()
         folder = self.customer_dir()
         try:
             os.makedirs(folder, exist_ok=True)
@@ -867,6 +886,7 @@ class App(tk.Tk):
                 "덮어쓰기", f"같은 이름의 파일이 이미 있습니다.\n\n{path}\n\n덮어쓸까요?"):
             return
         if self._make_pdf(path):
+            self.register_current()
             self.set_status(f"저장했습니다: {path}")
             if messagebox.askyesno("완료", f"저장했습니다.\n\n{path}\n\n폴더를 열어볼까요?"):
                 open_with_os(folder)
@@ -906,26 +926,64 @@ class App(tk.Tk):
             open_with_os(path)
 
     # ── 도구 ────────────────────────────────────────────────
+    def registry(self) -> Registry:
+        return Registry(self.output_root())
+
     def generate_doc_no(self) -> None:
-        """입력한 고객사·제품군·정격전류로 도번을 만든다."""
-        nf = self.no_fields
-        customer_en = nf.get("customer_en").strip()
-        if not customer_en:
-            messagebox.showinfo("도번 생성",
-                                "고객사(영문)를 먼저 입력해 주세요.\n"
-                                "예) Hyundai Electric → 고객코드 HYU")
+        """도번 대장을 보고 다음 번호를 자동으로 발급한다."""
+        self.collect_meta()
+        m = self.doc.meta
+        if not m.customer_en.strip():
+            messagebox.showinfo(
+                "도번 발급",
+                "고객사(영문)를 먼저 입력해 주세요.\n\n"
+                "고객코드는 영문명에서 자동으로 만들어집니다.\n"
+                "  Hyundai Electric → HYU      LS Electric → LSE\n"
+                "이미 쓰던 고객이면 예전에 준 코드를 그대로 씁니다.")
             return
-        family = dn.family_from_choice(nf.get("family"))
-        number = dn.build(family, customer_en, nf.get("rated_current"), nf.get("serial") or "1")
+        if m.dwg_no and not messagebox.askyesno(
+                "도번 발급",
+                f"이미 도번이 있습니다.\n\n    {m.dwg_prefix}-{m.dwg_no}\n\n"
+                "새 번호를 발급할까요?\n"
+                "(설계 변경이라면 새 번호가 아니라 [▲ 리비전 올리기] 를 쓰세요)"):
+            return
+
+        reg = self.registry()
+        number = reg.issue(m.family, m.customer_en, m.customer,
+                           m.rated_current, m.product_name)
+        if not reg.save():
+            messagebox.showwarning(
+                "도번 대장",
+                f"번호는 만들었지만 대장을 저장하지 못했습니다.\n\n{reg.path}\n\n"
+                "출력 폴더에 쓸 수 있는지 확인해 주세요. "
+                "대장이 저장되지 않으면 다음에 같은 번호가 또 나올 수 있습니다.")
         prefix, rest = dn.split(number)
-        nf.set("dwg_no", rest)
+        self.no_fields.set("dwg_no", rest)
         self.meta_fields.set("dwg_prefix", prefix)
+        code = rest.split("-")[1] if "-" in rest else ""
         if not self.rev_var.get().strip():
             self.rev_var.set("A")
         if not self.rev_date_var.get().strip():
             self.rev_date_var.set(_dt.date.today().isoformat())
         self.mark_dirty()
-        self.set_status(f"도번을 만들었습니다: {number}   (고객코드 {dn.customer_code(customer_en)})")
+        self.set_status(f"도번 발급: {number}   (고객코드 {code}, 대장 {reg.count()}건)")
+
+    def show_registry(self) -> None:
+        RegistryWindow(self, self.registry())
+
+    def register_current(self) -> None:
+        """저장·출력할 때 대장에 현재 문서 정보를 갱신해 둔다."""
+        m = self.doc.meta
+        if not m.dwg_no:
+            return
+        reg = self.registry()
+        number = f"{m.dwg_prefix}-{m.dwg_no}" if m.dwg_prefix else m.dwg_no
+        reg.record(number, family=m.family, customer=m.customer, customer_en=m.customer_en,
+                   rated_current=m.rated_current, product=m.product_name,
+                   revision=m.revision, file=self.doc.source_path)
+        if m.customer_en:
+            reg.customer_code(m.customer_en, m.customer)
+        reg.save()
 
     def bump_revision(self) -> None:
         """리비전을 한 단계 올리고 개정 이력에 한 줄 남긴다."""
@@ -992,6 +1050,14 @@ class App(tk.Tk):
         self.settings.pop("font_path", None)
         save_settings(self.settings)
         messagebox.showinfo("폰트", "기본 폰트 자동 선택으로 되돌렸습니다.")
+
+    def show_placeholders(self) -> None:
+        messagebox.showinfo(
+            "자동 입력 항목",
+            "표나 본문에 아래처럼 적어 두면, PDF 를 만들 때 "
+            "① 기본정보에 입력한 값으로 자동으로 바뀝니다.\n"
+            "표준 템플릿의 '기본 사양' 표에는 이미 들어가 있습니다.\n\n"
+            + ph.help_lines())
 
     def show_help(self) -> None:
         HelpWindow(self)

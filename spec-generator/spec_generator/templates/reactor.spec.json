@@ -79,31 +79,31 @@
       "title_en": "",
       "underline": true,
       "page_break_before": false,
-      "note": "※ 값은 고객 승인 사양에 따른다",
+      "note": "※ 고객사·품명·모델·정격전류는 ① 기본정보 값이 자동으로 들어갑니다",
       "blocks": [],
       "rows": [
         {
           "item_ko": "고객사",
           "item_en": "Customer",
-          "spec": "",
+          "spec": "{고객사}",
           "remark": ""
         },
         {
           "item_ko": "품명",
           "item_en": "Product name",
-          "spec": "",
+          "spec": "{제품명}",
           "remark": ""
         },
         {
           "item_ko": "모델 / 형번",
           "item_en": "Model",
-          "spec": "",
+          "spec": "{도번}",
           "remark": ""
         },
         {
           "item_ko": "정격 전류",
           "item_en": "Rated current",
-          "spec": "",
+          "spec": "{정격전류}",
           "remark": "Arms"
         },
         {

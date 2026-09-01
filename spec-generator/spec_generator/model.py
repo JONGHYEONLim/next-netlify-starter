@@ -13,7 +13,13 @@ import uuid
 from dataclasses import dataclass, field, asdict
 from typing import Any, Dict, List
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
+
+# ── 파일 호환 정책 ──────────────────────────────────────────
+#  · 필드는 "추가" 만 한다. 지우거나 이름을 바꿀 때는 반드시 _LEGACY_KEYS 에 남긴다.
+#  · 모르는 키는 조용히 무시한다(옛 버전 프로그램이 새 파일을 열어도 죽지 않게).
+#  · 구조가 바뀌면 _MIGRATIONS 에 변환 함수를 추가하고 SCHEMA_VERSION 을 올린다.
+#  · tests/fixtures 에 각 버전의 실제 파일을 얼려 두고 selftest 로 계속 검증한다.
 
 # 섹션 종류
 KIND_TEXT = "text"                    # 번호 항목 + 본문(일/영 병기)
@@ -147,6 +153,7 @@ class Section:
 @dataclass
 class SpecDoc:
     schema: int = SCHEMA_VERSION
+    app_version: str = ""      # 이 파일을 마지막으로 저장한 프로그램 판
     meta: Meta = field(default_factory=Meta)
     sections: List[Section] = field(default_factory=list)
     source_path: str = ""   # 저장 경로(직렬화 제외). 상대 이미지 경로 해석 기준.
@@ -158,12 +165,16 @@ class SpecDoc:
         return d
 
     def save(self, path: str) -> None:
+        from . import __version__
+        self.schema = SCHEMA_VERSION
+        self.app_version = __version__
         with open(path, "w", encoding="utf-8") as f:
             json.dump(self.to_dict(), f, ensure_ascii=False, indent=2)
         self.source_path = os.path.abspath(path)
 
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> "SpecDoc":
+        d = migrate(dict(d or {}))
         meta_d = dict(d.get("meta") or {})
         for key in ("drawn", "checked", "renewal"):
             meta_d[key] = Person(**_pick(meta_d.get(key) or {}, Person))
@@ -177,7 +188,7 @@ class SpecDoc:
             sd["versions"] = [VersionRow(**_pick(r, VersionRow)) for r in sd.get("versions") or []]
             sd["images"] = [ImageItem(**_pick(i, ImageItem)) for i in sd.get("images") or []]
             sections.append(Section(**_pick(sd, Section)))
-        return cls(schema=int(d.get("schema", SCHEMA_VERSION)), meta=meta, sections=sections)
+        return cls(schema=SCHEMA_VERSION, meta=meta, sections=sections)
 
     @classmethod
     def load(cls, path: str) -> "SpecDoc":
@@ -214,6 +225,44 @@ _LEGACY_KEYS = {
     "ja": "ko", "item_ja": "item_ko", "changed_ja": "changed_ko",
     "caption_ja": "caption_ko", "title_ja": "title_ko", "version": "author",
 }
+
+
+def _migrate_1_to_2(d: Dict[str, Any]) -> Dict[str, Any]:
+    """v1(일영 병기) → v2(한국어). 키 이름 변경은 _LEGACY_KEYS 가 처리하므로
+    여기서는 v1 에만 있던 기본값을 손봐 준다."""
+    meta = d.setdefault("meta", {})
+    meta.setdefault("revision", "A")
+    meta.setdefault("family", "RA")
+    meta.setdefault("serial", "01")
+    if not meta.get("customer") and meta.get("use_name"):
+        pass          # 용도명에 고객사가 섞여 있을 수 있으나 임의로 나누지 않는다
+    return d
+
+
+_MIGRATIONS = {1: _migrate_1_to_2}
+
+
+def migrate(d: Dict[str, Any]) -> Dict[str, Any]:
+    """옛 버전 파일을 현재 구조로 올린다. 미래 버전 파일도 최선을 다해 읽는다."""
+    version = int(d.get("schema") or 1)
+    while version < SCHEMA_VERSION:
+        fn = _MIGRATIONS.get(version)
+        if fn is None:
+            break
+        d = fn(d)
+        version += 1
+    d["schema"] = SCHEMA_VERSION
+    return d
+
+
+def file_is_newer(path: str) -> int:
+    """이 프로그램보다 새 버전에서 만든 파일이면 그 schema 번호를, 아니면 0."""
+    try:
+        with open(path, encoding="utf-8") as f:
+            version = int(json.load(f).get("schema") or 1)
+    except (OSError, ValueError, TypeError):
+        return 0
+    return version if version > SCHEMA_VERSION else 0
 
 
 def _pick(d: Dict[str, Any], klass) -> Dict[str, Any]:

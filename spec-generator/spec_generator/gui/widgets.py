@@ -2,6 +2,7 @@
 """GUI 공용 위젯: 표 편집기, 여러 줄 입력 대화상자."""
 from __future__ import annotations
 
+import os
 import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
@@ -490,3 +491,75 @@ class HelpWindow(tk.Toplevel):
 
         ttk.Button(self, text="닫기", command=self.destroy).pack(pady=(0, 10))
         self.bind("<Escape>", lambda e: self.destroy())
+
+
+class RegistryWindow(tk.Toplevel):
+    """도번 대장 — 지금까지 발행한 번호를 훑어보는 창."""
+
+    def __init__(self, master, registry):
+        super().__init__(master)
+        self.title(f"도번 대장  —  {registry.path}")
+        self.geometry("980x560")
+        self.transient(master)
+        self.registry = registry
+
+        top = ttk.Frame(self)
+        top.pack(fill="x", padx=10, pady=(10, 4))
+        ttk.Label(top, text=f"발행한 도번 {registry.count()}건").pack(side="left")
+        self.q = tk.StringVar()
+        ttk.Label(top, text="검색").pack(side="left", padx=(20, 4))
+        ent = ttk.Entry(top, textvariable=self.q, width=28)
+        ent.pack(side="left")
+        self.q.trace_add("write", lambda *a: self._fill())
+        ttk.Button(top, text="폴더 열기", command=self._open_folder).pack(side="right")
+
+        cols = [("number", "도번", 190), ("customer", "고객사", 130),
+                ("product", "제품명", 200), ("rated_current", "정격전류", 90),
+                ("revision", "리비전", 60), ("created", "최초 발행", 100),
+                ("updated", "최종 수정", 100)]
+        wrap = ttk.Frame(self)
+        wrap.pack(fill="both", expand=True, padx=10, pady=4)
+        self.tree = ttk.Treeview(wrap, columns=[c[0] for c in cols], show="headings")
+        for key, label, width in cols:
+            self.tree.heading(key, text=label)
+            self.tree.column(key, width=width, anchor="w")
+        vs = ttk.Scrollbar(wrap, orient="vertical", command=self.tree.yview)
+        self.tree.configure(yscrollcommand=vs.set)
+        self.tree.pack(side="left", fill="both", expand=True)
+        vs.pack(side="right", fill="y")
+
+        codes = ", ".join(f"{v.get('name_ko') or k}={v['code']}"
+                          for k, v in sorted(registry.data["customers"].items(),
+                                             key=lambda x: x[1]["code"]))
+        ttk.Label(self, text="고객코드:  " + (codes or "(아직 없음)"),
+                  foreground="#555", wraplength=940, justify="left").pack(
+            anchor="w", padx=12, pady=(0, 4))
+        ttk.Button(self, text="닫기", command=self.destroy).pack(pady=(0, 10))
+        self.bind("<Escape>", lambda e: self.destroy())
+        self._fill()
+
+    def _fill(self) -> None:
+        self.tree.delete(*self.tree.get_children())
+        needle = self.q.get().strip().lower()
+        for row in self.registry.rows():
+            blob = " ".join(str(v) for v in row.values()).lower()
+            if needle and needle not in blob:
+                continue
+            self.tree.insert("", "end", values=[
+                row.get("number", ""), row.get("customer", ""), row.get("product", ""),
+                row.get("rated_current", ""), row.get("revision", ""),
+                row.get("created", ""), row.get("updated", "")])
+
+    def _open_folder(self) -> None:
+        import subprocess
+        import sys
+        path = self.registry.root
+        try:
+            if sys.platform.startswith("win"):
+                os.startfile(path)          # type: ignore[attr-defined]
+            elif sys.platform == "darwin":
+                subprocess.Popen(["open", path])
+            else:
+                subprocess.Popen(["xdg-open", path])
+        except Exception:
+            pass

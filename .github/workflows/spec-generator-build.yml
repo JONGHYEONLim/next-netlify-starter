@@ -26,6 +26,9 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
 
+      - name: 호환성 자체 점검 (예전 문서가 계속 열리는지)
+        run: python -m spec_generator selftest
+
       - name: Smoke test (render the sample without a GUI)
         run: python -m spec_generator build "samples/예제_리액터_475A.spec.json" -o build-check.pdf
 

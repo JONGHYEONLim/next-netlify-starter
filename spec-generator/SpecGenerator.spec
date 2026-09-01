@@ -5,6 +5,7 @@ import os
 datas = [
     ("spec_generator/templates/*.spec.json", "spec_generator/templates"),
     ("assets", "assets"),
+    ("tests/fixtures", "tests/fixtures"),   # selftest 용 고정 문서
 ]
 
 hiddenimports = [

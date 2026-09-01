@@ -1,0 +1,103 @@
+{
+  "schema": 1,
+  "meta": {
+    "product_name": "UPS7500WX-T4/UPM",
+    "use_name": "AC Reactor(REC)",
+    "doc_kind": "注文仕様書",
+    "dwg_prefix": "HG",
+    "dwg_no": "564145",
+    "old_dwg_no": "HG556283",
+    "dwg_code": "PC",
+    "company": "Fuji Electric Co.,Ltd.",
+    "drawn": {
+      "date": "2022-09-06",
+      "name": "長光"
+    },
+    "checked": {
+      "date": "2022-09-06",
+      "name": "木水"
+    },
+    "renewal": {
+      "date": "",
+      "name": ""
+    },
+    "approved": "濱田",
+    "footer_code": "A4V-21_DOC _03",
+    "page_start": 1,
+    "page_total": 0,
+    "revision_rows": 5
+  },
+  "sections": [
+    {
+      "id": "a1",
+      "kind": "text",
+      "numbered": true,
+      "title_ja": "適用範囲",
+      "title_en": "Scope",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "",
+          "ja": "本仕様書は…",
+          "en": "This specification…"
+        }
+      ]
+    },
+    {
+      "id": "a2",
+      "kind": "spec_table",
+      "numbered": true,
+      "title_ja": "仕様",
+      "title_en": "Specification",
+      "note": "※テスト",
+      "page_break_before": true,
+      "rows": [
+        {
+          "item_ja": "定格電流",
+          "item_en": "Rated current",
+          "spec": "475 Arms",
+          "remark": "50/60 Hz"
+        },
+        {
+          "item_ja": "各相インダクタンス",
+          "item_en": "Inductance",
+          "spec": "90 μH",
+          "remark": "±10%"
+        }
+      ]
+    },
+    {
+      "id": "a3",
+      "kind": "image",
+      "numbered": false,
+      "bullet": "○",
+      "title_ja": "外形図",
+      "title_en": " Outline drawing",
+      "images": [
+        {
+          "path": "figures/외형도.png",
+          "width_mm": 150,
+          "caption_ja": "P1",
+          "caption_en": ""
+        }
+      ]
+    },
+    {
+      "id": "a4",
+      "kind": "version_table",
+      "numbered": true,
+      "title_ja": "版数管理表",
+      "title_en": "Version List",
+      "part_no": "P1",
+      "versions": [
+        {
+          "rev": "New",
+          "version": "00A",
+          "date": "2022-09-06",
+          "changed_ja": "新規発行",
+          "changed_en": "Newly-issued."
+        }
+      ]
+    }
+  ]
+}

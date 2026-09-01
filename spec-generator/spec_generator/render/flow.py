@@ -44,7 +44,18 @@ def make_styles():
     }
 
 
+# 렌더링 한 번 동안 쓰이는 치환표. build_pdf 가 채워 넣는다.
+_CTX: dict = {}
+
+
+def set_context(ctx: dict) -> None:
+    global _CTX
+    _CTX = ctx or {}
+
+
 def _esc(text: str) -> str:
+    from ..placeholders import apply as _apply
+    text = _apply(text or "", _CTX)
     return (text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
 
 

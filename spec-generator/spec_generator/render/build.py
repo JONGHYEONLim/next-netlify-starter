@@ -11,6 +11,7 @@ from reportlab.platypus import BaseDocTemplate, Frame, PageBreak, PageTemplate
 
 from ..fonts import register_fonts
 from ..model import SpecDoc
+from .. import placeholders
 from . import flow, frame
 
 
@@ -46,6 +47,7 @@ def build_pdf(doc: SpecDoc, out_path: str, font_path: Optional[str] = None) -> s
     """
     register_fonts(font_path)
     styles = flow.make_styles()
+    flow.set_context(placeholders.build_context(doc.meta))
 
     total = {"n": doc.meta.page_total or 0}
     if not doc.meta.page_total:
