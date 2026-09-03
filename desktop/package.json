@@ -1,7 +1,7 @@
 {
   "name": "braumm-office",
-  "version": "1.9.4",
-  "description": "BRAUMM 사무 도구 — 견적서 / 거래명세서 / 성적서 / 제품 / 매출",
+  "version": "1.9.5",
+  "description": "BRAUMM 사무 도구 — 견적서 / 주문서 / 거래명세서 / 성적서 / 제품 / 매출 / 발주서(매입)",
   "author": "BRAUMM",
   "license": "UNLICENSED",
   "private": true,
