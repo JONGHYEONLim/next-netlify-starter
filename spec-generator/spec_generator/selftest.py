@@ -182,6 +182,57 @@ def run() -> int:
         updater.apply(doc, updater.plan(doc, templates.load_template("reactor")).changes)
         build_pdf(doc, os.path.join(out, "updated.pdf"))
 
+    @check("표지가 붙고, 쪽 번호에서는 빠진다")
+    def _(out=out):
+        doc = SpecDoc.load(files[-1])
+        doc.meta.cover = False
+        a = build_pdf(doc, os.path.join(out, "nocover.pdf"))
+        n_without = _pages(a)
+        doc.meta.cover = True
+        b = build_pdf(doc, os.path.join(out, "cover.pdf"))
+        n_with = _pages(b)
+        if n_without < 0:
+            return                                  # 페이지를 셀 수 없는 환경
+        assert n_with == n_without + 1, f"표지가 한 장 늘지 않았습니다 ({n_without} → {n_with})"
+        try:
+            import pymupdf
+        except ImportError:
+            return
+        with pymupdf.open(b) as d:
+            first = d[1].get_text()
+            last = d[d.page_count - 1].get_text()
+        assert "PAGE" in first, "내용 첫 장에 표제란이 없습니다"
+        total = str(n_without)
+        assert total in last, f"마지막 장의 전체 쪽수가 {total} 가 아닙니다"
+
+    @check("도면 크기 옵션(자동 최대 · 90도 회전)이 동작한다")
+    def _(out=out):
+        from .render.flow import FitImage
+        from reportlab.lib.units import mm as MM
+        doc = SpecDoc.load(files[-1])
+        path = None
+        for s in doc.sections:
+            for item in s.images:
+                from .importers import resolve_image
+                path = resolve_image(item.path, doc.base_dir())
+                if path:
+                    break
+            if path:
+                break
+        assert path, "예제에 도면이 없습니다"
+
+        avail_w, avail_h = 170 * MM, 230 * MM
+        plain = FitImage(path, 0, "CENTER")
+        w1, h1 = plain.wrap(avail_w, avail_h)
+        turned = FitImage(path, 0, "CENTER", rotate=90)
+        w2, h2 = turned.wrap(avail_w, avail_h)
+        fixed = FitImage(path, 80, "CENTER")
+        w3, _ = fixed.wrap(avail_w, avail_h)
+
+        assert w1 <= avail_w + 1 and h1 <= avail_h + 1, "자동 크기가 지면을 넘습니다"
+        assert abs(w3 - 80 * MM) < 1, "폭을 지정했는데 그 폭이 아닙니다"
+        assert w2 * h2 > w1 * h1, "90도 회전이 더 크게 넣지 못했습니다"
+
     @check("바깥으로 나가는 코드가 없다 (로컬 전용)")
     def _():
         import re

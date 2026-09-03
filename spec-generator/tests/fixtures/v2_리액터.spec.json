@@ -41,7 +41,9 @@
     "confidential_note": "본 문서 및 여기에 포함된 정보는 Braumm 의 자산입니다. Braumm 의 서면 동의 없이 복제, 복사, 대여하거나 제3자에게 어떠한 방법으로도 공개할 수 없으며, 승인된 생산 목적 외에는 사용할 수 없습니다.",
     "page_start": 1,
     "page_total": 0,
-    "revision_rows": 5
+    "revision_rows": 5,
+    "cover": true,
+    "cover_subtitle": "PRODUCTION SPECIFICATION"
   },
   "sections": [
     {
@@ -216,10 +218,11 @@
       "images": [
         {
           "path": "figures/외형도.png",
-          "width_mm": 165.0,
+          "width_mm": 0,
           "caption_ko": "예시 도면",
           "caption_en": "",
-          "align": "CENTER"
+          "align": "CENTER",
+          "rotate": 0
         }
       ],
       "part_no": "",
@@ -236,7 +239,7 @@
       "title_en": "",
       "underline": true,
       "page_break_before": true,
-      "note": "",
+      "note": "※ 보빈 가공도 등 필요한 도면을 [첨부 도면] 에 넣으세요",
       "blocks": [],
       "rows": [
         {
@@ -301,7 +304,8 @@
           "width_mm": 155.0,
           "caption_ko": "예시 도면",
           "caption_en": "",
-          "align": "CENTER"
+          "align": "CENTER",
+          "rotate": 0
         }
       ],
       "part_no": "",

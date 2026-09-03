@@ -56,9 +56,11 @@ def _y(v: float) -> float:
 class FrameDrawer:
     """SimpleDocTemplate 의 onPage 콜백으로 쓰인다."""
 
-    def __init__(self, meta: Meta, total_pages_getter=None, base_dir: str = ""):
+    def __init__(self, meta: Meta, total_pages_getter=None, base_dir: str = "",
+                 page_offset: int = 0):
         self.meta = meta
         self._total = total_pages_getter
+        self.page_offset = page_offset      # 표지처럼 번호를 매기지 않는 앞 장 수
         self.base_dir = base_dir or os.getcwd()
         self._logo = _find_logo(meta.logo_path, self.base_dir)
 
@@ -233,7 +235,7 @@ class FrameDrawer:
         _vtext_mid(c, (TB_PAGE_X + TB_PAGE_LBL_X) / 2, (TB_BOT + TB_INDEX_Y) / 2,
                    "REV.", FONT_REGULAR, 5.4)
 
-        page_no = self.meta.page_start + page_index - 1
+        page_no = self.meta.page_start + page_index - 1 - self.page_offset
         total = self.meta.page_total or (self._total() if self._total else 0)
         _ctext(c, (TB_PAGE_LBL_X + OUT_R) / 2, (TB_PAGE_Y1 + TB_PAGE_Y2) / 2 - 1.4,
                str(page_no), FONT_REGULAR, 9.0)

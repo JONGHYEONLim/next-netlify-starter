@@ -7,11 +7,13 @@ import os
 from typing import Optional
 
 from reportlab.lib.pagesizes import A4
-from reportlab.platypus import BaseDocTemplate, Frame, PageBreak, PageTemplate
+from reportlab.platypus import (BaseDocTemplate, Frame, NextPageTemplate,
+                                PageBreak, PageTemplate, Spacer)
 
 from ..fonts import register_fonts
 from ..model import SpecDoc
 from .. import placeholders
+from . import cover as cover_mod
 from . import flow, frame
 
 
@@ -24,15 +26,24 @@ class _Doc(BaseDocTemplate):
         x, y, w, h = frame.content_frame_rect()
         f = Frame(x, y, w, h, leftPadding=0, rightPadding=0,
                   topPadding=0, bottomPadding=0, id="content")
-        self.addPageTemplates([PageTemplate(
+        offset = 1 if meta.cover else 0
+        pages = [PageTemplate(
             id="std", frames=[f],
-            onPage=frame.FrameDrawer(meta, total_getter, base_dir))])
+            onPage=frame.FrameDrawer(meta, total_getter, base_dir, page_offset=offset))]
+        if meta.cover:
+            # 표지는 도면 양식 없이 통짜 한 장. 쪽 번호에서도 빼 준다.
+            blank = Frame(0, 0, A4[0], A4[1], id="cover", showBoundary=0)
+            pages.insert(0, PageTemplate(id="cover", frames=[blank],
+                                         onPage=cover_mod.CoverDrawer(meta, base_dir)))
+        self.addPageTemplates(pages)
 
 
 def _story(doc: SpecDoc, styles):
     numbers = doc.assign_numbers()
     base_dir = doc.base_dir()
     story = []
+    if doc.meta.cover:
+        story += [Spacer(1, 1), NextPageTemplate("std"), PageBreak()]
     for i, s in enumerate(doc.sections):
         if s.page_break_before and story:
             story.append(PageBreak())
@@ -53,7 +64,8 @@ def build_pdf(doc: SpecDoc, out_path: str, font_path: Optional[str] = None) -> s
     if not doc.meta.page_total:
         probe = _Doc(io.BytesIO(), doc.meta, lambda: 0, doc.base_dir())
         probe.build(_story(doc, styles))
-        total["n"] = probe.page + max(0, doc.meta.page_start - 1)
+        content_pages = probe.page - (1 if doc.meta.cover else 0)
+        total["n"] = content_pages + max(0, doc.meta.page_start - 1)
 
     out_dir = os.path.dirname(os.path.abspath(out_path))
     if out_dir:

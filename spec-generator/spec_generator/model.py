@@ -82,6 +82,8 @@ class Meta:
         "어떠한 방법으로도 공개할 수 없으며, 승인된 생산 목적 외에는 "
         "사용할 수 없습니다."
     )
+    cover: bool = True            # 첫 장에 표지를 넣을지
+    cover_subtitle: str = "PRODUCTION SPECIFICATION"
     page_start: int = 1           # 첫 페이지에 찍히는 PAGE 번호
     page_total: int = 0           # 0 이면 실제 생성 페이지 수로 자동 계산
     revision_rows: int = 5        # 좌측 REVISIONS 빈 칸 수
@@ -117,7 +119,8 @@ class VersionRow:
 @dataclass
 class ImageItem:
     path: str = ""
-    width_mm: float = 150.0
+    width_mm: float = 0.0      # 0 = 지면에 맞춰 최대 크기
+    rotate: int = 0            # 0 또는 90 — 가로로 긴 도면을 세로 지면에 크게 넣을 때
     caption_ko: str = ""
     caption_en: str = ""
     align: str = "CENTER"   # LEFT / CENTER / RIGHT

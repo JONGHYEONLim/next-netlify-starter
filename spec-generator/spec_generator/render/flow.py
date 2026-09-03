@@ -9,8 +9,10 @@ from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
+from reportlab.lib.utils import ImageReader
 from reportlab.platypus import (Image, KeepTogether, Paragraph, Spacer, Table,
                                TableStyle)
+from reportlab.platypus.flowables import Flowable
 from reportlab.platypus.flowables import HRFlowable
 
 from ..fonts import FONT_BOLD, FONT_REGULAR
@@ -202,6 +204,57 @@ def _version_table(section: Section, styles) -> List:
     return out
 
 
+class FitImage(Flowable):
+    """남은 지면을 최대한 채우는 그림.
+
+    폭(mm)을 0 으로 두면 **가로 폭과 남은 세로 높이 양쪽에 맞춰** 최대한 크게 넣는다.
+    도면은 클수록 현장에서 보기 좋으므로 이 방식을 기본으로 삼는다.
+    """
+
+    def __init__(self, path: str, width_mm: float = 0.0, align: str = "CENTER",
+                 reserve_mm: float = 0.0, rotate: int = 0):
+        super().__init__()
+        self.path = path
+        self.width_mm = float(width_mm or 0.0)
+        self.align = (align or "CENTER").upper()
+        self.reserve_mm = reserve_mm      # 캡션 등 아래에 남겨 둘 높이
+        self.rotate_deg = 90 if int(rotate or 0) == 90 else 0
+        reader = ImageReader(path)
+        iw, ih = reader.getSize()
+        self._reader = reader
+        ratio = (ih / float(iw)) if iw else 1.0
+        self._ratio = (1.0 / ratio if ratio else 1.0) if self.rotate_deg else ratio
+        self._w = self._h = 0.0
+
+    def wrap(self, availWidth, availHeight):
+        max_w = min(availWidth, CONTENT_W_MM * mm)
+        if self.width_mm > 0:
+            max_w = min(max_w, self.width_mm * mm)
+        w = max_w
+        h = w * self._ratio
+        room = availHeight - self.reserve_mm * mm
+        if room > 20 * mm and h > room:       # 세로가 모자라면 높이에 맞춘다
+            h = room
+            w = h / self._ratio if self._ratio else max_w
+        self._w, self._h = w, h
+        return w, h
+
+    def draw(self):
+        if self.rotate_deg:
+            self.canv.saveState()
+            self.canv.translate(self._w, 0)
+            self.canv.rotate(90)
+            self.canv.drawImage(self._reader, 0, 0, self._h, self._w,
+                                mask="auto", preserveAspectRatio=True, anchor="c")
+            self.canv.restoreState()
+        else:
+            self.canv.drawImage(self._reader, 0, 0, self._w, self._h,
+                                mask="auto", preserveAspectRatio=True, anchor="c")
+
+    def identity(self, maxLen=None):
+        return f"FitImage({os.path.basename(self.path)})"
+
+
 def _images(section: Section, styles, base_dir: str) -> List:
     from ..importers import resolve_image
     out: List = []
@@ -210,17 +263,15 @@ def _images(section: Section, styles, base_dir: str) -> List:
         if not path or not os.path.exists(path):
             out.append(Paragraph(_esc(f"[이미지를 찾을 수 없습니다: {item.path}]"), styles["caption"]))
             continue
+        cap = "<br/>".join(_esc(x) for x in (item.caption_ko, item.caption_en) if x)
         try:
-            img = Image(path)
-            ratio = img.imageHeight / float(img.imageWidth or 1)
-            w = min(float(item.width_mm or 150.0), CONTENT_W_MM) * mm
-            img.drawWidth, img.drawHeight = w, w * ratio
+            img = FitImage(path, item.width_mm, item.align,
+                           reserve_mm=10.0 if cap else 4.0, rotate=item.rotate)
             img.hAlign = (item.align or "CENTER").upper()
             out.append(img)
         except Exception as exc:  # 손상된 이미지도 문서 생성을 막지 않는다
             out.append(Paragraph(_esc(f"[이미지 오류: {item.path} — {exc}]"), styles["caption"]))
             continue
-        cap = "<br/>".join(_esc(x) for x in (item.caption_ko, item.caption_en) if x)
         if cap:
             out.append(Spacer(1, 1.5 * mm))
             out.append(Paragraph(cap, styles["caption"]))

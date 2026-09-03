@@ -210,7 +210,22 @@ class App(tk.Tk):
         mf.add("label_use", "좌측 라벨 ②", 16)
         mf.add("label_kind", "좌측 라벨 ③", 16)
 
-        logo = ttk.LabelFrame(f, text="회사 로고 (표제란 하단)")
+        cover = ttk.LabelFrame(f, text="표지 (첫 장)")
+        cover.pack(fill="x", padx=10, pady=6)
+        crow = ttk.Frame(cover)
+        crow.pack(fill="x", padx=6, pady=6)
+        self.cover_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(crow, text="첫 장에 표지 넣기", variable=self.cover_var).pack(side="left")
+        ttk.Label(crow, text="  영문 부제").pack(side="left", padx=(16, 4))
+        self.cover_sub_var = tk.StringVar()
+        ttk.Entry(crow, textvariable=self.cover_sub_var, width=34).pack(side="left")
+        ttk.Label(cover, foreground="#666",
+                  text="표지에는 로고, 제품명, 고객사, 도번, 리비전, 승인란이 들어갑니다. "
+                       "표지는 쪽 번호에서 제외됩니다.").pack(anchor="w", padx=12, pady=(0, 6))
+        self.cover_var.trace_add("write", lambda *a: self.mark_dirty())
+        self.cover_sub_var.trace_add("write", lambda *a: self.mark_dirty())
+
+        logo = ttk.LabelFrame(f, text="회사 로고 (표지 · 표제란)")
         logo.pack(fill="x", padx=10, pady=6)
         row = ttk.Frame(logo)
         row.pack(fill="x", padx=6, pady=6)
@@ -355,6 +370,8 @@ class App(tk.Tk):
             self.meta_fields.set(key, getattr(m, key))
         self.logo_var.set(m.logo_path)
         self.logo_h_var.set(str(m.logo_height_mm))
+        self.cover_var.set(bool(m.cover))
+        self.cover_sub_var.set(m.cover_subtitle)
         for key in ("customer", "customer_en", "rated_current", "serial", "dwg_no"):
             self.no_fields.set(key, getattr(m, key))
         self.no_fields.set("family", next(
@@ -386,6 +403,8 @@ class App(tk.Tk):
             setattr(m, key, self.meta_fields.get(key))
         m.logo_path = self.logo_var.get()
         m.logo_height_mm = _float(self.logo_h_var.get(), 8.5)
+        m.cover = bool(self.cover_var.get())
+        m.cover_subtitle = self.cover_sub_var.get()
         for key in ("customer", "customer_en", "rated_current", "serial", "dwg_no"):
             setattr(m, key, self.no_fields.get(key))
         m.family = dn.family_from_choice(self.no_fields.get("family"))
@@ -463,6 +482,7 @@ class App(tk.Tk):
         else:
             self._pane_text(section)
         self._current = section
+        self._refresh_tab_counts()
 
     # ── 항목 종류별 편집 화면 ────────────────────────────────
     # 표 / 도면 / 설명글을 탭으로 나눠 각각 넉넉한 높이를 갖게 한다.
@@ -473,15 +493,33 @@ class App(tk.Tk):
         nb = ttk.Notebook(self.body_area)
         nb.pack(fill="both", expand=True, padx=4, pady=4)
         self.body_nb = nb
+        self._tab_counts = {}       # {탭 index: (기본 라벨, 개수를 세는 함수)}
         return nb
 
-    def _tab(self, nb: ttk.Notebook, label: str, hint: str = "") -> ttk.Frame:
+    def _tab(self, nb: ttk.Notebook, label: str, hint: str = "", counter=None) -> ttk.Frame:
         page = ttk.Frame(nb)
         nb.add(page, text=f"  {label}  ")
+        if counter is not None:
+            self._tab_counts[len(nb.tabs()) - 1] = (label, counter)
         if hint:
             ttk.Label(page, text=hint, foreground="#555", justify="left").pack(
                 anchor="w", padx=8, pady=(6, 0))
         return page
+
+    def _refresh_tab_counts(self) -> None:
+        """탭 이름에 담긴 개수를 갱신 — 도면이 붙어 있는지 한눈에 보이도록."""
+        nb = getattr(self, "body_nb", None)
+        if nb is None or not getattr(self, "_tab_counts", None):
+            return
+        try:
+            tabs = nb.tabs()
+        except tk.TclError:
+            return
+        for idx, (label, counter) in self._tab_counts.items():
+            if idx >= len(tabs):
+                continue
+            n = counter()
+            nb.tab(tabs[idx], text=f"  {label} ({n})  " if n else f"  {label}  ")
 
     def _blocks_grid(self, page, section: Section, main: bool) -> GridEditor:
         g = GridEditor(page, columns=[("indent", "들여쓰기", 70), ("marker", "머리기호", 80),
@@ -495,29 +533,32 @@ class App(tk.Tk):
         return g
 
     def _image_grid(self, page, section: Section, main: bool) -> GridEditor:
-        g = GridEditor(page, columns=[("path", "파일", 380), ("width_mm", "폭(mm)", 70),
-                                      ("align", "정렬", 80),
-                                      ("caption_ko", "도면 설명", 260),
-                                      ("caption_en", "설명(영문·선택)", 180)],
+        g = GridEditor(page, columns=[("path", "파일", 330), ("width_mm", "폭(mm)", 80),
+                                      ("rotate", "회전", 60), ("align", "정렬", 70),
+                                      ("caption_ko", "도면 설명", 240),
+                                      ("caption_en", "설명(영문·선택)", 160)],
                        multiline=("caption_ko", "caption_en"), on_change=self._changed(),
                        extra_buttons=(("＋ 도면 파일 추가...", self._add_image_file),),
                        tree_height=10 if main else 5,
                        panel_text_height=2)
         g.pack(fill="both", expand=True, padx=8, pady=8)
-        g.set_rows([{"path": i.path, "width_mm": str(i.width_mm), "align": i.align,
-                     "caption_ko": i.caption_ko, "caption_en": i.caption_en}
+        g.set_rows([{"path": i.path, "width_mm": str(i.width_mm), "rotate": str(i.rotate),
+                     "align": i.align, "caption_ko": i.caption_ko,
+                     "caption_en": i.caption_en}
                     for i in section.images])
         return g
 
-    IMG_HINT = ("[＋ 도면 파일 추가...] 로 PNG / JPG / PDF 를 고르세요. "
-                "PDF 는 첫 페이지가 그림으로 들어갑니다. 폭은 mm, 본문 최대 폭 170mm.")
+    IMG_HINT = ("[＋ 도면 파일 추가...] 로 PNG / JPG / PDF 를 고르세요 (PDF 는 첫 페이지 사용).\n"
+                "폭(mm) : 0 = 지면에 맞춰 최대 크기 (권장).  숫자를 넣으면 그 폭으로 고정 (최대 170).\n"
+                "회전 : 가로로 긴 도면은 90 을 넣으면 세로 지면에 두 배 가까이 크게 들어갑니다.")
     BLK_HINT = ("한 줄에 한 문장씩 적습니다. 영문 칸은 비워 두어도 됩니다. "
                 "들여쓰기 0~3 단계, 머리기호는 (1) ① · 등을 그대로 넣으세요.")
 
     def _pane_text(self, section: Section) -> None:
         nb = self._notebook()
         self.blocks_editor = self._blocks_grid(self._tab(nb, "본문", self.BLK_HINT), section, True)
-        self.image_editor = self._image_grid(self._tab(nb, "첨부 도면", self.IMG_HINT), section, False)
+        self.image_editor = self._image_grid(self._tab(nb, "첨부 도면", self.IMG_HINT,
+                                                counter=lambda: len(self.image_editor.get_rows()) if self.image_editor else 0), section, False)
 
     def _pane_spec(self, section: Section) -> None:
         nb = self._notebook()
@@ -533,13 +574,15 @@ class App(tk.Tk):
         g.set_rows([{"item_ko": r.item_ko, "item_en": r.item_en,
                      "spec": r.spec, "remark": r.remark} for r in section.rows])
         self.rows_editor = g
-        self.image_editor = self._image_grid(self._tab(nb, "첨부 도면", self.IMG_HINT), section, False)
+        self.image_editor = self._image_grid(self._tab(nb, "첨부 도면", self.IMG_HINT,
+                                                counter=lambda: len(self.image_editor.get_rows()) if self.image_editor else 0), section, False)
         self.blocks_editor = self._blocks_grid(
             self._tab(nb, "표 위 설명글", self.BLK_HINT), section, False)
 
     def _pane_image(self, section: Section) -> None:
         nb = self._notebook()
-        self.image_editor = self._image_grid(self._tab(nb, "도면", self.IMG_HINT), section, True)
+        self.image_editor = self._image_grid(self._tab(nb, "도면", self.IMG_HINT,
+                                               counter=lambda: len(self.image_editor.get_rows()) if self.image_editor else 0), section, True)
         self.blocks_editor = self._blocks_grid(
             self._tab(nb, "도면 위 설명글", self.BLK_HINT), section, False)
 
@@ -586,7 +629,7 @@ class App(tk.Tk):
                 rel = copy_into_project(path, self.doc.base_dir()) if self.doc.source_path else path
             except OSError:
                 rel = path
-            rows.append({"path": rel, "width_mm": "150", "align": "CENTER",
+            rows.append({"path": rel, "width_mm": "0", "rotate": "0", "align": "CENTER",
                          "caption_ko": "", "caption_en": ""})
         g.set_rows(rows)
         self._commit_current(mark=True)
@@ -610,7 +653,8 @@ class App(tk.Tk):
         if self.blocks_editor is not None:
             s.blocks = _blocks_from(self.blocks_editor.get_rows())
         if self.image_editor is not None:
-            s.images = [ImageItem(r.get("path", ""), _float(r.get("width_mm"), 150.0),
+            s.images = [ImageItem(r.get("path", ""), _float(r.get("width_mm"), 0.0),
+                                  90 if str(r.get("rotate", "")).strip() == "90" else 0,
                                   r.get("caption_ko", ""), r.get("caption_en", ""),
                                   (r.get("align") or "CENTER").upper())
                         for r in self.image_editor.get_rows() if r.get("path")]
@@ -628,6 +672,7 @@ class App(tk.Tk):
         if mark:
             self.mark_dirty()
             self._refresh_list_labels()
+            self._refresh_tab_counts()
 
     def _refresh_list_labels(self) -> None:
         sel = self.sec_list.curselection()
