@@ -107,6 +107,32 @@ def find_default_logo(base_dir: str) -> Optional[str]:
     return None
 
 
+def find_stamp(name: str, explicit: str, base_dir: str) -> Optional[str]:
+    """도장·사인 이미지를 찾는다.
+
+    1) 문서에 지정한 경로
+    2) 문서 폴더의 stamps/{이름}.png
+    3) 프로그램 폴더의 assets/stamps/{이름}.png   ← 한 번 넣어 두면 계속 쓰인다
+    """
+    if explicit:
+        found = resolve_image(explicit, base_dir)
+        if found:
+            return found
+    name = (name or "").strip()
+    if not name:
+        return None
+    from .fonts import bundled_font_dir
+    assets = os.path.join(os.path.dirname(bundled_font_dir()), "stamps")
+    for d in (os.path.join(base_dir, "stamps"), assets):
+        if not os.path.isdir(d):
+            continue
+        for ext in (".png", ".jpg", ".jpeg", ".gif", ".bmp"):
+            cand = os.path.join(d, name + ext)
+            if os.path.exists(cand):
+                return cand
+    return None
+
+
 def parse_pasted_table(text: str, ncols: int) -> List[List[str]]:
     """엑셀/시트에서 복사한 내용(탭 구분)을 표 행 리스트로 바꾼다.
 

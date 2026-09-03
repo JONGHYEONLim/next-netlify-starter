@@ -155,8 +155,15 @@ class FrameDrawer:
             _ctext(c, (TB_COL[1] + TB_COL[2]) / 2, cy, d, FONT_REGULAR, 7.0)
             _ctext(c, (TB_COL[2] + TB_COL[3]) / 2, cy, n, FONT_REGULAR, 7.4)
         _ctext(c, (TB_COL[3] + TB_COL[4]) / 2, top - TB_ROW_H + 1.5, "APPROVED", FONT_REGULAR, 6.6)
-        _ctext(c, (TB_COL[3] + TB_COL[4]) / 2,
-               (bot_rows + top - TB_ROW_H) / 2 - 1.4, m.approved, FONT_REGULAR, 9.0)
+        # 승인란: 도장이 있으면 도장을, 없으면 이름을
+        from .cover import draw_stamp
+        acx = (TB_COL[3] + TB_COL[4]) / 2
+        acy = (bot_rows + top - TB_ROW_H) / 2
+        stamped = draw_stamp(c, m.approved, self.base_dir, cx=acx, cy=acy + 1.2,
+                             max_w=(TB_COL[4] - TB_COL[3]) - 3.0, max_h=10.5)
+        if m.approved.name:
+            _ctext(c, acx, bot_rows + 0.8 if stamped else acy - 1.4,
+                   m.approved.name, FONT_REGULAR, 5.6 if stamped else 9.0)
         self._company_cell(c, TB_COL[0], TB_COL[-1], TB_BOT, TB_COMPANY_TOP)
 
     def _company_cell(self, c: Canvas, x0: float, x1: float, y0: float, y1: float) -> None:

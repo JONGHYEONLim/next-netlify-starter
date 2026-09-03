@@ -5,3 +5,9 @@ __pycache__/
 *.pyc
 *.pdf
 !samples/**/*.pdf
+
+# 도장·사인 이미지는 서명과 같으므로 저장소에 올리지 않는다
+# (안내 파일만 남기고, 이미지 파일은 전부 제외)
+assets/stamps/*
+!assets/stamps/README.txt
+/stamps/

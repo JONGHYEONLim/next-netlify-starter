@@ -26,8 +26,8 @@ MID_RULE = 176.0
 INFO_TOP = 164.0              # 정보표 상단
 INFO_ROW = 13.0
 INFO_LABEL_W = 42.0
-APPROVAL_TOP = 74.0           # 승인란 상단
-APPROVAL_H = 30.0
+APPROVAL_TOP = 77.0           # 승인란 상단
+APPROVAL_H = 35.0
 BOTTOM_RULE = 34.0
 
 INK = colors.Color(0.10, 0.10, 0.12)
@@ -164,9 +164,7 @@ class CoverDrawer:
 
     def _approval(self, c: Canvas) -> None:
         m = self.meta
-        cells = [("작 성", m.drawn.name, m.drawn.date),
-                 ("검 토", m.checked.name, m.checked.date),
-                 ("승 인", m.approved, "")]
+        cells = [("작 성", m.drawn), ("검 토", m.checked), ("승 인", m.approved)]
         total_w = R - L
         w = total_w / len(cells)
         top, bot = APPROVAL_TOP, APPROVAL_TOP - APPROVAL_H
@@ -181,21 +179,31 @@ class CoverDrawer:
         c.rect(_x(L), _y(bot), _x(total_w), _y(APPROVAL_H), stroke=1, fill=0)
         c.line(_x(L), _y(top - head_h), _x(R), _y(top - head_h))
 
-        for i, (label, name, date) in enumerate(cells):
+        for i, (label, person) in enumerate(cells):
             x0 = L + w * i
             if i:
                 c.line(_x(x0), _y(bot), _x(x0), _y(top))
             c.setFillColor(SOFT)
             c.setFont(FONT_REGULAR, 8.4)
             c.drawCentredString(_x(x0 + w / 2), _y(top - head_h + 2.6), label)
-            if name:
+
+            stamp = draw_stamp(c, person, self.base_dir,
+                               cx=x0 + w / 2, cy=bot + 16.0,
+                               max_w=w - 10.0, max_h=15.5)
+            if person.name:
                 c.setFillColor(INK)
-                c.setFont(FONT_REGULAR, 12)
-                c.drawCentredString(_x(x0 + w / 2), _y(bot + 9.5), name)
-            if date:
+                if stamp:
+                    # 도장을 찍었으면 이름은 그 아래 작게
+                    c.setFont(FONT_REGULAR, 8.4)
+                    c.drawCentredString(_x(x0 + w / 2), _y(bot + 5.2), person.name)
+                else:
+                    c.setFont(FONT_REGULAR, 12.5)
+                    c.drawCentredString(_x(x0 + w / 2), _y(bot + 12.0), person.name)
+            if person.date:
                 c.setFillColor(SOFT)
-                c.setFont(FONT_REGULAR, 7.6)
-                c.drawCentredString(_x(x0 + w / 2), _y(bot + 3.2), date)
+                c.setFont(FONT_REGULAR, 7.0 if stamp else 7.6)
+                c.drawCentredString(_x(x0 + w / 2), _y(bot + 1.6 if stamp else bot + 3.6),
+                                    person.date)
 
     def _footer(self, c: Canvas) -> None:
         m = self.meta
@@ -214,6 +222,32 @@ class CoverDrawer:
 
 
 # ── 헬퍼 ────────────────────────────────────────────────────
+def draw_stamp(c: Canvas, person, base_dir: str, cx: float, cy: float,
+               max_w: float, max_h: float) -> bool:
+    """도장·사인 이미지를 (cx, cy) 중심에 넣는다. 넣었으면 True."""
+    from ..importers import find_stamp
+    path = find_stamp(person.name, person.stamp, base_dir)
+    if not path:
+        return False
+    try:
+        from reportlab.lib.utils import ImageReader
+        reader = ImageReader(path)
+        iw, ih = reader.getSize()
+        if not iw or not ih:
+            return False
+        scale = min(max_w / (iw / ih * max_h), 1.0) if ih else 1.0
+        h = max_h * scale
+        w = h * (iw / float(ih))
+        if w > max_w:                       # 가로가 긴 사인 이미지
+            w, h = max_w, max_w * (ih / float(iw))
+        c.drawImage(reader, _x(cx - w / 2), _y(cy - h / 2), _x(w), _y(h),
+                    mask="auto", preserveAspectRatio=True, anchor="c")
+        return True
+    except Exception:
+        return False                        # 이미지가 깨져도 문서 생성은 계속한다
+
+
+
 def _spaced(c: Canvas, cx: float, y: float, text: str, font: str, size: float,
             gap: float) -> None:
     """자간을 벌려 가운데 정렬로 그린다."""

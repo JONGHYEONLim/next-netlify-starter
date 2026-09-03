@@ -41,9 +41,14 @@ def _new_id() -> str:
 
 @dataclass
 class Person:
-    """표제란의 DRAWN / CHECKED / RENEWAL 한 줄."""
+    """작성 / 검토 / 승인 한 사람.
+
+    stamp 에 도장·사인 이미지(PNG 권장, 배경 투명)를 지정하면 표지 승인란에 찍힌다.
+    비워 두면 이름으로 stamps 폴더에서 자동으로 찾는다.
+    """
     date: str = ""
     name: str = ""
+    stamp: str = ""     # 도장/사인 이미지 경로. 비우면 이름으로 자동 탐색
 
 
 @dataclass
@@ -74,7 +79,7 @@ class Meta:
     drawn: Person = field(default_factory=Person)
     checked: Person = field(default_factory=Person)
     renewal: Person = field(default_factory=Person)
-    approved: str = ""
+    approved: Person = field(default_factory=Person)
     footer_code: str = ""         # 용지 좌측 하단 코드 (예: A4V-21_DOC _03)
     confidential_note: str = (
         "본 문서 및 여기에 포함된 정보는 Braumm 의 자산입니다. "
@@ -181,7 +186,10 @@ class SpecDoc:
     def from_dict(cls, d: Dict[str, Any]) -> "SpecDoc":
         d = migrate(dict(d or {}))
         meta_d = dict(d.get("meta") or {})
-        for key in ("drawn", "checked", "renewal"):
+        # v2 까지 approved 는 이름 문자열이었다 → Person 으로 올린다
+        if isinstance(meta_d.get("approved"), str):
+            meta_d["approved"] = {"name": meta_d["approved"]}
+        for key in ("drawn", "checked", "renewal", "approved"):
             meta_d[key] = Person(**_pick(meta_d.get(key) or {}, Person))
         meta = Meta(**_pick(meta_d, Meta))
 

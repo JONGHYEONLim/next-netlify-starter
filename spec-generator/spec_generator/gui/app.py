@@ -243,18 +243,38 @@ class App(tk.Tk):
         self.logo_var.trace_add("write", lambda *a: self.mark_dirty())
         self.logo_h_var.trace_add("write", lambda *a: self.mark_dirty())
 
-        g2 = ttk.LabelFrame(f, text="표제란 서명")
+        g2 = ttk.LabelFrame(f, text="작성 · 검토 · 승인   (도장/사인 이미지를 넣을 수 있습니다)")
         g2.pack(fill="x", padx=10, pady=6)
-        self.sign_fields = FieldGrid(g2, columns=2)
-        self.sign_fields.pack(fill="x", padx=6, pady=6)
-        sf = self.sign_fields
-        sf.add("drawn_date", "DRAWN 일자", 20)
-        sf.add("drawn_name", "DRAWN 이름", 20)
-        sf.add("checked_date", "CHECKED 일자", 20)
-        sf.add("checked_name", "CHECKED 이름", 20)
-        sf.add("renewal_date", "RENEWAL 일자", 20)
-        sf.add("renewal_name", "RENEWAL 이름", 20)
-        sf.add("approved", "APPROVED", 20)
+        head = ttk.Frame(g2)
+        head.pack(fill="x", padx=8, pady=(6, 0))
+        for text, width in (("", 8), ("이름", 18), ("일자", 16), ("도장 / 사인 파일", 40)):
+            ttk.Label(head, text=text, width=width).pack(side="left", padx=2)
+
+        self.sign_vars = {}
+        for key, label in (("drawn", "작 성"), ("checked", "검 토"),
+                           ("renewal", "갱 신"), ("approved", "승 인")):
+            row = ttk.Frame(g2)
+            row.pack(fill="x", padx=8, pady=2)
+            ttk.Label(row, text=label, width=8).pack(side="left", padx=2)
+            name = tk.StringVar()
+            date = tk.StringVar()
+            stamp = tk.StringVar()
+            ttk.Entry(row, textvariable=name, width=18).pack(side="left", padx=2)
+            ttk.Entry(row, textvariable=date, width=16).pack(side="left", padx=2)
+            ttk.Entry(row, textvariable=stamp).pack(side="left", padx=2, fill="x", expand=True)
+            ttk.Button(row, text="찾아보기", width=9,
+                       command=lambda v=stamp: self.choose_stamp(v)).pack(side="left", padx=2)
+            ttk.Button(row, text="지우기", width=7,
+                       command=lambda v=stamp: v.set("")).pack(side="left")
+            for var in (name, date, stamp):
+                var.trace_add("write", lambda *a: self.mark_dirty())
+            self.sign_vars[key] = {"name": name, "date": date, "stamp": stamp}
+
+        ttk.Label(g2, foreground="#666", justify="left",
+                  text="도장 파일을 비워 두면 assets\\stamps\\{이름}.png 를 자동으로 찾습니다. "
+                       "(예: 홍길동.png)\n"
+                       "한 번 넣어 두면 그 사람 이름을 쓸 때마다 자동으로 찍힙니다. "
+                       "PNG 배경 투명 권장.").pack(anchor="w", padx=12, pady=(2, 8))
 
         g3 = ttk.LabelFrame(f, text="페이지 / 양식")
         g3.pack(fill="x", padx=10, pady=6)
@@ -270,7 +290,7 @@ class App(tk.Tk):
         self.note_text = tk.Text(g4, height=5, wrap="word")
         self.note_text.pack(fill="both", expand=True, padx=6, pady=6)
 
-        for var in list(mf.vars.values()) + list(sf.vars.values()) + list(pf.vars.values()):
+        for var in list(mf.vars.values()) + list(pf.vars.values()):
             var.trace_add("write", lambda *a: self.mark_dirty())
         self.note_text.bind("<<Modified>>", self._note_modified)
 
@@ -378,13 +398,11 @@ class App(tk.Tk):
             (c for c in dn.family_choices() if c.startswith(m.family)), dn.family_choices()[0]))
         self.rev_var.set(m.revision)
         self.rev_date_var.set(m.revision_date)
-        self.sign_fields.set("drawn_date", m.drawn.date)
-        self.sign_fields.set("drawn_name", m.drawn.name)
-        self.sign_fields.set("checked_date", m.checked.date)
-        self.sign_fields.set("checked_name", m.checked.name)
-        self.sign_fields.set("renewal_date", m.renewal.date)
-        self.sign_fields.set("renewal_name", m.renewal.name)
-        self.sign_fields.set("approved", m.approved)
+        for key, vars_ in self.sign_vars.items():
+            person = getattr(m, key)
+            vars_["name"].set(person.name)
+            vars_["date"].set(person.date)
+            vars_["stamp"].set(person.stamp)
         self.page_fields.set("page_start", str(m.page_start))
         self.page_fields.set("page_total", str(m.page_total))
         self.page_fields.set("revision_rows", str(m.revision_rows))
@@ -410,13 +428,11 @@ class App(tk.Tk):
         m.family = dn.family_from_choice(self.no_fields.get("family"))
         m.revision = (self.rev_var.get() or "A").upper()
         m.revision_date = self.rev_date_var.get()
-        m.drawn.date = self.sign_fields.get("drawn_date")
-        m.drawn.name = self.sign_fields.get("drawn_name")
-        m.checked.date = self.sign_fields.get("checked_date")
-        m.checked.name = self.sign_fields.get("checked_name")
-        m.renewal.date = self.sign_fields.get("renewal_date")
-        m.renewal.name = self.sign_fields.get("renewal_name")
-        m.approved = self.sign_fields.get("approved")
+        for key, vars_ in self.sign_vars.items():
+            person = getattr(m, key)
+            person.name = vars_["name"].get()
+            person.date = vars_["date"].get()
+            person.stamp = vars_["stamp"].get()
         m.page_start = _int(self.page_fields.get("page_start"), 1)
         m.page_total = _int(self.page_fields.get("page_total"), 0)
         m.revision_rows = max(1, _int(self.page_fields.get("revision_rows"), 5))
@@ -1086,6 +1102,20 @@ class App(tk.Tk):
             except OSError:
                 pass
         self.logo_var.set(path)
+
+    def choose_stamp(self, var: tk.StringVar) -> None:
+        path = filedialog.askopenfilename(
+            title="도장 / 사인 이미지 선택",
+            initialdir=self._stamp_dir(),
+            filetypes=[("이미지", "*.png *.jpg *.jpeg *.gif *.bmp"), ("모든 파일", "*.*")])
+        if path:
+            var.set(path)
+
+    @staticmethod
+    def _stamp_dir() -> str:
+        from ..fonts import bundled_font_dir
+        d = os.path.join(os.path.dirname(bundled_font_dir()), "stamps")
+        return d if os.path.isdir(d) else os.path.expanduser("~")
 
     def choose_font(self) -> None:
         path = filedialog.askopenfilename(

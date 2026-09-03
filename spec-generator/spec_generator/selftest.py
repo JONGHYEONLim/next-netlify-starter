@@ -235,6 +235,45 @@ def run() -> int:
         assert abs(w3 - 80 * MM) < 1, "폭을 지정했는데 그 폭이 아닙니다"
         assert w2 * h2 > w1 * h1, "90도 회전이 더 크게 넣지 못했습니다"
 
+    @check("도장·사인 이미지가 승인란에 들어간다")
+    def _(out=out):
+        from PIL import Image, ImageDraw
+        from .importers import find_stamp
+        from .model import Person
+
+        stamps = os.path.join(out, "stamps")
+        os.makedirs(stamps, exist_ok=True)
+        for who in ("홍길동", "김철수"):
+            im = Image.new("RGBA", (200, 200), (0, 0, 0, 0))
+            ImageDraw.Draw(im).ellipse([6, 6, 194, 194], outline=(200, 30, 30, 255), width=10)
+            im.save(os.path.join(stamps, who + ".png"))
+
+        # 이름만으로 stamps 폴더에서 찾아진다
+        assert find_stamp("홍길동", "", out), "이름으로 도장을 찾지 못했습니다"
+        assert not find_stamp("없는사람", "", out), "없는 도장을 찾았다고 합니다"
+        explicit = os.path.join(stamps, "김철수.png")
+        assert find_stamp("아무개", explicit, out) == explicit, "지정한 경로를 쓰지 않았습니다"
+
+        doc = SpecDoc.load(files[-1])
+        doc.source_path = os.path.join(out, "stamped.spec.json")
+        doc.meta.drawn = Person("2026-01-01", "홍길동", "")
+        doc.meta.approved = Person("2026-01-03", "김철수", explicit)
+        pdf = build_pdf(doc, os.path.join(out, "stamped.pdf"))
+        assert os.path.getsize(pdf) > 2000
+
+        doc.meta.drawn = Person("2026-01-01", "이름만있음", "")
+        doc.meta.approved = Person("", "깨진도장", os.path.join(out, "없는파일.png"))
+        build_pdf(doc, os.path.join(out, "stamped2.pdf"))   # 없는 파일이어도 죽지 않는다
+
+    @check("승인란이 예전 파일(문자열)에서도 읽힌다")
+    def _():
+        import json as _json
+        raw = _json.loads(open(files[-1], encoding="utf-8").read())
+        raw["meta"]["approved"] = "박영희"          # v2 까지의 저장 형식
+        doc = SpecDoc.from_dict(raw)
+        assert doc.meta.approved.name == "박영희", doc.meta.approved
+        assert doc.meta.approved.stamp == ""
+
     @check("한글 출력이 서유럽/한국어 코덱 콘솔에서도 죽지 않는다")
     def _():
         # Windows 콘솔은 기본 코덱이 cp1252/cp949 라, 한글을 그냥 print 하면 죽는다.
