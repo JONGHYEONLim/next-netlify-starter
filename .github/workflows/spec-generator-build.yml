@@ -11,6 +11,10 @@ on:
 jobs:
   windows-exe:
     runs-on: windows-latest
+    env:
+      # Windows 콘솔 기본 코덱에서 한글 출력이 깨지지 않도록
+      PYTHONUTF8: "1"
+      PYTHONIOENCODING: "utf-8"
     defaults:
       run:
         working-directory: spec-generator

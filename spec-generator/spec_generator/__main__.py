@@ -14,7 +14,20 @@ import os
 import sys
 
 
+def force_utf8_console() -> None:
+    """Windows 콘솔 기본 코덱(cp1252/cp949)에서 한글 출력이 죽지 않게 한다.
+
+    창 모드로 빌드한 exe 에서는 stdout 이 아예 없을 수 있으므로 조용히 넘어간다.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError, OSError):
+            pass
+
+
 def main(argv=None) -> int:
+    force_utf8_console()
     argv = list(sys.argv[1:] if argv is None else argv)
 
     if argv and argv[0] == "selftest":

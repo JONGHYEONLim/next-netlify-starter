@@ -49,6 +49,8 @@ def _pages(path: str) -> int:
 
 
 def run() -> int:
+    from .__main__ import force_utf8_console
+    force_utf8_console()
     from .model import SCHEMA_VERSION, SpecDoc
     from .render.build import build_pdf
     from . import docnumber as dn, placeholders as ph, templates
@@ -232,6 +234,20 @@ def run() -> int:
         assert w1 <= avail_w + 1 and h1 <= avail_h + 1, "자동 크기가 지면을 넘습니다"
         assert abs(w3 - 80 * MM) < 1, "폭을 지정했는데 그 폭이 아닙니다"
         assert w2 * h2 > w1 * h1, "90도 회전이 더 크게 넣지 못했습니다"
+
+    @check("한글 출력이 서유럽/한국어 코덱 콘솔에서도 죽지 않는다")
+    def _():
+        # Windows 콘솔은 기본 코덱이 cp1252/cp949 라, 한글을 그냥 print 하면 죽는다.
+        # 실제로 이 문제로 CI 빌드가 끊긴 적이 있어 회귀 검사로 남긴다.
+        import io
+        from .__main__ import force_utf8_console
+        saved = sys.stdout
+        sys.stdout = io.TextIOWrapper(io.BytesIO(), encoding="cp1252", errors="strict")
+        try:
+            force_utf8_console()
+            print("통과 · 한글 출력 확인 ★")
+        finally:
+            sys.stdout = saved
 
     @check("바깥으로 나가는 코드가 없다 (로컬 전용)")
     def _():
