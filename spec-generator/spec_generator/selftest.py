@@ -235,6 +235,89 @@ def run() -> int:
         assert abs(w3 - 80 * MM) < 1, "폭을 지정했는데 그 폭이 아닙니다"
         assert w2 * h2 > w1 * h1, "90도 회전이 더 크게 넣지 못했습니다"
 
+    @check("고객 승인 사양서에 생산용 내용이 새어 나가지 않는다")
+    def _(out=out):
+        # 가장 중요한 검사.
+        # '생산용만' 으로 표시한 내용 중, 승인 템플릿의 정형 문구나 고객 공개 항목에는
+        # 없는 말(= 그 항목에서만 나오는 말)이 고객 문서에 나타나면 누출이다.
+        from . import approval as approval_mod
+        from .model import goes_to_customer
+        from .render.build import build_approval_pdf
+
+        def words_of(sections):
+            out_ = []
+            for sec in sections:
+                out_.append(sec.title_ko)
+                out_.append(sec.title_en)
+                out_ += [r.item_ko for r in sec.rows]
+                out_ += [r.spec for r in sec.rows]
+                out_ += [b.ko for b in sec.blocks]
+            return out_
+
+        def flat(t):
+            return " ".join(str(t or "").split())
+
+        doc = SpecDoc.load(files[-1])
+        tpl = templates.load_template(approval_mod.TEMPLATE_NAME)
+
+        internal = [s for s in doc.sections if not s.to_customer()]
+        secret = set()
+        for sec in internal:
+            for t in [sec.title_ko] + [r.item_ko for r in sec.rows] + \
+                     [r.spec for r in sec.rows] + [b.ko for b in sec.blocks]:
+                if len(flat(t)) >= 3:
+                    secret.add(flat(t))
+        for sec in doc.sections:                    # 고객 항목 안의 '생산용만' 줄
+            if not sec.to_customer():
+                continue
+            for r in sec.rows:
+                if not goes_to_customer(r.audience) and len(flat(r.item_ko)) >= 3:
+                    secret.add(flat(r.item_ko))
+
+        # 승인 템플릿·고객 공개 항목에 원래 있는 말은 누출이 아니다.
+        # 허용 목록은 검사 대상 함수(customer_sections)를 거치지 않고
+        # 문서에서 직접 계산한다 — 그 함수가 망가져도 검사가 무력화되지 않게.
+        allowed = " ".join(flat(t) for t in
+                           words_of(tpl.sections)
+                           + words_of([x for x in doc.sections if x.to_customer()]))
+        secret = {t for t in secret if t not in allowed}
+        assert secret, "검사할 '생산용 전용' 문구를 찾지 못했습니다"
+
+        pdf = build_approval_pdf(approval_mod.build_doc(doc),
+                                 os.path.join(out, "approval_leak.pdf"), source=doc)
+        try:
+            import pymupdf
+        except ImportError:
+            return
+        with pymupdf.open(pdf) as d:
+            text = " ".join(flat(p.get_text()) for p in d)
+        leaked = sorted(t for t in secret if t in text)
+        assert not leaked, ("고객 문서에 생산용 내용이 실렸습니다: "
+                            + ", ".join(leaked[:6]))
+
+    @check("고객 승인 사양서에 기본 내용은 들어간다")
+    def _(out=out):
+        from . import approval as approval_mod
+        from .render.build import build_approval_pdf
+        doc = SpecDoc.load(files[-1])
+        a = approval_mod.build_doc(doc)
+        assert a.sections, "승인 사양서가 비었습니다"
+        pdf = build_approval_pdf(a, os.path.join(out, "approval_ok.pdf"), source=doc)
+        try:
+            import pymupdf
+        except ImportError:
+            return
+        with pymupdf.open(pdf) as d:
+            text = " ".join(" ".join(p.get_text().split()) for p in d)
+        for must in ("APPROVAL", "Applicable Standards", "Tolerances", "Rev."):
+            assert must in text, f"승인 사양서에 '{must}' 가 없습니다"
+
+    @check("항목의 기본 공개 범위는 '생산용만' 이다")
+    def _():
+        from .model import AUD_INTERNAL, Section, SpecRow
+        assert Section().audience == AUD_INTERNAL, "새 항목이 기본으로 고객에게 나갑니다"
+        assert SpecRow().audience == "both"
+
     @check("도장·사인 이미지가 승인란에 들어간다")
     def _(out=out):
         from PIL import Image, ImageDraw

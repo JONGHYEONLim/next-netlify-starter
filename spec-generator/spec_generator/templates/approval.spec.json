@@ -1,0 +1,611 @@
+{
+  "schema": 2,
+  "app_version": "1.0.0",
+  "template": "approval",
+  "meta": {
+    "product_name": "",
+    "use_name": "",
+    "doc_kind": "승인 사양서",
+    "dwg_prefix": "BR",
+    "dwg_no": "",
+    "customer": "",
+    "customer_en": "",
+    "family": "RA",
+    "serial": "01",
+    "rated_current": "",
+    "revision": "A",
+    "revision_date": "",
+    "old_dwg_no": "",
+    "dwg_code": "",
+    "dwg_code2": "",
+    "standard": "STANDARD",
+    "index": "",
+    "company": "Braumm",
+    "logo_path": "",
+    "logo_height_mm": 8.5,
+    "label_product": "제품명",
+    "label_use": "용도",
+    "label_kind": "문서종류",
+    "drawn": {
+      "date": "",
+      "name": "",
+      "stamp": ""
+    },
+    "checked": {
+      "date": "",
+      "name": "",
+      "stamp": ""
+    },
+    "renewal": {
+      "date": "",
+      "name": "",
+      "stamp": ""
+    },
+    "approved": {
+      "date": "",
+      "name": "",
+      "stamp": ""
+    },
+    "footer_code": "Braumm-APPROVAL-A4",
+    "confidential_note": "본 문서 및 여기에 포함된 정보는 Braumm 의 자산입니다. Braumm 의 서면 동의 없이 복제, 복사, 대여하거나 제3자에게 어떠한 방법으로도 공개할 수 없으며, 승인된 생산 목적 외에는 사용할 수 없습니다.",
+    "cover": true,
+    "cover_subtitle": "APPROVAL SPECIFICATION",
+    "page_start": 1,
+    "page_total": 0,
+    "revision_rows": 5
+  },
+  "sections": [
+    {
+      "id": "d37303f0",
+      "key": "scope",
+      "audience": "customer",
+      "kind": "text",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "적용 범위",
+      "title_en": "Scope",
+      "underline": true,
+      "page_break_before": false,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "",
+          "ko": "본 사양서는 Braumm 이 공급하는 건식 리액터의 정격, 구조, 시험 및 검사에 대하여 규정한다. 대상 제품은 표지에 기재한 도면번호 및 형번의 제품으로 한다.",
+          "en": "This specification covers the ratings, construction, testing and inspection of the dry-type reactor supplied by Braumm, identified by the drawing number and model shown on the cover."
+        },
+        {
+          "indent": 1,
+          "marker": "",
+          "ko": "본 사양서에 규정하지 않은 사항은 아래 2항의 적용 규격 및 구매자가 승인한 도면에 따른다.",
+          "en": "Items not specified herein shall conform to the applicable standards listed in Clause 2 and to the drawings approved by the purchaser."
+        }
+      ],
+      "rows": [],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "08aa11f5",
+      "key": "standards",
+      "audience": "customer",
+      "kind": "spec_table",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "적용 규격",
+      "title_en": "Applicable Standards",
+      "underline": true,
+      "page_break_before": false,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "",
+          "ko": "특별히 정하지 않는 한, 주문 시점의 최신판을 적용한다.",
+          "en": "Unless otherwise agreed, the edition in force at the time of order shall apply."
+        }
+      ],
+      "rows": [
+        {
+          "item_ko": "IEC 60076-6",
+          "item_en": "",
+          "spec": "Power transformers - Part 6: Reactors",
+          "remark": "",
+          "audience": "both"
+        },
+        {
+          "item_ko": "IEC 60076-11",
+          "item_en": "",
+          "spec": "Power transformers - Part 11: Dry-type transformers",
+          "remark": "",
+          "audience": "both"
+        },
+        {
+          "item_ko": "IEC 60085",
+          "item_en": "",
+          "spec": "Electrical insulation - Thermal evaluation and designation",
+          "remark": "",
+          "audience": "both"
+        },
+        {
+          "item_ko": "IEC 61558-1",
+          "item_en": "",
+          "spec": "Safety of transformers, reactors and similar products",
+          "remark": "As applicable",
+          "audience": "both"
+        },
+        {
+          "item_ko": "KS C IEC 60076-6",
+          "item_en": "",
+          "spec": "Reactors (Korean adoption of IEC 60076-6)",
+          "remark": "",
+          "audience": "both"
+        },
+        {
+          "item_ko": "RoHS 2011/65/EU",
+          "item_en": "",
+          "spec": "Restriction of hazardous substances",
+          "remark": "Declaration on request",
+          "audience": "both"
+        }
+      ],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [
+        "Standard",
+        "Title",
+        "Remarks"
+      ],
+      "col_widths_mm": []
+    },
+    {
+      "id": "dec92955",
+      "key": "service",
+      "audience": "customer",
+      "kind": "spec_table",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "사용 조건",
+      "title_en": "Service Conditions",
+      "underline": true,
+      "page_break_before": true,
+      "note": "",
+      "blocks": [],
+      "rows": [
+        {
+          "item_ko": "1. Ambient temperature",
+          "item_en": "",
+          "spec": "Operation : -10 °C ~ +50 °C\nStorage : -20 °C ~ +60 °C",
+          "remark": "",
+          "audience": "both"
+        },
+        {
+          "item_ko": "2. Altitude",
+          "item_en": "",
+          "spec": "1,000 m or less above sea level",
+          "remark": "",
+          "audience": "both"
+        },
+        {
+          "item_ko": "3. Installation",
+          "item_en": "",
+          "spec": "Indoor use",
+          "remark": "",
+          "audience": "both"
+        },
+        {
+          "item_ko": "4. Relative humidity",
+          "item_en": "",
+          "spec": "95 % or less, non-condensing",
+          "remark": "",
+          "audience": "both"
+        },
+        {
+          "item_ko": "5. Cooling",
+          "item_en": "",
+          "spec": "Natural or forced air cooling\n(see rating table)",
+          "remark": "",
+          "audience": "both"
+        },
+        {
+          "item_ko": "6. Ambient state",
+          "item_en": "",
+          "spec": "Free from excessive dust, corrosive gas,\nsalt and abnormal vibration",
+          "remark": "",
+          "audience": "both"
+        }
+      ],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [
+        "Description",
+        "Condition",
+        "Remarks"
+      ],
+      "col_widths_mm": []
+    },
+    {
+      "id": "c72ab497",
+      "key": "_customer_content",
+      "audience": "customer",
+      "kind": "text",
+      "numbered": false,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "",
+      "title_en": "",
+      "underline": true,
+      "page_break_before": false,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 0,
+          "marker": "",
+          "ko": "",
+          "en": ""
+        }
+      ],
+      "rows": [],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "438aede3",
+      "key": "test",
+      "audience": "customer",
+      "kind": "text",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "시험 및 검사",
+      "title_en": "Test and Inspection",
+      "underline": true,
+      "page_break_before": true,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "",
+          "ko": "특별히 정하지 않는 한 모든 시험은 Braumm 공장에서 실시하며, 시험 성적서는 납품 시 함께 제출한다.",
+          "en": "Unless otherwise agreed, all tests are carried out at the Braumm works and the test report is submitted with the delivery."
+        },
+        {
+          "indent": 1,
+          "marker": "(1)",
+          "ko": "형식 시험 / Type test — 초도품 및 설계 변경 시",
+          "en": ""
+        },
+        {
+          "indent": 2,
+          "marker": "①",
+          "ko": "외관 및 치수 검사",
+          "en": "Visual and dimensional inspection"
+        },
+        {
+          "indent": 2,
+          "marker": "②",
+          "ko": "인덕턴스 측정",
+          "en": "Measurement of inductance"
+        },
+        {
+          "indent": 2,
+          "marker": "③",
+          "ko": "권선 직류 저항 측정",
+          "en": "Measurement of winding DC resistance"
+        },
+        {
+          "indent": 2,
+          "marker": "④",
+          "ko": "절연 저항 측정",
+          "en": "Measurement of insulation resistance"
+        },
+        {
+          "indent": 2,
+          "marker": "⑤",
+          "ko": "내전압 시험",
+          "en": "Dielectric withstand voltage test"
+        },
+        {
+          "indent": 2,
+          "marker": "⑥",
+          "ko": "온도 상승 시험",
+          "en": "Temperature rise test"
+        },
+        {
+          "indent": 2,
+          "marker": "⑦",
+          "ko": "포화 특성 확인",
+          "en": "Saturation characteristic test"
+        },
+        {
+          "indent": 2,
+          "marker": "⑧",
+          "ko": "소음 측정",
+          "en": "Noise measurement"
+        },
+        {
+          "indent": 1,
+          "marker": "(2)",
+          "ko": "전수 시험 / Routine test — 전 제품",
+          "en": ""
+        },
+        {
+          "indent": 2,
+          "marker": "①",
+          "ko": "외관 및 치수 검사",
+          "en": "Visual and dimensional inspection"
+        },
+        {
+          "indent": 2,
+          "marker": "②",
+          "ko": "인덕턴스 측정",
+          "en": "Measurement of inductance"
+        },
+        {
+          "indent": 2,
+          "marker": "③",
+          "ko": "권선 직류 저항 측정",
+          "en": "Measurement of winding DC resistance"
+        },
+        {
+          "indent": 2,
+          "marker": "④",
+          "ko": "절연 저항 측정",
+          "en": "Measurement of insulation resistance"
+        },
+        {
+          "indent": 2,
+          "marker": "⑤",
+          "ko": "내전압 시험",
+          "en": "Dielectric withstand voltage test"
+        }
+      ],
+      "rows": [],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "9fd3ddf5",
+      "key": "method",
+      "audience": "customer",
+      "kind": "spec_table",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "시험 방법",
+      "title_en": "Test Methods",
+      "underline": true,
+      "page_break_before": false,
+      "note": "",
+      "blocks": [],
+      "rows": [
+        {
+          "item_ko": "1. Inductance",
+          "item_en": "",
+          "spec": "Between coil terminals, LCR meter\n1 kHz unless otherwise specified",
+          "remark": "",
+          "audience": "both"
+        },
+        {
+          "item_ko": "2. DC resistance",
+          "item_en": "",
+          "spec": "Micro-ohm meter, corrected to the\nreference temperature of the insulation class",
+          "remark": "Class F/H : 115 °C",
+          "audience": "both"
+        },
+        {
+          "item_ko": "3. Insulation resistance",
+          "item_en": "",
+          "spec": "Coil to core (ground), DC 500 V megger",
+          "remark": "",
+          "audience": "both"
+        },
+        {
+          "item_ko": "4. Dielectric withstand",
+          "item_en": "",
+          "spec": "Coil to core (ground), power frequency AC\nCut-off 10 mA",
+          "remark": "Type : 60 s\nRoutine : 2 s",
+          "audience": "both"
+        },
+        {
+          "item_ko": "5. Temperature rise",
+          "item_en": "",
+          "spec": "Coil : resistance method\nCore : thermocouple method",
+          "remark": "",
+          "audience": "both"
+        },
+        {
+          "item_ko": "6. Noise",
+          "item_en": "",
+          "spec": "1 m from the surface, A-weighted",
+          "remark": "At rated current",
+          "audience": "both"
+        }
+      ],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [
+        "Item",
+        "Method",
+        "Remarks"
+      ],
+      "col_widths_mm": []
+    },
+    {
+      "id": "ef3ac501",
+      "key": "tolerance",
+      "audience": "customer",
+      "kind": "spec_table",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "허용 공차",
+      "title_en": "Tolerances",
+      "underline": true,
+      "page_break_before": true,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "",
+          "ko": "측정값은 아래에 정한 공차를 넘지 않아야 한다.",
+          "en": "Measured values shall not deviate from the guaranteed values beyond the tolerances below."
+        }
+      ],
+      "rows": [
+        {
+          "item_ko": "1. Inductance",
+          "item_en": "",
+          "spec": "± 10 %",
+          "remark": "At rated current",
+          "audience": "both"
+        },
+        {
+          "item_ko": "2. DC resistance",
+          "item_en": "",
+          "spec": "+ 10 %",
+          "remark": "At reference temperature",
+          "audience": "both"
+        },
+        {
+          "item_ko": "3. Total loss",
+          "item_en": "",
+          "spec": "+ 15 %",
+          "remark": "Calculated value",
+          "audience": "both"
+        },
+        {
+          "item_ko": "4. Dimensions",
+          "item_en": "",
+          "spec": "Per approved drawing",
+          "remark": "",
+          "audience": "both"
+        },
+        {
+          "item_ko": "5. Weight",
+          "item_en": "",
+          "spec": "± 10 %",
+          "remark": "",
+          "audience": "both"
+        }
+      ],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [
+        "Item",
+        "Tolerance",
+        "Remarks"
+      ],
+      "col_widths_mm": []
+    },
+    {
+      "id": "38a6ce8b",
+      "key": "quality",
+      "audience": "customer",
+      "kind": "text",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "품질 보증 및 변경 관리",
+      "title_en": "Quality Assurance and Change Control",
+      "underline": true,
+      "page_break_before": false,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "(1)",
+          "ko": "무상 보증 기간은 납품 후 1년으로 한다.",
+          "en": "The warranty period is one year after delivery."
+        },
+        {
+          "indent": 1,
+          "marker": "(2)",
+          "ko": "보증 기간 중 제조자의 책임으로 발생한 고장은 무상으로 수리 또는 교환한다.",
+          "en": "Failures attributable to the manufacturer within the warranty period are repaired or replaced free of charge."
+        },
+        {
+          "indent": 1,
+          "marker": "(3)",
+          "ko": "성능·외관·보수에 영향을 주는 변경은 사전에 구매자에게 통지하고 승인을 받는다.",
+          "en": "Any change affecting performance, appearance or maintenance shall be notified to the purchaser and approved in advance."
+        },
+        {
+          "indent": 1,
+          "marker": "(4)",
+          "ko": "최신 리비전은 제품 명판에 표시하며, 본 사양서의 개정 이력은 표지에 기록한다.",
+          "en": "The current revision is marked on the nameplate and recorded in the revision history on the cover of this specification."
+        }
+      ],
+      "rows": [],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [],
+      "col_widths_mm": []
+    },
+    {
+      "id": "90d844aa",
+      "key": "attach",
+      "audience": "customer",
+      "kind": "spec_table",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "첨부 도면",
+      "title_en": "Attachments",
+      "underline": true,
+      "page_break_before": false,
+      "note": "",
+      "blocks": [],
+      "rows": [
+        {
+          "item_ko": "1. Outline drawing",
+          "item_en": "",
+          "spec": "{도번}",
+          "remark": "",
+          "audience": "both"
+        },
+        {
+          "item_ko": "2. ",
+          "item_en": "",
+          "spec": "",
+          "remark": "",
+          "audience": "both"
+        },
+        {
+          "item_ko": "3. ",
+          "item_en": "",
+          "spec": "",
+          "remark": "",
+          "audience": "both"
+        }
+      ],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [
+        "Description",
+        "Drawing No.",
+        "Remarks"
+      ],
+      "col_widths_mm": []
+    }
+  ]
+}

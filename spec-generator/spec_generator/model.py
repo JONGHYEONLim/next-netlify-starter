@@ -21,6 +21,26 @@ SCHEMA_VERSION = 2
 #  · 구조가 바뀌면 _MIGRATIONS 에 변환 함수를 추가하고 SCHEMA_VERSION 을 올린다.
 #  · tests/fixtures 에 각 버전의 실제 파일을 얼려 두고 selftest 로 계속 검증한다.
 
+# 공개 범위 — 어떤 문서에 실릴지
+AUD_INTERNAL = "internal"   # 생산 사양서에만 (기본값 — 실수로 새어 나가지 않게)
+AUD_CUSTOMER = "customer"   # 고객 승인 사양서에만
+AUD_BOTH = "both"           # 양쪽 모두
+
+AUDIENCE_LABELS = {
+    AUD_INTERNAL: "생산용만",
+    AUD_BOTH: "생산 + 고객",
+    AUD_CUSTOMER: "고객용만",
+}
+
+
+def goes_to_customer(audience: str) -> bool:
+    return audience in (AUD_CUSTOMER, AUD_BOTH)
+
+
+def goes_to_internal(audience: str) -> bool:
+    return audience in (AUD_INTERNAL, AUD_BOTH)
+
+
 # 섹션 종류
 KIND_TEXT = "text"                    # 번호 항목 + 본문(일/영 병기)
 KIND_SPEC_TABLE = "spec_table"        # 항목/사양/비고 3열 표
@@ -110,6 +130,7 @@ class SpecRow:
     item_en: str = ""
     spec: str = ""
     remark: str = ""
+    audience: str = AUD_BOTH   # 고객용 항목 안에서는 기본으로 함께 나간다
 
 
 @dataclass
@@ -135,6 +156,7 @@ class ImageItem:
 class Section:
     id: str = field(default_factory=_new_id)
     key: str = ""                 # 템플릿과 짝을 맞추는 고정 이름 (업데이트 반영용)
+    audience: str = AUD_INTERNAL  # 기본은 생산용만 — 고객에게 보낼 것만 따로 지정한다
     kind: str = KIND_TEXT
     numbered: bool = True         # True 면 1. 2. 3. 자동 번호
     no_override: str = ""         # 번호를 직접 지정할 때
@@ -151,6 +173,16 @@ class Section:
     part_no: str = ""             # 판수관리표의 <PartNo. P1> 표기
     headers: List[str] = field(default_factory=list)          # 표 머리글(비우면 기본값)
     col_widths_mm: List[float] = field(default_factory=list)  # 표 열 너비(비우면 기본값)
+
+    def to_customer(self) -> bool:
+        return goes_to_customer(self.audience)
+
+    def customer_copy(self) -> "Section":
+        """고객용 사본 — 내부용으로 표시된 표의 줄은 빼고 복사한다."""
+        import copy as _copy
+        out = _copy.deepcopy(self)
+        out.rows = [r for r in out.rows if goes_to_customer(r.audience)]
+        return out
 
     def display_name(self) -> str:
         head = self.no_override or self.bullet or ""

@@ -76,7 +76,9 @@
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": []
+      "col_widths_mm": [],
+      "audience": "internal",
+      "key": "scope"
     },
     {
       "id": "72de9eb9",
@@ -95,104 +97,122 @@
           "item_ko": "고객사",
           "item_en": "Customer",
           "spec": "{고객사}",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         },
         {
           "item_ko": "품명",
           "item_en": "Product name",
           "spec": "{제품명}",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         },
         {
           "item_ko": "모델 / 형번",
           "item_en": "Model",
           "spec": "{도번}",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         },
         {
           "item_ko": "정격 전류",
           "item_en": "Rated current",
           "spec": "{정격전류}",
-          "remark": "Arms"
+          "remark": "Arms",
+          "audience": "both"
         },
         {
           "item_ko": "인덕턴스",
           "item_en": "Inductance",
           "spec": "○○ μH",
-          "remark": "허용오차 ±10%"
+          "remark": "허용오차 ±10%",
+          "audience": "both"
         },
         {
           "item_ko": "정격 전압",
           "item_en": "Rated voltage",
           "spec": "○○○ VAC",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         },
         {
           "item_ko": "주파수",
           "item_en": "Frequency",
           "spec": "50 / 60 Hz",
-          "remark": "Hz"
+          "remark": "Hz",
+          "audience": "both"
         },
         {
           "item_ko": "상 수",
           "item_en": "Phase",
           "spec": "3상",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         },
         {
           "item_ko": "철심 구조",
           "item_en": "Core structure",
           "spec": "3상 5각",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         },
         {
           "item_ko": "절연 등급",
           "item_en": "Insulation class",
           "spec": "○종",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         },
         {
           "item_ko": "내전압",
           "item_en": "Withstand voltage",
           "spec": "AC ○○○○V / 1분",
-          "remark": "권선-철심 간"
+          "remark": "권선-철심 간",
+          "audience": "both"
         },
         {
           "item_ko": "절연 저항",
           "item_en": "Insulation resistance",
           "spec": "○○ MΩ 이상",
-          "remark": "DC500V 메거"
+          "remark": "DC500V 메거",
+          "audience": "both"
         },
         {
           "item_ko": "냉각 방식",
           "item_en": "Cooling method",
           "spec": "건식 풍냉",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         },
         {
           "item_ko": "사용 주위온도",
           "item_en": "Ambient temperature",
           "spec": "0 ℃ ~ +○○ ℃",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         },
         {
           "item_ko": "사용 주위습도",
           "item_en": "Humidity",
           "spec": "5 % ~ 95 %",
-          "remark": "결로 없을 것"
+          "remark": "결로 없을 것",
+          "audience": "both"
         },
         {
           "item_ko": "총 중량",
           "item_en": "Total weight",
           "spec": "",
-          "remark": "kg"
+          "remark": "kg",
+          "audience": "both"
         }
       ],
       "versions": [],
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": []
+      "col_widths_mm": [],
+      "audience": "both",
+      "key": "basic_spec"
     },
     {
       "id": "178be316",
@@ -227,7 +247,9 @@
       ],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": []
+      "col_widths_mm": [],
+      "audience": "both",
+      "key": "outline"
     },
     {
       "id": "4ad09922",
@@ -246,55 +268,64 @@
           "item_ko": "권선 턴수",
           "item_en": "Turns",
           "spec": "○○ T",
-          "remark": "T"
+          "remark": "T",
+          "audience": "both"
         },
         {
           "item_ko": "전선 재질",
           "item_en": "Wire material",
           "spec": "알루미늄",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         },
         {
           "item_ko": "전선 규격",
           "item_en": "Wire size",
           "spec": "t ○.○ mm",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         },
         {
           "item_ko": "병렬 수",
           "item_en": "Parallel",
           "spec": "",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         },
         {
           "item_ko": "권선 층수",
           "item_en": "Layers",
           "spec": "",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         },
         {
           "item_ko": "권선 방향",
           "item_en": "Winding direction",
           "spec": "",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         },
         {
           "item_ko": "층간 절연",
           "item_en": "Interlayer insulation",
           "spec": "",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         },
         {
           "item_ko": "인출선 길이",
           "item_en": "Lead length",
           "spec": "",
-          "remark": "mm"
+          "remark": "mm",
+          "audience": "both"
         },
         {
           "item_ko": "단자 형태",
           "item_en": "Terminal type",
           "spec": "",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         }
       ],
       "versions": [],
@@ -310,7 +341,9 @@
       ],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": []
+      "col_widths_mm": [],
+      "audience": "internal",
+      "key": "winding"
     },
     {
       "id": "9b4dd212",
@@ -329,44 +362,52 @@
           "item_ko": "재질",
           "item_en": "Material",
           "spec": "○○○○ (전기강판)",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         },
         {
           "item_ko": "두께 (t)",
           "item_en": "Thickness",
           "spec": "",
-          "remark": "mm"
+          "remark": "mm",
+          "audience": "both"
         },
         {
           "item_ko": "폭 (W)",
           "item_en": "Width",
           "spec": "",
-          "remark": "mm"
+          "remark": "mm",
+          "audience": "both"
         },
         {
           "item_ko": "길이 (L)",
           "item_en": "Length",
           "spec": "",
-          "remark": "mm"
+          "remark": "mm",
+          "audience": "both"
         },
         {
           "item_ko": "적층 높이",
           "item_en": "Stack height",
           "spec": "",
-          "remark": "mm"
+          "remark": "mm",
+          "audience": "both"
         },
         {
           "item_ko": "매 수",
           "item_en": "Quantity",
           "spec": "",
-          "remark": "EA"
+          "remark": "EA",
+          "audience": "both"
         }
       ],
       "versions": [],
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": []
+      "col_widths_mm": [],
+      "audience": "internal",
+      "key": "yoke_core"
     },
     {
       "id": "57f8fe22",
@@ -385,50 +426,59 @@
           "item_ko": "재질",
           "item_en": "Material",
           "spec": "○○○○ (전기강판)",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         },
         {
           "item_ko": "두께 (t)",
           "item_en": "Thickness",
           "spec": "",
-          "remark": "mm"
+          "remark": "mm",
+          "audience": "both"
         },
         {
           "item_ko": "폭 (W)",
           "item_en": "Width",
           "spec": "",
-          "remark": "mm"
+          "remark": "mm",
+          "audience": "both"
         },
         {
           "item_ko": "길이 (L)",
           "item_en": "Length",
           "spec": "",
-          "remark": "mm"
+          "remark": "mm",
+          "audience": "both"
         },
         {
           "item_ko": "적층 높이",
           "item_en": "Stack height",
           "spec": "",
-          "remark": "mm"
+          "remark": "mm",
+          "audience": "both"
         },
         {
           "item_ko": "매 수",
           "item_en": "Quantity",
           "spec": "",
-          "remark": "EA"
+          "remark": "EA",
+          "audience": "both"
         },
         {
           "item_ko": "다리 개수",
           "item_en": "Number of legs",
           "spec": "5",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         }
       ],
       "versions": [],
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": []
+      "col_widths_mm": [],
+      "audience": "internal",
+      "key": "leg_core"
     },
     {
       "id": "f9fd3174",
@@ -447,38 +497,45 @@
           "item_ko": "갭 재질",
           "item_en": "Gap material",
           "spec": "",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         },
         {
           "item_ko": "갭 두께",
           "item_en": "Gap thickness",
           "spec": "",
-          "remark": "mm"
+          "remark": "mm",
+          "audience": "both"
         },
         {
           "item_ko": "갭 개수",
           "item_en": "Number of gaps",
           "spec": "",
-          "remark": "EA / 다리당"
+          "remark": "EA / 다리당",
+          "audience": "both"
         },
         {
           "item_ko": "총 갭 길이",
           "item_en": "Total gap length",
           "spec": "",
-          "remark": "mm"
+          "remark": "mm",
+          "audience": "both"
         },
         {
           "item_ko": "갭 위치",
           "item_en": "Gap position",
           "spec": "",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         }
       ],
       "versions": [],
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": []
+      "col_widths_mm": [],
+      "audience": "internal",
+      "key": "gap"
     },
     {
       "id": "598cebd1",
@@ -497,44 +554,52 @@
           "item_ko": "재질",
           "item_en": "Material",
           "spec": "",
-          "remark": "예: SUS304"
+          "remark": "예: SUS304",
+          "audience": "both"
         },
         {
           "item_ko": "두께 (t)",
           "item_en": "Thickness",
           "spec": "",
-          "remark": "mm"
+          "remark": "mm",
+          "audience": "both"
         },
         {
           "item_ko": "폭 (W)",
           "item_en": "Width",
           "spec": "",
-          "remark": "mm"
+          "remark": "mm",
+          "audience": "both"
         },
         {
           "item_ko": "길이 (L)",
           "item_en": "Length",
           "spec": "",
-          "remark": "mm"
+          "remark": "mm",
+          "audience": "both"
         },
         {
           "item_ko": "수 량",
           "item_en": "Quantity",
           "spec": "",
-          "remark": "EA"
+          "remark": "EA",
+          "audience": "both"
         },
         {
           "item_ko": "표면 처리",
           "item_en": "Surface treatment",
           "spec": "",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         }
       ],
       "versions": [],
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": []
+      "col_widths_mm": [],
+      "audience": "internal",
+      "key": "sus"
     },
     {
       "id": "10fedd45",
@@ -553,44 +618,52 @@
           "item_ko": "보빈 품번",
           "item_en": "Bobbin part no.",
           "spec": "",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         },
         {
           "item_ko": "재질",
           "item_en": "Material",
           "spec": "",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         },
         {
           "item_ko": "내경 (가로 × 세로)",
           "item_en": "Inner size",
           "spec": "",
-          "remark": "mm"
+          "remark": "mm",
+          "audience": "both"
         },
         {
           "item_ko": "높이",
           "item_en": "Height",
           "spec": "",
-          "remark": "mm"
+          "remark": "mm",
+          "audience": "both"
         },
         {
           "item_ko": "두께",
           "item_en": "Thickness",
           "spec": "",
-          "remark": "mm"
+          "remark": "mm",
+          "audience": "both"
         },
         {
           "item_ko": "수 량",
           "item_en": "Quantity",
           "spec": "",
-          "remark": "EA"
+          "remark": "EA",
+          "audience": "both"
         }
       ],
       "versions": [],
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": []
+      "col_widths_mm": [],
+      "audience": "internal",
+      "key": "bobbin"
     },
     {
       "id": "88870c68",
@@ -609,44 +682,52 @@
           "item_ko": "볼트 규격",
           "item_en": "Bolt size",
           "spec": "M○ × ○○",
-          "remark": "예: M8 × 30"
+          "remark": "예: M8 × 30",
+          "audience": "both"
         },
         {
           "item_ko": "볼트 재질 / 등급",
           "item_en": "Material / grade",
           "spec": "",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         },
         {
           "item_ko": "볼트 수량",
           "item_en": "Quantity",
           "spec": "",
-          "remark": "EA"
+          "remark": "EA",
+          "audience": "both"
         },
         {
           "item_ko": "너트 규격",
           "item_en": "Nut size",
           "spec": "",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         },
         {
           "item_ko": "와셔 종류",
           "item_en": "Washer type",
           "spec": "",
-          "remark": "평와셔 / 스프링와셔"
+          "remark": "평와셔 / 스프링와셔",
+          "audience": "both"
         },
         {
           "item_ko": "체결 토크",
           "item_en": "Tightening torque",
           "spec": "",
-          "remark": "N·m"
+          "remark": "N·m",
+          "audience": "both"
         }
       ],
       "versions": [],
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": []
+      "col_widths_mm": [],
+      "audience": "internal",
+      "key": "fastener"
     },
     {
       "id": "fb6eff80",
@@ -665,50 +746,59 @@
           "item_ko": "품 명",
           "item_en": "Part name",
           "spec": "",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         },
         {
           "item_ko": "재질",
           "item_en": "Material",
           "spec": "",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         },
         {
           "item_ko": "두께 (t)",
           "item_en": "Thickness",
           "spec": "",
-          "remark": "mm"
+          "remark": "mm",
+          "audience": "both"
         },
         {
           "item_ko": "전개 치수",
           "item_en": "Blank size",
           "spec": "",
-          "remark": "mm"
+          "remark": "mm",
+          "audience": "both"
         },
         {
           "item_ko": "완성 치수",
           "item_en": "Finished size",
           "spec": "",
-          "remark": "mm"
+          "remark": "mm",
+          "audience": "both"
         },
         {
           "item_ko": "표면 처리",
           "item_en": "Surface treatment",
           "spec": "",
-          "remark": ""
+          "remark": "",
+          "audience": "both"
         },
         {
           "item_ko": "수 량",
           "item_en": "Quantity",
           "spec": "",
-          "remark": "EA"
+          "remark": "EA",
+          "audience": "both"
         }
       ],
       "versions": [],
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": []
+      "col_widths_mm": [],
+      "audience": "internal",
+      "key": "sheetmetal"
     },
     {
       "id": "a337fee2",
@@ -764,7 +854,9 @@
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": []
+      "col_widths_mm": [],
+      "audience": "internal",
+      "key": "assembly"
     },
     {
       "id": "4ab995ca",
@@ -844,7 +936,9 @@
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": []
+      "col_widths_mm": [],
+      "audience": "internal",
+      "key": "inspection"
     },
     {
       "id": "18c78f5a",
@@ -882,7 +976,9 @@
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": []
+      "col_widths_mm": [],
+      "audience": "internal",
+      "key": "packing"
     },
     {
       "id": "67fcc4dd",
@@ -956,7 +1052,10 @@
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": []
+      "col_widths_mm": [],
+      "audience": "internal",
+      "key": "revision"
     }
-  ]
+  ],
+  "template": "reactor"
 }

@@ -13,6 +13,7 @@ import traceback
 from tkinter import filedialog, messagebox, ttk
 from typing import Dict, List, Optional
 
+from .. import approval as approval_mod
 from .. import docnumber as dn
 from .. import placeholders as ph
 from .. import updater
@@ -20,10 +21,11 @@ from .. import templates as tpl_pkg
 from ..registry import Registry
 from ..fonts import active_font_description, register_fonts
 from ..importers import SUPPORTED_EXT, copy_into_project
-from ..model import (file_is_newer, KIND_IMAGE, KIND_LABELS, KIND_SPEC_TABLE, KIND_TEXT,
+from ..model import (AUDIENCE_LABELS, AUD_BOTH, AUD_CUSTOMER, AUD_INTERNAL,
+                     file_is_newer, KIND_IMAGE, KIND_LABELS, KIND_SPEC_TABLE, KIND_TEXT,
                      KIND_VERSION_TABLE, Block, ImageItem, Section, SpecDoc,
                      SpecRow, VersionRow)
-from ..render.build import build_pdf
+from ..render.build import build_approval_pdf, build_both, build_pdf
 from .widgets import (FieldGrid, GridEditor, HelpWindow, MultilineDialog,
                       RegistryWindow, UpdateWindow)
 
@@ -111,11 +113,19 @@ class App(tk.Tk):
         bar.add_cascade(label="파일", menu=m)
 
         o = tk.Menu(bar, tearoff=0)
-        o.add_command(label="PDF 미리보기", accelerator="F5", command=self.preview)
+        o.add_command(label="생산 사양서 미리보기", accelerator="F5", command=self.preview)
+        o.add_command(label="고객 승인 사양서 미리보기", accelerator="F6",
+                      command=self.preview_approval)
+        o.add_command(label="고객에게 나가는 내용 확인...", command=self.show_customer_scope)
+        o.add_separator()
         o.add_command(label="고객사 폴더에 저장", accelerator="Ctrl+E",
                       command=self.export_to_customer_folder)
         o.add_command(label="PDF로 내보내기 (위치 지정)...", accelerator="Ctrl+P",
                       command=self.export)
+        o.add_separator()
+        self.approval_var = tk.BooleanVar(value=bool(self.settings.get("make_approval", True)))
+        o.add_checkbutton(label="저장할 때 고객 승인 사양서도 함께 발행",
+                          variable=self.approval_var, command=self.toggle_approval_output)
         o.add_separator()
         o.add_command(label="출력 폴더 설정...", command=self.set_output_root)
         o.add_command(label="파일 이름 규칙...", command=self.set_filename_pattern)
@@ -142,6 +152,7 @@ class App(tk.Tk):
         self.bind_all("<Control-p>", lambda e: self.export())
         self.bind_all("<Control-e>", lambda e: self.export_to_customer_folder())
         self.bind_all("<F5>", lambda e: self.preview())
+        self.bind_all("<F6>", lambda e: self.preview_approval())
         self._rebuild_recent_menu()
 
     def _build_body(self) -> None:
@@ -348,6 +359,8 @@ class App(tk.Tk):
         sfg.add("bullet", "번호 대신 기호(예: ○)", 10)
         sfg.add("underline", "제목 밑줄", kind="check")
         sfg.add("page_break_before", "이 항목부터 새 페이지", kind="check")
+        sfg.add("audience", "공개 범위", 22, kind="combo",
+                values=[AUDIENCE_LABELS[k] for k in (AUD_INTERNAL, AUD_BOTH, AUD_CUSTOMER)])
         sfg.add("note", "제목 옆 주기(※)", 40, span=2)
         for var in sfg.vars.values():
             var.trace_add("write", lambda *a: self._commit_current(mark=True))
@@ -364,8 +377,10 @@ class App(tk.Tk):
         bar.pack(fill="x", side="bottom")
         self.status = tk.StringVar(value="준비됨")
         ttk.Label(bar, textvariable=self.status, anchor="w").pack(side="left", padx=10, pady=4)
-        ttk.Button(bar, text="PDF 미리보기 (F5)", command=self.preview).pack(
+        ttk.Button(bar, text="생산 미리보기 (F5)", command=self.preview).pack(
             side="right", padx=(4, 10), pady=4)
+        ttk.Button(bar, text="승인 미리보기 (F6)", command=self.preview_approval).pack(
+            side="right", padx=4, pady=4)
         ttk.Button(bar, text="고객사 폴더에 저장 (Ctrl+E)",
                    command=self.export_to_customer_folder).pack(side="right", padx=4, pady=4)
         ttk.Button(bar, text="저장 (Ctrl+S)", command=self.save).pack(side="right", pady=4)
@@ -446,7 +461,9 @@ class App(tk.Tk):
             head = numbers.get(s.id) or ""
             head = f"{head}." if s.numbered and head else head
             title = "/".join(x for x in (s.title_ko, s.title_en) if x)
-            self.sec_list.insert("end", f"{head} {title}   〔{KIND_LABELS.get(s.kind, s.kind)}〕")
+            tag = "  ▶고객" if s.to_customer() else ""
+            self.sec_list.insert(
+                "end", f"{head} {title}   〔{KIND_LABELS.get(s.kind, s.kind)}〕{tag}")
         if self.doc.sections:
             idx = 0 if keep is None else max(0, min(int(keep), len(self.doc.sections) - 1))
             self.sec_list.selection_clear(0, "end")
@@ -487,6 +504,7 @@ class App(tk.Tk):
         sfg.set("underline", section.underline)
         sfg.set("page_break_before", section.page_break_before)
         sfg.set("note", section.note)
+        sfg.set("audience", AUDIENCE_LABELS.get(section.audience, AUDIENCE_LABELS[AUD_INTERNAL]))
 
         self._clear_body()
         if section.kind == KIND_SPEC_TABLE:
@@ -580,15 +598,20 @@ class App(tk.Tk):
         nb = self._notebook()
         page = self._tab(nb, "사양표",
                          "엑셀에서 [항목 / 항목(영문) / 사양 / 비고] 4열을 복사한 뒤 "
-                         "[엑셀에서 붙여넣기] 를 누르면 한 번에 채워집니다.")
-        g = GridEditor(page, columns=[("item_ko", "항목", 190),
-                                      ("item_en", "항목(영문·선택)", 150),
-                                      ("spec", "사양", 320), ("remark", "비고", 240)],
+                         "[엑셀에서 붙여넣기] 를 누르면 한 번에 채워집니다.\n"
+                         "‘공개’ 칸은 이 항목이 고객용일 때만 뜻이 있습니다 — "
+                         "고객에게 감출 줄만 ‘생산용만’ 으로 바꾸세요.")
+        g = GridEditor(page, columns=[("item_ko", "항목", 175),
+                                      ("item_en", "항목(영문·선택)", 140),
+                                      ("spec", "사양", 300), ("remark", "비고", 210),
+                                      ("audience", "공개", 70)],
                        multiline=("spec", "remark"), on_change=self._changed(),
                        tree_height=11, panel_text_height=3)
         g.pack(fill="both", expand=True, padx=8, pady=8)
-        g.set_rows([{"item_ko": r.item_ko, "item_en": r.item_en,
-                     "spec": r.spec, "remark": r.remark} for r in section.rows])
+        g.set_rows([{"item_ko": r.item_ko, "item_en": r.item_en, "spec": r.spec,
+                     "remark": r.remark,
+                     "audience": AUDIENCE_LABELS.get(r.audience, AUDIENCE_LABELS[AUD_BOTH])}
+                    for r in section.rows])
         self.rows_editor = g
         self.image_editor = self._image_grid(self._tab(nb, "첨부 도면", self.IMG_HINT,
                                                 counter=lambda: len(self.image_editor.get_rows()) if self.image_editor else 0), section, False)
@@ -665,6 +688,8 @@ class App(tk.Tk):
         s.underline = bool(sfg.get("underline"))
         s.page_break_before = bool(sfg.get("page_break_before"))
         s.note = sfg.get("note")
+        s.audience = next((k for k, v in AUDIENCE_LABELS.items() if v == sfg.get("audience")),
+                          AUD_INTERNAL)
 
         if self.blocks_editor is not None:
             s.blocks = _blocks_from(self.blocks_editor.get_rows())
@@ -678,7 +703,10 @@ class App(tk.Tk):
             rows = self.rows_editor.get_rows()
             if s.kind == KIND_SPEC_TABLE:
                 s.rows = [SpecRow(r.get("item_ko", ""), r.get("item_en", ""),
-                                  r.get("spec", ""), r.get("remark", "")) for r in rows]
+                                  r.get("spec", ""), r.get("remark", ""),
+                                  next((k for k, v in AUDIENCE_LABELS.items()
+                                        if v == r.get("audience")), AUD_BOTH))
+                          for r in rows]
             elif s.kind == KIND_VERSION_TABLE:
                 s.versions = [VersionRow(r.get("rev", ""), r.get("author", ""),
                                          r.get("date", ""), r.get("changed_ko", ""),
@@ -698,7 +726,8 @@ class App(tk.Tk):
             head = numbers.get(s.id) or ""
             head = f"{head}." if s.numbered and head else head
             title = "/".join(x for x in (s.title_ko, s.title_en) if x)
-            label = f"{head} {title}   〔{KIND_LABELS.get(s.kind, s.kind)}〕"
+            tag = "  ▶고객" if s.to_customer() else ""
+            label = f"{head} {title}   〔{KIND_LABELS.get(s.kind, s.kind)}〕{tag}"
             if self.sec_list.get(i) != label:
                 self.sec_list.delete(i)
                 self.sec_list.insert(i, label)
@@ -899,6 +928,9 @@ class App(tk.Tk):
         root = self.output_root()
         return os.path.join(root, safe_name(customer)) if customer else root
 
+    def approval_basename(self) -> str:
+        return self.output_basename() + "_APPROVAL"
+
     def output_basename(self) -> str:
         m = self.doc.meta
         doc_no = f"{m.dwg_prefix}-{m.dwg_no}" if m.dwg_prefix and m.dwg_no else (m.dwg_no or "사양서")
@@ -947,28 +979,78 @@ class App(tk.Tk):
             messagebox.showerror("폴더 생성 실패", f"{folder}\n{exc}")
             return
         path = os.path.join(folder, self.output_basename() + ".pdf")
-        if os.path.exists(path) and not messagebox.askyesno(
-                "덮어쓰기", f"같은 이름의 파일이 이미 있습니다.\n\n{path}\n\n덮어쓸까요?"):
-            return
-        if self._make_pdf(path):
-            self.register_current()
-            self.set_status(f"저장했습니다: {path}")
-            if messagebox.askyesno("완료", f"저장했습니다.\n\n{path}\n\n폴더를 열어볼까요?"):
-                open_with_os(folder)
+        appr_path = os.path.join(folder, self.approval_basename() + ".pdf")
+        also_approval = bool(self.settings.get("make_approval", True))
 
-    def _make_pdf(self, out_path: str) -> Optional[str]:
+        exists = [p for p in ([path] + ([appr_path] if also_approval else []))
+                  if os.path.exists(p)]
+        if exists and not messagebox.askyesno(
+                "덮어쓰기", "같은 이름의 파일이 이미 있습니다.\n\n"
+                + "\n".join(os.path.basename(p) for p in exists) + "\n\n덮어쓸까요?"):
+            return
+
+        made = self._make_pdf(path, approval_path=appr_path if also_approval else None)
+        if not made:
+            return
+        self.register_current()
+        names = "\n".join(os.path.basename(p) for p in made)
+        self.set_status(f"저장했습니다: {folder}  ({len(made)}개 파일)")
+        if messagebox.askyesno("완료", f"저장했습니다.\n\n{folder}\n{names}\n\n폴더를 열어볼까요?"):
+            open_with_os(folder)
+
+    def _make_pdf(self, out_path: str, approval_path: Optional[str] = None):
+        """생산 사양서를, approval_path 가 있으면 고객 승인 사양서까지 만든다."""
         self._commit_current()
         self.collect_meta()
+        font = self.settings.get("font_path")
         try:
             self.set_status("PDF 생성 중...")
-            path = build_pdf(self.doc, out_path, self.settings.get("font_path"))
-            self.set_status(f"PDF 생성 완료: {path}  (폰트: {active_font_description()})")
-            return path
+            if approval_path:
+                made = list(build_both(self.doc, out_path, approval_path, font))
+            else:
+                made = [build_pdf(self.doc, out_path, font)]
+            self.set_status(f"PDF 생성 완료 ({len(made)}개)  (폰트: {active_font_description()})")
+            return made if approval_path else made[0]
         except Exception as exc:
             traceback.print_exc()
             messagebox.showerror("PDF 생성 실패", f"{exc}\n\n자세한 내용은 콘솔을 확인하세요.")
             self.set_status("PDF 생성 실패")
             return None
+
+    def preview_approval(self) -> None:
+        """고객 승인 사양서만 따로 미리보기."""
+        self._commit_current()
+        self.collect_meta()
+        if not approval_mod.customer_sections(self.doc):
+            messagebox.showinfo(
+                "고객 승인 사양서",
+                "고객에게 나갈 항목이 하나도 없습니다.\n\n"
+                "‘② 문서 구성’ 에서 항목을 고른 뒤 [공개 범위] 를\n"
+                "‘생산 + 고객’ 으로 바꿔 주세요.\n\n"
+                "기본값은 ‘생산용만’ 이라 표시하지 않은 항목은 나가지 않습니다.")
+            return
+        if not getattr(self, "_preview_dir", None):
+            self._preview_dir = tempfile.mkdtemp(prefix="specgen_preview_")
+        tmp = os.path.join(self._preview_dir,
+                           f"승인사양서_{safe_name(self.doc.meta.dwg_no or 'spec')}.pdf")
+        try:
+            build_approval_pdf(approval_mod.build_doc(self.doc), tmp,
+                               self.settings.get("font_path"), source=self.doc)
+        except Exception as exc:
+            traceback.print_exc()
+            messagebox.showerror("승인 사양서 생성 실패", f"{exc}")
+            return
+        open_with_os(tmp)
+        self.set_status(f"고객 승인 사양서 미리보기: {tmp}")
+
+    def show_customer_scope(self) -> None:
+        self._commit_current()
+        self.collect_meta()
+        messagebox.showinfo("고객에게 나가는 내용", approval_mod.summary(self.doc))
+
+    def toggle_approval_output(self) -> None:
+        self.settings["make_approval"] = bool(self.approval_var.get())
+        save_settings(self.settings)
 
     def preview(self) -> None:
         # 공용 임시 폴더에 예측 가능한 이름으로 쓰지 않도록, 이 실행 전용 폴더를 쓴다
@@ -990,7 +1072,15 @@ class App(tk.Tk):
                                             filetypes=[("PDF", "*.pdf")])
         if not path:
             return
-        if self._make_pdf(path) and messagebox.askyesno("완료", "PDF를 지금 열어볼까요?"):
+        appr = None
+        if self.settings.get("make_approval", True) and approval_mod.customer_sections(self.doc):
+            stem = os.path.splitext(path)[0]
+            appr = stem + "_APPROVAL.pdf"
+        made = self._make_pdf(path, approval_path=appr)
+        if made and messagebox.askyesno(
+                "완료", "저장했습니다.\n\n"
+                + "\n".join(os.path.basename(p) for p in (made if appr else [made]))
+                + "\n\n생산 사양서를 지금 열어볼까요?"):
             open_with_os(path)
 
     # ── 도구 ────────────────────────────────────────────────
