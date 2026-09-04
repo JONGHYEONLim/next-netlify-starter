@@ -429,6 +429,61 @@ def run() -> int:
         assert numbers == [str(i + 1) for i in range(len(numbers))], \
             f"번호가 이어지지 않습니다: {numbers[:6]}"
 
+    @check("빈 페이지가 끼지 않는다 (항목을 골라 실어도)")
+    def _(out=out):
+        from . import approval as approval_mod
+        from .model import AUD_CUSTOMER, Section
+        from .render import approval as approval_render, frame as frame_render
+        from .render.build import build_approval_pdf, build_pdf
+
+        def 빈장(path, rect_fn):
+            """내용 틀 안에 글자도 그림도 없는 장을 찾는다.
+
+            테두리 선은 어느 장에나 그려지므로 세지 않는다.
+            """
+            try:
+                import pymupdf
+            except ImportError:
+                return []
+            from reportlab.lib.pagesizes import A4
+            x, y, w, h = rect_fn()
+            clip = pymupdf.Rect(x, A4[1] - (y + h), x + w, A4[1] - y)
+            bad = []
+            with pymupdf.open(path) as d:
+                for i, page in enumerate(d, 1):
+                    text = page.get_textbox(clip).strip()
+                    imgs = [im for im in page.get_image_info()
+                            if clip.intersects(pymupdf.Rect(im["bbox"]))]
+                    if not text and not imgs:
+                        bad.append(i)
+            return bad
+
+        경우 = {}
+        # ① 앞쪽 항목을 고객용으로 돌려서, 표지 바로 뒤 항목이 '쪽 나눔' 으로 시작
+        d1 = SpecDoc.load(files[-1])
+        for s in d1.sections:
+            if s.key in ("scope", "basic_spec"):
+                s.audience = AUD_CUSTOMER
+        경우["앞 항목이 빠진 문서"] = d1
+        # ② 맨 뒤 '쪽 나눔' 항목을 지워서 끝에 넘김만 남는 경우
+        d2 = SpecDoc.load(files[-1])
+        while d2.sections and not d2.sections[-1].page_break_before:
+            d2.sections.pop()
+        d2.sections.pop()                      # 넘김이 붙은 마지막 항목까지 제거
+        d2.sections.append(Section(page_break_before=True, title_ko="빈 항목"))
+        경우["끝에 빈 항목만 남은 문서"] = d2
+        # ③ 손대지 않은 표준 문서
+        경우["표준 문서"] = SpecDoc.load(files[-1])
+
+        for 이름, doc in 경우.items():
+            a = build_pdf(doc, os.path.join(out, f"blank_p_{len(이름)}.pdf"))
+            bad = 빈장(a, frame_render.content_frame_rect)
+            assert not bad, f"생산 사양서({이름})에 빈 장: {bad}"
+            b = build_approval_pdf(approval_mod.build_doc(doc),
+                                   os.path.join(out, f"blank_a_{len(이름)}.pdf"), source=doc)
+            bad = 빈장(b, approval_render.content_frame_rect)
+            assert not bad, f"승인 사양서({이름})에 빈 장: {bad}"
+
     @check("명판에 적은 값이 도안 위에 찍힌다")
     def _(out=out):
         from . import approval as approval_mod

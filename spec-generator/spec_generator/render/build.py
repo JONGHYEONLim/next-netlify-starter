@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import io
 import os
-from typing import Optional
+from typing import List, Optional
 
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import (BaseDocTemplate, Frame, NextPageTemplate,
                                 PageBreak, PageTemplate, Spacer)
+from reportlab.platypus.doctemplate import ActionFlowable
 
 from ..fonts import register_fonts
 from ..model import SpecDoc, internal_sections
@@ -39,20 +40,49 @@ class _Doc(BaseDocTemplate):
         self.addPageTemplates(pages)
 
 
+def _is_filler(f) -> bool:
+    """혼자 있으면 아무것도 안 찍히는 flowable(빈 칸·내부 지시)인가."""
+    return isinstance(f, (Spacer, ActionFlowable))
+
+
+def _tidy(body: List) -> List:
+    """빈 페이지를 만드는 페이지 넘김을 걷어낸다.
+
+    항목을 골라 싣다 보면(고객용/생산용 분리, 항목 삭제 등) '페이지 넘김' 만
+    잇달아 남는 자리가 생긴다. 그대로 두면 아무것도 없는 장이 끼어든다.
+      · 앞에 실제 내용이 없는 페이지 넘김은 버린다 (맨 앞 · 넘김 바로 뒤)
+      · 맨 끝의 페이지 넘김도 버린다 (마지막에 빈 장이 붙는다)
+    """
+    out: List = []
+    for item in body:
+        if isinstance(item, PageBreak):
+            j = len(out) - 1
+            while j >= 0 and _is_filler(out[j]):
+                j -= 1
+            if j < 0 or isinstance(out[j], PageBreak):
+                continue                      # 앞에 실린 내용이 없다 → 넘길 것이 없다
+        out.append(item)
+    while out and isinstance(out[-1], PageBreak):
+        out.pop()
+    return out
+
+
 def _story(doc: SpecDoc, styles, sections=None):
     """조판할 flowable 목록. sections 를 주면 그것만 싣는다."""
     if sections is None:
         sections = doc.sections
     numbers = doc.assign_numbers(sections)
     base_dir = doc.base_dir()
-    story = []
-    if doc.meta.cover:
-        story += [Spacer(1, 1), NextPageTemplate("std"), PageBreak()]
+    body: List = []
     for s in sections:
-        if s.page_break_before and story:
-            story.append(PageBreak())
-        story.extend(flow.section_flowables(s, numbers.get(s.id, ""), styles, base_dir))
-    return story
+        if s.page_break_before:
+            body.append(PageBreak())
+        body.extend(flow.section_flowables(s, numbers.get(s.id, ""), styles, base_dir))
+    body = _tidy(body)
+    # 표지는 통짜 한 장이라, 표지를 닫는 넘김은 손대지 않고 앞에 붙인다.
+    if doc.meta.cover:
+        return [Spacer(1, 1), NextPageTemplate("std"), PageBreak()] + body
+    return body
 
 
 class _ApprovalDoc(BaseDocTemplate):
