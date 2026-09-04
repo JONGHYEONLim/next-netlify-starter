@@ -35,8 +35,12 @@ C_INFO_TOP = 188.0
 C_INFO_ROW = 11.0
 C_REV_TOP = 100.0             # 개정 이력
 C_REV_ROW = 7.5
-C_APPR_TOP = 56.0             # 고객 승인란
-C_APPR_H = 26.0
+C_APPR_TOP = 58.0             # 고객 승인란
+C_APPR_HEAD_H = 7.5
+C_APPR_STAMP_H = 14.0         # 도장 자리 (없어도 높이 유지)
+C_APPR_NAME_H = 6.0           # 이름 — 글자 크기 고정
+C_APPR_H = C_APPR_HEAD_H + C_APPR_STAMP_H + C_APPR_NAME_H
+C_APPR_NAME_SIZE = 9.0
 C_BOTTOM_RULE = 24.0
 
 
@@ -47,10 +51,16 @@ def _doc_no(m: Meta) -> str:
 class ApprovalFrame:
     """본문 각 장의 머리말·꼬리말."""
 
-    def __init__(self, meta: Meta, total_getter=None, page_offset: int = 0):
+    LOGO_H = 5.6          # 머리말 로고 높이(mm) — 선 위에 맞춰 작게
+
+    def __init__(self, meta: Meta, total_getter=None, page_offset: int = 0,
+                 base_dir: str = ""):
         self.meta = meta
         self._total = total_getter
         self.page_offset = page_offset
+        self.base_dir = base_dir or os.getcwd()
+        from .frame import _find_logo
+        self._logo = _find_logo(meta.logo_path, self.base_dir)
 
     def __call__(self, canvas: Canvas, doc) -> None:
         c, m = canvas, self.meta
@@ -63,9 +73,22 @@ class ApprovalFrame:
         c.setFillColor(SOFT)
         c.setFont(FONT_REGULAR, 8.0)
         c.drawString(_x(ML), _y(HEAD_Y + 2.6), m.company or "")
+
+        right = MR
+        if self._logo:                       # 오른쪽 위, 선에 맞춰 작게
+            reader, iw, ih = self._logo
+            h = self.LOGO_H
+            w = h * (iw / float(ih or 1))
+            if w > 34.0:
+                w, h = 34.0, 34.0 * (ih / float(iw or 1))
+            c.drawImage(reader, _x(MR - w), _y(HEAD_Y + 1.6), _x(w), _y(h),
+                        mask="auto", preserveAspectRatio=True, anchor="e")
+            right = MR - w - 4.0
         no = _doc_no(m)
         if no:
-            c.drawRightString(_x(MR), _y(HEAD_Y + 2.6), f"{no}    Rev. {m.revision or 'A'}")
+            c.setFillColor(SOFT)
+            c.setFont(FONT_REGULAR, 8.0)
+            c.drawRightString(_x(right), _y(HEAD_Y + 2.6), f"{no}    Rev. {m.revision or 'A'}")
 
         c.setFont(FONT_REGULAR, 7.6)
         c.drawString(_x(ML), _y(FOOT_Y - 5.0),
@@ -242,15 +265,22 @@ class ApprovalCover:
         return getattr(self, "_revs", [])
 
     def _approval(self, c: Canvas) -> None:
+        """Braumm 승인란(도장) 과 고객 승인란(빈칸).
+
+        도장 유무와 관계없이 행 높이·글자 크기를 고정한다.
+        """
         m = self.meta
-        top, bot = C_APPR_TOP, C_APPR_TOP - C_APPR_H
-        head_h = 7.5
+        top = C_APPR_TOP
+        y_head = top - C_APPR_HEAD_H
+        y_stamp = y_head - C_APPR_STAMP_H
+        bot = y_stamp - C_APPR_NAME_H
         groups = [("Braumm", [("Prepared", m.drawn), ("Checked", m.checked),
                               ("Approved", m.approved)]),
                   ("Customer", [("Checked", None), ("Approved", None)])]
         gap = 8.0
         total = MR - ML - gap
         widths = [total * 3 / 5, total * 2 / 5]
+
         gx = ML
         for (title, cells), gw in zip(groups, widths):
             c.setFillColor(SOFT)
@@ -259,28 +289,31 @@ class ApprovalCover:
             c.setStrokeColor(LINE)
             c.setLineWidth(0.6)
             c.setFillColor(FILL)
-            c.rect(_x(gx), _y(top - head_h), _x(gw), _y(head_h), stroke=0, fill=1)
+            c.rect(_x(gx), _y(y_head), _x(gw), _y(C_APPR_HEAD_H), stroke=0, fill=1)
             c.setFillColor(colors.white)
-            c.rect(_x(gx), _y(bot), _x(gw), _y(C_APPR_H - head_h), stroke=0, fill=1)
+            c.rect(_x(gx), _y(bot), _x(gw), _y(y_head - bot), stroke=0, fill=1)
             c.rect(_x(gx), _y(bot), _x(gw), _y(C_APPR_H), stroke=1, fill=0)
-            c.line(_x(gx), _y(top - head_h), _x(gx + gw), _y(top - head_h))
+            for gy in (y_head, y_stamp):
+                c.line(_x(gx), _y(gy), _x(gx + gw), _y(gy))
+
             cw = gw / len(cells)
             for i, (label, person) in enumerate(cells):
                 x0 = gx + cw * i
+                cx = x0 + cw / 2
                 if i:
                     c.line(_x(x0), _y(bot), _x(x0), _y(top))
                 c.setFillColor(SOFT)
                 c.setFont(FONT_REGULAR, 7.4)
-                c.drawCentredString(_x(x0 + cw / 2), _y(top - head_h + 2.3), label)
+                c.drawCentredString(_x(cx), _y(y_head + 2.3), label)
                 if person is None:
                     continue                     # 고객이 직접 서명할 빈 칸
-                stamped = draw_stamp(c, person, self.base_dir, cx=x0 + cw / 2,
-                                     cy=bot + 11.5, max_w=cw - 6.0, max_h=11.0)
+                draw_stamp(c, person, self.base_dir, cx=cx,
+                           cy=y_stamp + C_APPR_STAMP_H / 2,
+                           max_w=cw - 6.0, max_h=C_APPR_STAMP_H - 2.5)
                 if person.name:
                     c.setFillColor(INK)
-                    c.setFont(FONT_REGULAR, 7.4 if stamped else 10.0)
-                    c.drawCentredString(_x(x0 + cw / 2),
-                                        _y(bot + 3.0 if stamped else bot + 7.5), person.name)
+                    c.setFont(FONT_REGULAR, C_APPR_NAME_SIZE)
+                    c.drawCentredString(_x(cx), _y(bot + 1.8), person.name)
             gx += gw + gap
 
     def _footer(self, c: Canvas) -> None:

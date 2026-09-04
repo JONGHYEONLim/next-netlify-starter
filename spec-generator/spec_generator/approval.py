@@ -36,6 +36,22 @@ def customer_sections(doc: SpecDoc) -> List[Section]:
     return out
 
 
+def boilerplate(doc: SpecDoc) -> List[Section]:
+    """승인 사양서의 정형 문구.
+
+    문서가 스스로 가지고 있으면 그것을(= 사용자가 고친 값을) 쓰고,
+    없으면 프로그램에 들어 있는 표준 템플릿을 쓴다.
+    """
+    if doc.approval_sections:
+        return doc.approval_sections
+    return tpl_pkg.load_template(TEMPLATE_NAME).sections
+
+
+def default_boilerplate() -> List[Section]:
+    """표준 승인 템플릿의 정형 문구 사본 (문서에 심을 때 쓴다)."""
+    return copy.deepcopy(tpl_pkg.load_template(TEMPLATE_NAME).sections)
+
+
 def build_doc(doc: SpecDoc, template: Optional[SpecDoc] = None) -> SpecDoc:
     """생산 사양서 → 고객 승인 사양서 문서를 만들어 돌려준다(원본은 건드리지 않는다)."""
     tpl = template or tpl_pkg.load_template(TEMPLATE_NAME)
@@ -53,7 +69,7 @@ def build_doc(doc: SpecDoc, template: Optional[SpecDoc] = None) -> SpecDoc:
 
     picked = customer_sections(doc)
     sections: List[Section] = []
-    for s in tpl.sections:
+    for s in (template.sections if template else boilerplate(doc)):
         if s.key == SLOT_KEY:
             sections.extend(copy.deepcopy(picked))
             continue

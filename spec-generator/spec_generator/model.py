@@ -11,7 +11,7 @@ import json
 import os
 import uuid
 from dataclasses import dataclass, field, asdict
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 SCHEMA_VERSION = 2
 
@@ -198,6 +198,10 @@ class SpecDoc:
     template: str = ""         # 이 문서를 시작할 때 쓴 템플릿 이름
     meta: Meta = field(default_factory=Meta)
     sections: List[Section] = field(default_factory=list)
+    # 고객 승인 사양서의 정형 문구(적용 규격·사용 조건·허용 공차 등).
+    # 문서 안에 들어 있으므로 제품마다 값을 고치거나 항목을 더할 수 있다.
+    # 비어 있으면 프로그램에 들어 있는 승인 템플릿을 그대로 쓴다.
+    approval_sections: List[Section] = field(default_factory=list)
     source_path: str = ""   # 저장 경로(직렬화 제외). 상대 이미지 경로 해석 기준.
 
     # ---------- 직렬화 ----------
@@ -225,16 +229,22 @@ class SpecDoc:
             meta_d[key] = Person(**_pick(meta_d.get(key) or {}, Person))
         meta = Meta(**_pick(meta_d, Meta))
 
-        sections: List[Section] = []
-        for sd in d.get("sections") or []:
-            sd = dict(sd)
-            sd["blocks"] = [Block(**_pick(b, Block)) for b in sd.get("blocks") or []]
-            sd["rows"] = [SpecRow(**_pick(r, SpecRow)) for r in sd.get("rows") or []]
-            sd["versions"] = [VersionRow(**_pick(r, VersionRow)) for r in sd.get("versions") or []]
-            sd["images"] = [ImageItem(**_pick(i, ImageItem)) for i in sd.get("images") or []]
-            sections.append(Section(**_pick(sd, Section)))
+        def _sections(key: str) -> List[Section]:
+            out: List[Section] = []
+            for sd in d.get(key) or []:
+                sd = dict(sd)
+                sd["blocks"] = [Block(**_pick(b, Block)) for b in sd.get("blocks") or []]
+                sd["rows"] = [SpecRow(**_pick(r, SpecRow)) for r in sd.get("rows") or []]
+                sd["versions"] = [VersionRow(**_pick(r, VersionRow))
+                                  for r in sd.get("versions") or []]
+                sd["images"] = [ImageItem(**_pick(i, ImageItem)) for i in sd.get("images") or []]
+                out.append(Section(**_pick(sd, Section)))
+            return out
+
         return cls(schema=SCHEMA_VERSION, app_version=str(d.get("app_version") or ""),
-                   template=str(d.get("template") or ""), meta=meta, sections=sections)
+                   template=str(d.get("template") or ""), meta=meta,
+                   sections=_sections("sections"),
+                   approval_sections=_sections("approval_sections"))
 
     @classmethod
     def load(cls, path: str) -> "SpecDoc":
@@ -247,11 +257,11 @@ class SpecDoc:
     def base_dir(self) -> str:
         return os.path.dirname(self.source_path) if self.source_path else os.getcwd()
 
-    def assign_numbers(self) -> Dict[str, str]:
+    def assign_numbers(self, sections: Optional[List[Section]] = None) -> Dict[str, str]:
         """번호가 붙는 섹션에 1,2,3... 을 매긴다. {section.id: '4'} 형태로 반환."""
         out: Dict[str, str] = {}
         n = 0
-        for s in self.sections:
+        for s in (self.sections if sections is None else sections):
             if not s.numbered:
                 out[s.id] = s.no_override or s.bullet
                 continue

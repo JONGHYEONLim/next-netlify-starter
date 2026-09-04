@@ -27,7 +27,13 @@ INFO_TOP = 164.0              # 정보표 상단
 INFO_ROW = 13.0
 INFO_LABEL_W = 42.0
 APPROVAL_TOP = 77.0           # 승인란 상단
-APPROVAL_H = 35.0
+APPROVAL_HEAD_H = 8.0         # 머리(작성/검토/승인)
+APPROVAL_STAMP_H = 17.0       # 도장·사인 자리 (도장이 없어도 높이는 그대로)
+APPROVAL_NAME_H = 6.5         # 이름 — 글자 크기 고정
+APPROVAL_DATE_H = 5.5         # 일자
+APPROVAL_H = APPROVAL_HEAD_H + APPROVAL_STAMP_H + APPROVAL_NAME_H + APPROVAL_DATE_H
+APPROVAL_NAME_SIZE = 9.5
+APPROVAL_DATE_SIZE = 7.4
 BOTTOM_RULE = 34.0
 
 INK = colors.Color(0.10, 0.10, 0.12)
@@ -163,47 +169,51 @@ class CoverDrawer:
             c.drawString(_x(L + INFO_LABEL_W + 6), _y(y + 4.3), value)
 
     def _approval(self, c: Canvas) -> None:
+        """작성 · 검토 · 승인.
+
+        도장이 있든 없든 **행 높이와 글자 크기를 고정**해서
+        칸마다 이름 크기가 달라 보이지 않게 한다.
+        """
         m = self.meta
         cells = [("작 성", m.drawn), ("검 토", m.checked), ("승 인", m.approved)]
         total_w = R - L
         w = total_w / len(cells)
-        top, bot = APPROVAL_TOP, APPROVAL_TOP - APPROVAL_H
-        head_h = 8.0
+        top = APPROVAL_TOP
+        y_head = top - APPROVAL_HEAD_H
+        y_stamp = y_head - APPROVAL_STAMP_H
+        y_name = y_stamp - APPROVAL_NAME_H
+        bot = y_name - APPROVAL_DATE_H
 
         c.setStrokeColor(LINE)
         c.setLineWidth(0.6)
         c.setFillColor(FILL)
-        c.rect(_x(L), _y(top - head_h), _x(total_w), _y(head_h), stroke=0, fill=1)
+        c.rect(_x(L), _y(y_head), _x(total_w), _y(APPROVAL_HEAD_H), stroke=0, fill=1)
         c.setFillColor(colors.white)
-        c.rect(_x(L), _y(bot), _x(total_w), _y(APPROVAL_H - head_h), stroke=0, fill=1)
+        c.rect(_x(L), _y(bot), _x(total_w), _y(y_head - bot), stroke=0, fill=1)
         c.rect(_x(L), _y(bot), _x(total_w), _y(APPROVAL_H), stroke=1, fill=0)
-        c.line(_x(L), _y(top - head_h), _x(R), _y(top - head_h))
+        for gy in (y_head, y_stamp, y_name):
+            c.line(_x(L), _y(gy), _x(R), _y(gy))
 
         for i, (label, person) in enumerate(cells):
             x0 = L + w * i
+            cx = x0 + w / 2
             if i:
                 c.line(_x(x0), _y(bot), _x(x0), _y(top))
             c.setFillColor(SOFT)
             c.setFont(FONT_REGULAR, 8.4)
-            c.drawCentredString(_x(x0 + w / 2), _y(top - head_h + 2.6), label)
+            c.drawCentredString(_x(cx), _y(y_head + 2.6), label)
 
-            stamp = draw_stamp(c, person, self.base_dir,
-                               cx=x0 + w / 2, cy=bot + 16.0,
-                               max_w=w - 10.0, max_h=15.5)
+            draw_stamp(c, person, self.base_dir, cx=cx,
+                       cy=y_stamp + APPROVAL_STAMP_H / 2,
+                       max_w=w - 10.0, max_h=APPROVAL_STAMP_H - 3.0)
             if person.name:
                 c.setFillColor(INK)
-                if stamp:
-                    # 도장을 찍었으면 이름은 그 아래 작게
-                    c.setFont(FONT_REGULAR, 8.4)
-                    c.drawCentredString(_x(x0 + w / 2), _y(bot + 5.2), person.name)
-                else:
-                    c.setFont(FONT_REGULAR, 12.5)
-                    c.drawCentredString(_x(x0 + w / 2), _y(bot + 12.0), person.name)
+                c.setFont(FONT_REGULAR, APPROVAL_NAME_SIZE)
+                c.drawCentredString(_x(cx), _y(y_name + 2.0), person.name)
             if person.date:
                 c.setFillColor(SOFT)
-                c.setFont(FONT_REGULAR, 7.0 if stamp else 7.6)
-                c.drawCentredString(_x(x0 + w / 2), _y(bot + 1.6 if stamp else bot + 3.6),
-                                    person.date)
+                c.setFont(FONT_REGULAR, APPROVAL_DATE_SIZE)
+                c.drawCentredString(_x(cx), _y(bot + 1.8), person.date)
 
     def _footer(self, c: Canvas) -> None:
         m = self.meta

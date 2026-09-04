@@ -29,7 +29,9 @@ from ..render.build import build_approval_pdf, build_both, build_pdf
 from .widgets import (FieldGrid, GridEditor, HelpWindow, MultilineDialog,
                       RegistryWindow, UpdateWindow)
 
-APP_TITLE = "생산용 사양서 생성기"
+from .. import __version__
+
+APP_TITLE = f"Braumm 사양서 생성기  v{__version__}"
 SETTINGS = os.path.join(os.path.expanduser("~"), ".spec_generator.json")
 FILETYPES = [("사양서 프로젝트", "*.spec.json"), ("JSON", "*.json"), ("모든 파일", "*.*")]
 
@@ -82,6 +84,7 @@ class App(tk.Tk):
         self.doc = SpecDoc()
         self._dirty = False
         self._current: Optional[Section] = None
+        self.editing_approval = False      # False=생산 사양서 구성, True=승인 정형 문구
 
         self._build_menu()
         self._build_body()
@@ -143,6 +146,8 @@ class App(tk.Tk):
 
         h = tk.Menu(bar, tearoff=0)
         h.add_command(label="사용 방법", command=self.show_help)
+        h.add_separator()
+        h.add_command(label="프로그램 정보", command=self.show_about)
         bar.add_cascade(label="도움말", menu=h)
         self.config(menu=bar)
 
@@ -310,9 +315,51 @@ class App(tk.Tk):
             self.note_text.edit_modified(False)
             self.mark_dirty()
 
+    def _sections(self):
+        """지금 편집 중인 항목 목록."""
+        return self.doc.approval_sections if self.editing_approval else self.doc.sections
+
+    def _switch_list(self) -> None:
+        want = bool(self.list_mode.get())
+        if want == self.editing_approval:
+            return
+        self._commit_current()
+        if want and not self.doc.approval_sections:
+            if not messagebox.askyesno(
+                    "승인 사양서 정형 문구",
+                    "이 문서에는 아직 승인 사양서 정형 문구가 들어 있지 않습니다.\n"
+                    "(지금은 프로그램의 표준 문구를 그대로 쓰고 있습니다)\n\n"
+                    "표준 문구를 이 문서 안으로 가져와 편집할까요?\n"
+                    "가져오면 적용 규격·사용 조건·허용 공차 등을 제품에 맞게 고칠 수 있습니다."):
+                self.list_mode.set(0)
+                return
+            self.doc.approval_sections = approval_mod.default_boilerplate()
+            self.mark_dirty()
+        self.editing_approval = want
+        self._current = None
+        self.refresh_section_list(select=0)
+        self.mode_hint.configure(
+            text=("고객 승인 사양서에만 실리는 정형 문구입니다. "
+                  "적용 규격·허용 공차 등을 제품에 맞게 고치세요."
+                  if want else
+                  "생산 사양서의 구성입니다. 고객에게도 보낼 항목은 [공개 범위] 를 바꾸세요."))
+
     def _build_sections_tab(self) -> None:
+        top = ttk.Frame(self.tab_sections)
+        top.pack(fill="x", padx=10, pady=(8, 0))
+        self.list_mode = tk.IntVar(value=0)
+        ttk.Radiobutton(top, text="생산 사양서 구성", variable=self.list_mode, value=0,
+                        command=self._switch_list).pack(side="left")
+        ttk.Radiobutton(top, text="승인 사양서 정형 문구 (적용 규격 · 허용 공차 …)",
+                        variable=self.list_mode, value=1,
+                        command=self._switch_list).pack(side="left", padx=(14, 0))
+        self.mode_hint = ttk.Label(
+            self.tab_sections, foreground="#666",
+            text="생산 사양서의 구성입니다. 고객에게도 보낼 항목은 [공개 범위] 를 바꾸세요.")
+        self.mode_hint.pack(anchor="w", padx=12, pady=(2, 0))
+
         pane = ttk.PanedWindow(self.tab_sections, orient="horizontal")
-        pane.pack(fill="both", expand=True, padx=8, pady=8)
+        pane.pack(fill="both", expand=True, padx=8, pady=(6, 8))
 
         left = ttk.Frame(pane)
         pane.add(left, weight=1)
@@ -425,6 +472,9 @@ class App(tk.Tk):
         self.note_text.insert("1.0", m.confidential_note)
 
         self._current = None
+        self.editing_approval = False
+        if hasattr(self, "list_mode"):
+            self.list_mode.set(0)
         self.refresh_section_list(select=0)
         self.mark_dirty(False)
 
@@ -456,20 +506,21 @@ class App(tk.Tk):
     def refresh_section_list(self, select: Optional[int] = None) -> None:
         keep = select if select is not None else (self.sec_list.curselection() or [None])[0]
         self.sec_list.delete(0, "end")
-        numbers = self.doc.assign_numbers()
-        for s in self.doc.sections:
+        sections = self._sections()
+        numbers = self.doc.assign_numbers(sections)
+        for s in sections:
             head = numbers.get(s.id) or ""
             head = f"{head}." if s.numbered and head else head
             title = "/".join(x for x in (s.title_ko, s.title_en) if x)
             tag = "  ▶고객" if s.to_customer() else ""
             self.sec_list.insert(
                 "end", f"{head} {title}   〔{KIND_LABELS.get(s.kind, s.kind)}〕{tag}")
-        if self.doc.sections:
-            idx = 0 if keep is None else max(0, min(int(keep), len(self.doc.sections) - 1))
+        if sections:
+            idx = 0 if keep is None else max(0, min(int(keep), len(sections) - 1))
             self.sec_list.selection_clear(0, "end")
             self.sec_list.selection_set(idx)
             self.sec_list.see(idx)
-            self.show_section(self.doc.sections[idx])
+            self.show_section(sections[idx])
         else:
             self._current = None
             self._clear_body()
@@ -478,7 +529,7 @@ class App(tk.Tk):
         sel = self.sec_list.curselection()
         if not sel:
             return
-        section = self.doc.sections[sel[0]]
+        section = self._sections()[sel[0]]
         if section is self._current:
             return
         self._commit_current()
@@ -721,8 +772,9 @@ class App(tk.Tk):
     def _refresh_list_labels(self) -> None:
         sel = self.sec_list.curselection()
         idx = sel[0] if sel else None
-        numbers = self.doc.assign_numbers()
-        for i, s in enumerate(self.doc.sections):
+        sections = self._sections()
+        numbers = self.doc.assign_numbers(sections)
+        for i, s in enumerate(sections):
             head = numbers.get(s.id) or ""
             head = f"{head}." if s.numbered and head else head
             title = "/".join(x for x in (s.title_ko, s.title_en) if x)
@@ -740,7 +792,7 @@ class App(tk.Tk):
         self._commit_current()
         kind = next((k for k, v in KIND_LABELS.items() if v == self.new_kind.get()), KIND_TEXT)
         sel = self.sec_list.curselection()
-        pos = (sel[0] + 1) if sel else len(self.doc.sections)
+        pos = (sel[0] + 1) if sel else len(self._sections())
         section = Section(kind=kind, title_ko="새 항목")
         if kind == KIND_TEXT:
             section.blocks = [Block(indent=1)]
@@ -748,7 +800,7 @@ class App(tk.Tk):
             section.rows = [SpecRow()]
         elif kind == KIND_VERSION_TABLE:
             section.versions = [VersionRow()]
-        self.doc.sections.insert(pos, section)
+        self._sections().insert(pos, section)
         self.refresh_section_list(select=pos)
         self.mark_dirty()
 
@@ -758,9 +810,9 @@ class App(tk.Tk):
         if not sel:
             return
         import copy
-        s = copy.deepcopy(self.doc.sections[sel[0]])
+        s = copy.deepcopy(self._sections()[sel[0]])
         s.id = os.urandom(4).hex()
-        self.doc.sections.insert(sel[0] + 1, s)
+        self._sections().insert(sel[0] + 1, s)
         self.refresh_section_list(select=sel[0] + 1)
         self.mark_dirty()
 
@@ -771,7 +823,7 @@ class App(tk.Tk):
         if not messagebox.askyesno("확인", "선택한 항목을 삭제할까요?"):
             return
         self._current = None
-        del self.doc.sections[sel[0]]
+        del self._sections()[sel[0]]
         self.refresh_section_list(select=max(0, sel[0] - 1))
         self.mark_dirty()
 
@@ -780,10 +832,11 @@ class App(tk.Tk):
         sel = self.sec_list.curselection()
         if not sel:
             return
+        sections = self._sections()
         i, j = sel[0], sel[0] + delta
-        if not (0 <= j < len(self.doc.sections)):
+        if not (0 <= j < len(sections)):
             return
-        self.doc.sections[i], self.doc.sections[j] = self.doc.sections[j], self.doc.sections[i]
+        sections[i], sections[j] = sections[j], sections[i]
         self._current = None
         self.refresh_section_list(select=j)
         self.mark_dirty()
@@ -805,6 +858,8 @@ class App(tk.Tk):
         doc = tpl_pkg.load_template("reactor")
         doc.source_path = ""
         doc.template = "reactor"
+        if not doc.approval_sections:
+            doc.approval_sections = approval_mod.default_boilerplate()
         self.load_doc(doc)
         self.set_status("표준 템플릿(리액터 생산 사양서)에서 새 문서를 시작했습니다.")
 
@@ -1247,6 +1302,16 @@ class App(tk.Tk):
             "① 기본정보에 입력한 값으로 자동으로 바뀝니다.\n"
             "표준 템플릿의 '기본 사양' 표에는 이미 들어가 있습니다.\n\n"
             + ph.help_lines())
+
+    def show_about(self) -> None:
+        messagebox.showinfo(
+            "프로그램 정보",
+            f"Braumm 사양서 생성기\n\n"
+            f"판 번호 : v{__version__}\n"
+            f"PDF 폰트 : {active_font_description()}\n"
+            f"설정 파일 : {SETTINGS}\n"
+            f"출력 폴더 : {self.output_root()}\n\n"
+            "무엇이 바뀌었는지는 CHANGELOG.md 를 보세요.")
 
     def show_help(self) -> None:
         HelpWindow(self)

@@ -65,7 +65,8 @@ class _ApprovalDoc(BaseDocTemplate):
                   topPadding=0, bottomPadding=0, id="content")
         offset = 1 if meta.cover else 0
         pages = [PageTemplate(id="std", frames=[f],
-                              onPage=approval_render.ApprovalFrame(meta, total_getter, offset))]
+                              onPage=approval_render.ApprovalFrame(meta, total_getter, offset,
+                                                                  base_dir))]
         if meta.cover:
             cover = approval_render.ApprovalCover(meta, base_dir)
             cover._revs = list(revisions)

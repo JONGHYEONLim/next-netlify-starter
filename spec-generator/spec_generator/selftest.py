@@ -312,6 +312,68 @@ def run() -> int:
         for must in ("APPROVAL", "Applicable Standards", "Tolerances", "Rev."):
             assert must in text, f"승인 사양서에 '{must}' 가 없습니다"
 
+    @check("승인 사양서 정형 문구를 문서에서 고칠 수 있다")
+    def _(out=out):
+        from . import approval as approval_mod
+        from .render.build import build_approval_pdf
+        doc = SpecDoc.load(files[-1])
+        doc.approval_sections = approval_mod.default_boilerplate()
+        assert doc.approval_sections, "표준 정형 문구를 가져오지 못했습니다"
+
+        changed = "± 7.5 % (검사용)"
+        added = "9. 검사용으로 더한 줄"
+        for sec in doc.approval_sections:
+            if sec.key == "tolerance":
+                sec.rows[0].spec = changed
+                sec.rows.append(type(sec.rows[0])("9. Extra", "", added, ""))
+            if sec.key == "standards":
+                sec.rows.append(type(sec.rows[0])("IEC 61800-5-1", "", "Drive systems", ""))
+
+        pdf = build_approval_pdf(approval_mod.build_doc(doc),
+                                 os.path.join(out, "approval_edited.pdf"), source=doc)
+        try:
+            import pymupdf
+        except ImportError:
+            return
+        with pymupdf.open(pdf) as d:
+            text = " ".join(" ".join(p.get_text().split()) for p in d)
+        assert changed in text, "고친 공차 값이 반영되지 않았습니다"
+        assert added in text, "더한 줄이 반영되지 않았습니다"
+        assert "IEC 61800-5-1" in text, "더한 규격이 반영되지 않았습니다"
+        assert "여기에 생산 사양서" not in text, "슬롯 표시가 인쇄되었습니다"
+
+    @check("문서에 심은 정형 문구가 저장·복원된다")
+    def _(out=out):
+        from . import approval as approval_mod
+        doc = SpecDoc.load(files[-1])
+        doc.approval_sections = approval_mod.default_boilerplate()
+        doc.approval_sections[0].title_ko = "고친 제목"
+        p = os.path.join(out, "with_approval.spec.json")
+        doc.save(p)
+        again = SpecDoc.load(p)
+        assert len(again.approval_sections) == len(doc.approval_sections)
+        assert again.approval_sections[0].title_ko == "고친 제목"
+
+    @check("승인란 높이가 도장 유무와 상관없이 같다")
+    def _():
+        from .render import approval as ar, cover as cv
+        # 도장 칸 · 이름 칸 · 일자 칸을 고정 높이로 잡아 두었는지
+        assert cv.APPROVAL_H == (cv.APPROVAL_HEAD_H + cv.APPROVAL_STAMP_H
+                                 + cv.APPROVAL_NAME_H + cv.APPROVAL_DATE_H)
+        assert ar.C_APPR_H == (ar.C_APPR_HEAD_H + ar.C_APPR_STAMP_H + ar.C_APPR_NAME_H)
+        assert cv.APPROVAL_NAME_SIZE > 0 and ar.C_APPR_NAME_SIZE > 0
+
+    @check("판 번호가 붙어 있다")
+    def _():
+        import re as _re
+        from . import __version__
+        assert _re.fullmatch(r"\d+\.\d+", __version__), f"판 번호 형식이 이상합니다: {__version__}"
+        here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        log = os.path.join(here, "CHANGELOG.md")
+        if os.path.exists(log):
+            text = open(log, encoding="utf-8").read()
+            assert f"v{__version__}" in text, f"CHANGELOG 에 v{__version__} 항목이 없습니다"
+
     @check("항목의 기본 공개 범위는 '생산용만' 이다")
     def _():
         from .model import AUD_INTERNAL, Section, SpecRow

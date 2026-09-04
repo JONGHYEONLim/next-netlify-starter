@@ -36,12 +36,17 @@ jobs:
       - name: Smoke test (render the sample without a GUI)
         run: python -m spec_generator build "samples/예제_리액터_475A.spec.json" -o build-check.pdf
 
+      - name: 판 번호 읽기
+        id: ver
+        shell: bash
+        run: echo "v=$(python -c 'import spec_generator; print(spec_generator.__version__)')" >> $GITHUB_OUTPUT
+
       - name: Build exe
         run: python -m PyInstaller --clean --noconfirm SpecGenerator.spec
 
       - name: Upload exe
         uses: actions/upload-artifact@v4
         with:
-          name: SpecGenerator-exe
+          name: SpecGenerator-v${{ steps.ver.outputs.v }}-exe
           path: spec-generator/dist/SpecGenerator.exe
           if-no-files-found: error

@@ -240,19 +240,12 @@
       "numbered": false,
       "no_override": "",
       "bullet": "",
-      "title_ko": "",
+      "title_ko": "◆ 여기에 생산 사양서의 [고객 공개] 항목이 들어갑니다 (이 줄 자체는 인쇄되지 않음)",
       "title_en": "",
-      "underline": true,
+      "underline": false,
       "page_break_before": false,
       "note": "",
-      "blocks": [
-        {
-          "indent": 0,
-          "marker": "",
-          "ko": "",
-          "en": ""
-        }
-      ],
+      "blocks": [],
       "rows": [],
       "versions": [],
       "images": [],
