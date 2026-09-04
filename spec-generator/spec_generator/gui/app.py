@@ -22,7 +22,7 @@ from ..registry import Registry
 from ..fonts import active_font_description, register_fonts
 from ..importers import SUPPORTED_EXT, copy_into_project
 from ..model import (AUDIENCE_LABELS, AUD_BOTH, AUD_CUSTOMER, AUD_INTERNAL,
-                     file_is_newer, KIND_IMAGE, KIND_LABELS, KIND_SPEC_TABLE, KIND_TEXT,
+                     GridRow, KIND_TABLE, file_is_newer, KIND_IMAGE, KIND_LABELS, KIND_SPEC_TABLE, KIND_TEXT,
                      KIND_VERSION_TABLE, Block, ImageItem, Section, SpecDoc,
                      SpecRow, VersionRow)
 from ..render.build import build_approval_pdf, build_both, build_pdf
@@ -560,6 +560,8 @@ class App(tk.Tk):
         self._clear_body()
         if section.kind == KIND_SPEC_TABLE:
             self._pane_spec(section)
+        elif section.kind == KIND_TABLE:
+            self._pane_table(section)
         elif section.kind == KIND_VERSION_TABLE:
             self._pane_version(section)
         elif section.kind == KIND_IMAGE:
@@ -669,6 +671,70 @@ class App(tk.Tk):
         self.blocks_editor = self._blocks_grid(
             self._tab(nb, "표 위 설명글", self.BLK_HINT), section, False)
 
+    def _pane_table(self, section: Section) -> None:
+        """자유 표 — 열 이름과 열 수를 직접 정한다 (자재 리스트 등)."""
+        nb = self._notebook()
+        page = self._tab(nb, "표",
+                         "열 이름을  |  로 나눠 적고 [열 적용] 을 누르면 표의 열이 바뀝니다.\n"
+                         "열 너비는 비워 두면 고르게 나눕니다 (본문 폭 170mm 기준).")
+        head = ttk.Frame(page)
+        head.pack(fill="x", padx=8, pady=(4, 0))
+        ttk.Label(head, text="열 이름").grid(row=0, column=0, sticky="e", padx=(0, 4))
+        self.grid_headers_var = tk.StringVar(value=" | ".join(section.headers or ["No.", "항목", "내용"]))
+        ttk.Entry(head, textvariable=self.grid_headers_var).grid(row=0, column=1, sticky="ew", pady=2)
+        ttk.Label(head, text="열 너비(mm)").grid(row=1, column=0, sticky="e", padx=(0, 4))
+        self.grid_widths_var = tk.StringVar(
+            value=" | ".join(str(w) for w in section.col_widths_mm))
+        ttk.Entry(head, textvariable=self.grid_widths_var).grid(row=1, column=1, sticky="ew", pady=2)
+        ttk.Button(head, text="열 적용", command=self._apply_grid_headers).grid(
+            row=0, column=2, rowspan=2, padx=6)
+        head.columnconfigure(1, weight=1)
+
+        headers = section.headers or ["No.", "항목", "내용"]
+        cols = [(f"c{i}", h, 150) for i, h in enumerate(headers)]
+        cols.append(("audience", "공개", 70))
+        g = GridEditor(page, columns=cols,
+                       multiline=tuple(f"c{i}" for i in range(len(headers))),
+                       on_change=self._changed(), tree_height=11, panel_text_height=2)
+        g.pack(fill="both", expand=True, padx=8, pady=8)
+        g.set_rows([{**{f"c{i}": r.cell(i) for i in range(len(headers))},
+                     "audience": AUDIENCE_LABELS.get(r.audience, AUDIENCE_LABELS[AUD_BOTH])}
+                    for r in section.grid])
+        self.rows_editor = g
+        self._grid_cols = len(headers)
+
+        self.image_editor = self._image_grid(
+            self._tab(nb, "첨부 도면", self.IMG_HINT,
+                      counter=lambda: len(self.image_editor.get_rows()) if self.image_editor else 0),
+            section, False)
+        self.blocks_editor = self._blocks_grid(
+            self._tab(nb, "표 위 설명글", self.BLK_HINT), section, False)
+
+    def _apply_grid_headers(self) -> None:
+        """열 이름·너비를 바꾸고 표 편집기를 다시 그린다."""
+        section = self._current
+        if section is None:
+            return
+        headers = [h.strip() for h in self.grid_headers_var.get().split("|")]
+        headers = [h for h in headers if h] or ["항목"]
+        widths: list = []
+        for part in self.grid_widths_var.get().split("|"):
+            part = part.strip()
+            if part:
+                widths.append(_float(part, 0.0))
+        if len(widths) != len(headers):
+            widths = []            # 개수가 안 맞으면 고르게 나눈다
+
+        self._commit_current()
+        section.headers = headers
+        section.col_widths_mm = widths
+        for row in section.grid:   # 열 수가 바뀌면 칸 수를 맞춰 준다
+            cells = list(row.cells)[:len(headers)]
+            cells += [""] * (len(headers) - len(cells))
+            row.cells = cells
+        self.mark_dirty()
+        self.show_section(section)
+
     def _pane_image(self, section: Section) -> None:
         nb = self._notebook()
         self.image_editor = self._image_grid(self._tab(nb, "도면", self.IMG_HINT,
@@ -752,7 +818,13 @@ class App(tk.Tk):
                         for r in self.image_editor.get_rows() if r.get("path")]
         if self.rows_editor is not None:
             rows = self.rows_editor.get_rows()
-            if s.kind == KIND_SPEC_TABLE:
+            if s.kind == KIND_TABLE:
+                n = getattr(self, "_grid_cols", len(s.headers) or 1)
+                s.grid = [GridRow([r.get(f"c{i}", "") for i in range(n)],
+                                  next((k for k, v in AUDIENCE_LABELS.items()
+                                        if v == r.get("audience")), AUD_BOTH))
+                          for r in rows]
+            elif s.kind == KIND_SPEC_TABLE:
                 s.rows = [SpecRow(r.get("item_ko", ""), r.get("item_en", ""),
                                   r.get("spec", ""), r.get("remark", ""),
                                   next((k for k, v in AUDIENCE_LABELS.items()
@@ -798,6 +870,10 @@ class App(tk.Tk):
             section.blocks = [Block(indent=1)]
         elif kind == KIND_SPEC_TABLE:
             section.rows = [SpecRow()]
+        elif kind == KIND_TABLE:
+            section.headers = ["No.", "품명 / Name", "사양 / Specifications"]
+            section.col_widths_mm = [14.0, 56.0, 100.0]
+            section.grid = [GridRow(["1", "", ""])]
         elif kind == KIND_VERSION_TABLE:
             section.versions = [VersionRow()]
         self._sections().insert(pos, section)

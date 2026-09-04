@@ -16,7 +16,8 @@ from reportlab.platypus.flowables import Flowable
 from reportlab.platypus.flowables import HRFlowable
 
 from ..fonts import FONT_BOLD, FONT_REGULAR
-from ..model import KIND_IMAGE, KIND_SPEC_TABLE, KIND_TEXT, KIND_VERSION_TABLE, Section
+from ..model import (KIND_IMAGE, KIND_SPEC_TABLE, KIND_TABLE, KIND_TEXT,
+                     KIND_VERSION_TABLE, Section)
 
 CONTENT_W_MM = 170.0
 INDENT_STEP_MM = 9.0
@@ -24,6 +25,7 @@ INDENT_STEP_MM = 9.0
 SPEC_HEADERS = ["항  목", "사  양", "비  고"]
 SPEC_WIDTHS = [37.0, 74.0, 59.0]
 VER_HEADERS = ["리비전", "작성자", "발행일", "변  경  내  용"]
+GRID_HEADERS = ["No.", "항목", "내용"]
 VER_WIDTHS = [16.0, 20.0, 24.0, 110.0]
 
 
@@ -109,6 +111,12 @@ def _body(section: Section, styles, base_dir: str) -> List:
     out: List = []
     if section.kind == KIND_VERSION_TABLE:
         out.extend(_version_table(section, styles))
+    elif section.kind == KIND_TABLE:
+        out.extend(_text_blocks(section, styles))
+        if section.grid:
+            if out:
+                out.append(Spacer(1, 2 * mm))
+            out.append(_free_table(section, styles))
     elif section.kind == KIND_IMAGE:
         out.extend(_text_blocks(section, styles))
     else:
@@ -253,6 +261,36 @@ class FitImage(Flowable):
 
     def identity(self, maxLen=None):
         return f"FitImage({os.path.basename(self.path)})"
+
+
+def _free_table(section: Section, styles) -> Table:
+    """열 수를 마음대로 정할 수 있는 표 (자재 리스트, 부품 목록 등)."""
+    headers = [h for h in (section.headers or GRID_HEADERS)]
+    n = len(headers)
+    data = [[Paragraph(_multiline(h), styles["cell_h"]) for h in headers]]
+    for row in section.grid:
+        cells = [row.cell(i) for i in range(n)]
+        data.append([Paragraph(_multiline(c) or "&nbsp;",
+                               styles["cell"] if i == 0 else styles["cell_l"])
+                     for i, c in enumerate(cells)])
+
+    widths = section.col_widths_mm or []
+    if len(widths) != n:
+        widths = [CONTENT_W_MM / n] * n
+    scale = CONTENT_W_MM / sum(widths)
+    col_widths = [w * scale * mm for w in widths]
+
+    t = Table(data, colWidths=col_widths, repeatRows=1)
+    t.setStyle(TableStyle([
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("VALIGN", (0, 0), (-1, 0), "MIDDLE"),
+        ("TOPPADDING", (0, 0), (-1, -1), 2.0),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 2.0),
+        ("LEFTPADDING", (0, 0), (-1, -1), 2.5),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 2.5),
+    ]))
+    return t
 
 
 def _images(section: Section, styles, base_dir: str) -> List:

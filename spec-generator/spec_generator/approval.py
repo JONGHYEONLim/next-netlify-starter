@@ -30,7 +30,8 @@ def customer_sections(doc: SpecDoc) -> List[Section]:
             continue
         copy_ = s.customer_copy()
         # 표만 있고 남은 줄이 하나도 없으면서 그림·글도 없으면 뺀다
-        if copy_.kind != KIND_TEXT and not (copy_.rows or copy_.images or copy_.blocks):
+        if copy_.kind != KIND_TEXT and not (copy_.rows or copy_.grid
+                                           or copy_.images or copy_.blocks):
             continue
         out.append(copy_)
     return out

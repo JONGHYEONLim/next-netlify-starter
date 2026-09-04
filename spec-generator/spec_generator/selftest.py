@@ -252,10 +252,16 @@ def run() -> int:
                 out_ += [r.item_ko for r in sec.rows]
                 out_ += [r.spec for r in sec.rows]
                 out_ += [b.ko for b in sec.blocks]
+                for gr in sec.grid:                 # 자유 표 칸도 빠짐없이
+                    out_ += list(gr.cells)
             return out_
 
         def flat(t):
             return " ".join(str(t or "").split())
+
+        def squash(t):
+            """공백을 모두 지운다 — 좁은 칸에서 줄바꿈된 글자도 잡기 위해."""
+            return "".join(str(t or "").split())
 
         doc = SpecDoc.load(files[-1])
         tpl = templates.load_template(approval_mod.TEMPLATE_NAME)
@@ -263,8 +269,11 @@ def run() -> int:
         internal = [s for s in doc.sections if not s.to_customer()]
         secret = set()
         for sec in internal:
-            for t in [sec.title_ko] + [r.item_ko for r in sec.rows] + \
-                     [r.spec for r in sec.rows] + [b.ko for b in sec.blocks]:
+            texts = [sec.title_ko] + [r.item_ko for r in sec.rows] + \
+                    [r.spec for r in sec.rows] + [b.ko for b in sec.blocks]
+            for gr in sec.grid:
+                texts += list(gr.cells)
+            for t in texts:
                 if len(flat(t)) >= 3:
                     secret.add(flat(t))
         for sec in doc.sections:                    # 고객 항목 안의 '생산용만' 줄
@@ -273,14 +282,20 @@ def run() -> int:
             for r in sec.rows:
                 if not goes_to_customer(r.audience) and len(flat(r.item_ko)) >= 3:
                     secret.add(flat(r.item_ko))
+            for gr in sec.grid:
+                if goes_to_customer(gr.audience):
+                    continue
+                for t in gr.cells:
+                    if len(flat(t)) >= 3:
+                        secret.add(flat(t))
 
         # 승인 템플릿·고객 공개 항목에 원래 있는 말은 누출이 아니다.
         # 허용 목록은 검사 대상 함수(customer_sections)를 거치지 않고
         # 문서에서 직접 계산한다 — 그 함수가 망가져도 검사가 무력화되지 않게.
-        allowed = " ".join(flat(t) for t in
-                           words_of(tpl.sections)
-                           + words_of([x for x in doc.sections if x.to_customer()]))
-        secret = {t for t in secret if t not in allowed}
+        allowed = "".join(squash(t) for t in
+                          words_of(tpl.sections)
+                          + words_of([x for x in doc.sections if x.to_customer()]))
+        secret = {t for t in secret if squash(t) not in allowed}
         assert secret, "검사할 '생산용 전용' 문구를 찾지 못했습니다"
 
         pdf = build_approval_pdf(approval_mod.build_doc(doc),
@@ -290,8 +305,8 @@ def run() -> int:
         except ImportError:
             return
         with pymupdf.open(pdf) as d:
-            text = " ".join(flat(p.get_text()) for p in d)
-        leaked = sorted(t for t in secret if t in text)
+            text = "".join(squash(p.get_text()) for p in d)
+        leaked = sorted(t for t in secret if squash(t) in text)
         assert not leaked, ("고객 문서에 생산용 내용이 실렸습니다: "
                             + ", ".join(leaked[:6]))
 
@@ -311,6 +326,34 @@ def run() -> int:
             text = " ".join(" ".join(p.get_text().split()) for p in d)
         for must in ("APPROVAL", "Applicable Standards", "Tolerances", "Rev."):
             assert must in text, f"승인 사양서에 '{must}' 가 없습니다"
+
+    @check("자유 표(자재 리스트)가 승인 사양서에 실리고, 감춘 줄은 빠진다")
+    def _(out=out):
+        from . import approval as approval_mod
+        from .model import AUD_INTERNAL, GridRow, KIND_TABLE
+        from .render.build import build_approval_pdf
+
+        doc = SpecDoc.load(files[-1])
+        target = next((s for s in doc.sections if s.kind == KIND_TABLE and s.to_customer()), None)
+        assert target is not None, "고객에게 나가는 자유 표가 없습니다"
+        assert target.headers, "자유 표에 열 이름이 없습니다"
+
+        shown = "ZZSHOWN"
+        hidden = "ZZHIDDEN"
+        n = len(target.headers)
+        target.grid.append(GridRow([shown] + [""] * (n - 1)))
+        target.grid.append(GridRow([hidden] + [""] * (n - 1), AUD_INTERNAL))
+
+        pdf = build_approval_pdf(approval_mod.build_doc(doc),
+                                 os.path.join(out, "grid.pdf"), source=doc)
+        try:
+            import pymupdf
+        except ImportError:
+            return
+        with pymupdf.open(pdf) as d:
+            text = "".join("".join(p.get_text().split()) for p in d)
+        assert shown in text, "자유 표의 줄이 승인 사양서에 실리지 않았습니다"
+        assert hidden not in text, "감춘 줄이 승인 사양서에 실렸습니다"
 
     @check("승인 사양서 정형 문구를 문서에서 고칠 수 있다")
     def _(out=out):

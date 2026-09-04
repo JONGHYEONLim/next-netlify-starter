@@ -46,10 +46,12 @@ KIND_TEXT = "text"                    # 번호 항목 + 본문(일/영 병기)
 KIND_SPEC_TABLE = "spec_table"        # 항목/사양/비고 3열 표
 KIND_VERSION_TABLE = "version_table"  # 판수관리표
 KIND_IMAGE = "image"                  # 도면/그림
+KIND_TABLE = "table"                  # 자유 표 — 열 수와 열 이름을 마음대로 (자재 리스트 등)
 
 KIND_LABELS = {
     KIND_TEXT: "본문 항목",
     KIND_SPEC_TABLE: "사양표",
+    KIND_TABLE: "자유 표",
     KIND_IMAGE: "도면/그림",
     KIND_VERSION_TABLE: "판수관리표",
 }
@@ -134,6 +136,16 @@ class SpecRow:
 
 
 @dataclass
+class GridRow:
+    """자유 표의 한 행. 칸 수는 Section.headers 의 열 수를 따른다."""
+    cells: List[str] = field(default_factory=list)
+    audience: str = AUD_BOTH
+
+    def cell(self, i: int) -> str:
+        return self.cells[i] if 0 <= i < len(self.cells) else ""
+
+
+@dataclass
 class VersionRow:
     rev: str = ""
     author: str = ""
@@ -168,6 +180,7 @@ class Section:
     note: str = ""                # 제목 오른쪽 또는 아래에 붙는 ※ 주기
     blocks: List[Block] = field(default_factory=list)
     rows: List[SpecRow] = field(default_factory=list)
+    grid: List[GridRow] = field(default_factory=list)      # 자유 표의 행
     versions: List[VersionRow] = field(default_factory=list)
     images: List[ImageItem] = field(default_factory=list)
     part_no: str = ""             # 판수관리표의 <PartNo. P1> 표기
@@ -182,6 +195,7 @@ class Section:
         import copy as _copy
         out = _copy.deepcopy(self)
         out.rows = [r for r in out.rows if goes_to_customer(r.audience)]
+        out.grid = [r for r in out.grid if goes_to_customer(r.audience)]
         return out
 
     def display_name(self) -> str:
@@ -235,6 +249,7 @@ class SpecDoc:
                 sd = dict(sd)
                 sd["blocks"] = [Block(**_pick(b, Block)) for b in sd.get("blocks") or []]
                 sd["rows"] = [SpecRow(**_pick(r, SpecRow)) for r in sd.get("rows") or []]
+                sd["grid"] = [GridRow(**_pick(r, GridRow)) for r in sd.get("grid") or []]
                 sd["versions"] = [VersionRow(**_pick(r, VersionRow))
                                   for r in sd.get("versions") or []]
                 sd["images"] = [ImageItem(**_pick(i, ImageItem)) for i in sd.get("images") or []]

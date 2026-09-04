@@ -1,11 +1,20 @@
 {
-  "schema": 1,
+  "schema": 2,
+  "app_version": "1.0",
+  "template": "reactor",
   "meta": {
     "product_name": "",
     "use_name": "",
     "doc_kind": "생산 사양서",
     "dwg_prefix": "BR",
     "dwg_no": "",
+    "customer": "",
+    "customer_en": "",
+    "family": "RA",
+    "serial": "01",
+    "rated_current": "",
+    "revision": "A",
+    "revision_date": "",
     "old_dwg_no": "",
     "dwg_code": "",
     "dwg_code2": "",
@@ -19,28 +28,37 @@
     "label_kind": "문서종류",
     "drawn": {
       "date": "",
-      "name": ""
+      "name": "",
+      "stamp": ""
     },
     "checked": {
       "date": "",
-      "name": ""
+      "name": "",
+      "stamp": ""
     },
     "renewal": {
       "date": "",
-      "name": ""
+      "name": "",
+      "stamp": ""
     },
-    "approved": "",
+    "approved": {
+      "date": "",
+      "name": "",
+      "stamp": ""
+    },
     "footer_code": "Braumm-SPEC-A4",
     "confidential_note": "본 문서 및 여기에 포함된 정보는 Braumm 의 자산입니다. Braumm 의 서면 동의 없이 복제, 복사, 대여하거나 제3자에게 어떠한 방법으로도 공개할 수 없으며, 승인된 생산 목적 외에는 사용할 수 없습니다.",
+    "cover": true,
+    "cover_subtitle": "PRODUCTION SPECIFICATION",
     "page_start": 1,
     "page_total": 0,
-    "revision_rows": 5,
-    "cover": true,
-    "cover_subtitle": "PRODUCTION SPECIFICATION"
+    "revision_rows": 5
   },
   "sections": [
     {
       "id": "a76707d6",
+      "key": "scope",
+      "audience": "internal",
       "kind": "text",
       "numbered": true,
       "no_override": "",
@@ -65,16 +83,17 @@
         }
       ],
       "rows": [],
+      "grid": [],
       "versions": [],
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": [],
-      "key": "scope",
-      "audience": "internal"
+      "col_widths_mm": []
     },
     {
       "id": "72de9eb9",
+      "key": "basic_spec",
+      "audience": "both",
       "kind": "spec_table",
       "numbered": true,
       "no_override": "",
@@ -192,6 +211,48 @@
           "audience": "both"
         },
         {
+          "item_ko": "리플 전류",
+          "item_en": "Ripple current",
+          "spec": "",
+          "remark": "% max. / 주파수",
+          "audience": "both"
+        },
+        {
+          "item_ko": "직류 저항",
+          "item_en": "DC resistance",
+          "spec": "",
+          "remark": "mΩ, 기준온도 환산",
+          "audience": "both"
+        },
+        {
+          "item_ko": "총 손실",
+          "item_en": "Total loss",
+          "spec": "",
+          "remark": "W (계산값)",
+          "audience": "both"
+        },
+        {
+          "item_ko": "과부하 용량",
+          "item_en": "Over-load capacity",
+          "spec": "",
+          "remark": "% / 시간",
+          "audience": "both"
+        },
+        {
+          "item_ko": "온도 상승",
+          "item_en": "Temperature rise",
+          "spec": "",
+          "remark": "K (권선: 저항법, 철심: 열전대법)",
+          "audience": "both"
+        },
+        {
+          "item_ko": "소음",
+          "item_en": "Noise",
+          "spec": "",
+          "remark": "dB(A), 정격 전류에서",
+          "audience": "both"
+        },
+        {
           "item_ko": "총 중량",
           "item_en": "Total weight",
           "spec": "",
@@ -199,16 +260,17 @@
           "audience": "both"
         }
       ],
+      "grid": [],
       "versions": [],
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": [],
-      "key": "basic_spec",
-      "audience": "both"
+      "col_widths_mm": []
     },
     {
       "id": "178be316",
+      "key": "outline",
+      "audience": "both",
       "kind": "image",
       "numbered": true,
       "no_override": "",
@@ -227,16 +289,337 @@
         }
       ],
       "rows": [],
+      "grid": [],
       "versions": [],
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": [],
-      "key": "outline",
-      "audience": "both"
+      "col_widths_mm": []
+    },
+    {
+      "id": "62a0c61f",
+      "key": "parts",
+      "audience": "both",
+      "kind": "table",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "구조 및 부품",
+      "title_en": "Construction and Parts",
+      "underline": true,
+      "page_break_before": true,
+      "note": "※ 번호는 아래 도면의 풍선 번호와 같습니다",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "",
+          "ko": "각 부품의 번호는 외형도의 풍선 번호와 일치한다.",
+          "en": "The item numbers correspond to the balloon numbers on the outline drawing."
+        }
+      ],
+      "rows": [],
+      "grid": [
+        {
+          "cells": [
+            "1",
+            "철심 / Core",
+            ""
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "2",
+            "권선 / Coil",
+            ""
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "3",
+            "베이스 / Base",
+            ""
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "4",
+            "코어 서포트 / Core Support",
+            ""
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "5",
+            "절연 튜브 / Insulating Tube",
+            ""
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "6",
+            "인출선 / Lead Wire",
+            ""
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "7",
+            "단자 / Terminal",
+            ""
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "8",
+            "볼트 · 너트 / Bolt & Nut",
+            ""
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "9",
+            "명판 / Name Plate",
+            ""
+          ],
+          "audience": "both"
+        }
+      ],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [
+        "No.",
+        "부품명 / Name",
+        "비고 / Remarks"
+      ],
+      "col_widths_mm": [
+        16.0,
+        74.0,
+        80.0
+      ]
+    },
+    {
+      "id": "5542d7dd",
+      "key": "materials",
+      "audience": "both",
+      "kind": "table",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "자재 리스트",
+      "title_en": "Materials List",
+      "underline": true,
+      "page_break_before": true,
+      "note": "",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "",
+          "ko": "본 사양서 대상품에 사용하는 자재는 아래와 같다. 동등 이상의 자재를 사용할 수 있다.",
+          "en": "The materials used for the product covered by this specification are listed below. Materials of equal or better grade may be used."
+        },
+        {
+          "indent": 1,
+          "marker": "",
+          "ko": "",
+          "en": ""
+        },
+        {
+          "indent": 1,
+          "marker": "",
+          "ko": ".RoHS : 시험 성적서 번호      .MSDS : 자재 분류 번호 및 제조사명",
+          "en": ".RoHS : test report number      .MSDS : classification number and manufacturer"
+        }
+      ],
+      "rows": [],
+      "grid": [
+        {
+          "cells": [
+            "1",
+            "철심 / Core",
+            ".재질 :\n.무방향성 전기강판",
+            "N/A",
+            "",
+            ""
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "2",
+            "권선 / Coil",
+            ".재질 :\n.내열등급 :",
+            "",
+            "",
+            ""
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "3",
+            "절연물 / Insulator",
+            ".재질 :\n.두께 :\n.내열등급 :",
+            "",
+            "",
+            ""
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "4",
+            "베이스 / Base",
+            ".재질 :\n.두께 :",
+            "",
+            "",
+            ""
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "5",
+            "코어 서포트 / Core Support",
+            ".재질 :\n.두께 :",
+            "N/A",
+            "",
+            ""
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "6",
+            "절연 튜브 / Insulating Tube",
+            ".재질 :\n.규격 :",
+            "",
+            "",
+            ""
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "7",
+            "단자 / Terminal",
+            ".재질 :\n.규격 :",
+            "",
+            "",
+            ""
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "8",
+            "볼트 · 너트 / Bolt & Nut",
+            ".재질 :\n.규격 :",
+            "N/A",
+            "",
+            ""
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "9",
+            "명판 / Name Plate",
+            ".재질 :",
+            "N/A",
+            "",
+            ""
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "10",
+            "함침 바니시 / Varnish",
+            ".재질 :\n.내열등급 :",
+            "",
+            "",
+            ""
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "11",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "12",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "13",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "14",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "audience": "both"
+        }
+      ],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "headers": [
+        "No.",
+        "품명 / Name",
+        "사양 / Specifications",
+        "UL File No.",
+        "RoHS",
+        "MSDS"
+      ],
+      "col_widths_mm": [
+        10.0,
+        30.0,
+        54.0,
+        24.0,
+        26.0,
+        26.0
+      ]
     },
     {
       "id": "4ad09922",
+      "key": "winding",
+      "audience": "internal",
       "kind": "spec_table",
       "numbered": true,
       "no_override": "",
@@ -312,16 +695,17 @@
           "audience": "both"
         }
       ],
+      "grid": [],
       "versions": [],
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": [],
-      "key": "winding",
-      "audience": "internal"
+      "col_widths_mm": []
     },
     {
       "id": "9b4dd212",
+      "key": "yoke_core",
+      "audience": "internal",
       "kind": "spec_table",
       "numbered": true,
       "no_override": "",
@@ -376,16 +760,17 @@
           "audience": "both"
         }
       ],
+      "grid": [],
       "versions": [],
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": [],
-      "key": "yoke_core",
-      "audience": "internal"
+      "col_widths_mm": []
     },
     {
       "id": "57f8fe22",
+      "key": "leg_core",
+      "audience": "internal",
       "kind": "spec_table",
       "numbered": true,
       "no_override": "",
@@ -447,16 +832,17 @@
           "audience": "both"
         }
       ],
+      "grid": [],
       "versions": [],
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": [],
-      "key": "leg_core",
-      "audience": "internal"
+      "col_widths_mm": []
     },
     {
       "id": "f9fd3174",
+      "key": "gap",
+      "audience": "internal",
       "kind": "spec_table",
       "numbered": true,
       "no_override": "",
@@ -504,16 +890,17 @@
           "audience": "both"
         }
       ],
+      "grid": [],
       "versions": [],
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": [],
-      "key": "gap",
-      "audience": "internal"
+      "col_widths_mm": []
     },
     {
       "id": "598cebd1",
+      "key": "sus",
+      "audience": "internal",
       "kind": "spec_table",
       "numbered": true,
       "no_override": "",
@@ -568,16 +955,17 @@
           "audience": "both"
         }
       ],
+      "grid": [],
       "versions": [],
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": [],
-      "key": "sus",
-      "audience": "internal"
+      "col_widths_mm": []
     },
     {
       "id": "10fedd45",
+      "key": "bobbin",
+      "audience": "internal",
       "kind": "spec_table",
       "numbered": true,
       "no_override": "",
@@ -632,16 +1020,17 @@
           "audience": "both"
         }
       ],
+      "grid": [],
       "versions": [],
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": [],
-      "key": "bobbin",
-      "audience": "internal"
+      "col_widths_mm": []
     },
     {
       "id": "88870c68",
+      "key": "fastener",
+      "audience": "internal",
       "kind": "spec_table",
       "numbered": true,
       "no_override": "",
@@ -696,16 +1085,17 @@
           "audience": "both"
         }
       ],
+      "grid": [],
       "versions": [],
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": [],
-      "key": "fastener",
-      "audience": "internal"
+      "col_widths_mm": []
     },
     {
       "id": "fb6eff80",
+      "key": "sheetmetal",
+      "audience": "internal",
       "kind": "spec_table",
       "numbered": true,
       "no_override": "",
@@ -767,16 +1157,17 @@
           "audience": "both"
         }
       ],
+      "grid": [],
       "versions": [],
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": [],
-      "key": "sheetmetal",
-      "audience": "internal"
+      "col_widths_mm": []
     },
     {
       "id": "a337fee2",
+      "key": "assembly",
+      "audience": "internal",
       "kind": "text",
       "numbered": true,
       "no_override": "",
@@ -825,16 +1216,17 @@
         }
       ],
       "rows": [],
+      "grid": [],
       "versions": [],
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": [],
-      "key": "assembly",
-      "audience": "internal"
+      "col_widths_mm": []
     },
     {
       "id": "4ab995ca",
+      "key": "inspection",
+      "audience": "internal",
       "kind": "text",
       "numbered": true,
       "no_override": "",
@@ -907,16 +1299,17 @@
         }
       ],
       "rows": [],
+      "grid": [],
       "versions": [],
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": [],
-      "key": "inspection",
-      "audience": "internal"
+      "col_widths_mm": []
     },
     {
       "id": "18c78f5a",
+      "key": "packing",
+      "audience": "internal",
       "kind": "text",
       "numbered": true,
       "no_override": "",
@@ -947,16 +1340,17 @@
         }
       ],
       "rows": [],
+      "grid": [],
       "versions": [],
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": [],
-      "key": "packing",
-      "audience": "internal"
+      "col_widths_mm": []
     },
     {
       "id": "67fcc4dd",
+      "key": "revision",
+      "audience": "internal",
       "kind": "version_table",
       "numbered": true,
       "no_override": "",
@@ -987,6 +1381,7 @@
         }
       ],
       "rows": [],
+      "grid": [],
       "versions": [
         {
           "rev": "A",
@@ -997,40 +1392,38 @@
         },
         {
           "rev": "",
+          "author": "",
           "date": "",
           "changed_ko": "",
-          "changed_en": "",
-          "author": ""
+          "changed_en": ""
         },
         {
           "rev": "",
+          "author": "",
           "date": "",
           "changed_ko": "",
-          "changed_en": "",
-          "author": ""
+          "changed_en": ""
         },
         {
           "rev": "",
+          "author": "",
           "date": "",
           "changed_ko": "",
-          "changed_en": "",
-          "author": ""
+          "changed_en": ""
         },
         {
           "rev": "",
+          "author": "",
           "date": "",
           "changed_ko": "",
-          "changed_en": "",
-          "author": ""
+          "changed_en": ""
         }
       ],
       "images": [],
       "part_no": "",
       "headers": [],
-      "col_widths_mm": [],
-      "key": "revision",
-      "audience": "internal"
+      "col_widths_mm": []
     }
   ],
-  "template": "reactor"
+  "approval_sections": []
 }
