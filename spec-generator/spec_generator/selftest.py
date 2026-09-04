@@ -355,6 +355,45 @@ def run() -> int:
         assert shown in text, "자유 표의 줄이 승인 사양서에 실리지 않았습니다"
         assert hidden not in text, "감춘 줄이 승인 사양서에 실렸습니다"
 
+    @check("명판에 적은 값이 도안 위에 찍힌다")
+    def _(out=out):
+        from . import approval as approval_mod
+        from .model import KIND_NAMEPLATE
+        from .render.build import build_approval_pdf
+
+        doc = SpecDoc.load(files[-1])
+        plate = next((s for s in doc.sections if s.kind == KIND_NAMEPLATE), None)
+        assert plate is not None, "명판 항목이 없습니다"
+
+        marker = "ZZPLATE-26-0001"
+        for row in plate.grid:
+            if row.cell(0):
+                row.cells[1] = marker
+                break
+        pdf = build_approval_pdf(approval_mod.build_doc(doc),
+                                 os.path.join(out, "plate.pdf"), source=doc)
+        try:
+            import pymupdf
+        except ImportError:
+            return
+        with pymupdf.open(pdf) as d:
+            text = "".join("".join(p.get_text().split()) for p in d)
+        assert marker.replace(" ", "") in text, "명판에 적은 값이 찍히지 않았습니다"
+
+    @check("명판 글자가 도안 밖으로 넘치지 않는다")
+    def _():
+        from reportlab.lib.units import mm as MM
+        from .render.flow import NamePlate
+
+        # 줄을 아주 많이 넣어도 안쪽에 들어가야 한다
+        rows = [("", "제목", 1.6)] + [(f"항목{i}", f"값{i}", 1.0) for i in range(14)]
+        plate = NamePlate(rows, {"width_mm": 110, "aspect": 1.93}, None, ".")
+        w, h = plate.wrap(170 * MM, 240 * MM)
+        used = h * plate.cfg["y"] / 100.0 + plate._body_fraction() * h * plate._shrink
+        limit = h * (1.0 - plate.BOTTOM_MARGIN) + 0.5
+        assert used <= limit, f"명판 글자가 넘칩니다 ({used:.1f} > {limit:.1f})"
+        assert plate._shrink <= 1.0
+
     @check("승인 사양서 정형 문구를 문서에서 고칠 수 있다")
     def _(out=out):
         from . import approval as approval_mod

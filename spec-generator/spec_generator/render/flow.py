@@ -16,8 +16,8 @@ from reportlab.platypus.flowables import Flowable
 from reportlab.platypus.flowables import HRFlowable
 
 from ..fonts import FONT_BOLD, FONT_REGULAR
-from ..model import (KIND_IMAGE, KIND_SPEC_TABLE, KIND_TABLE, KIND_TEXT,
-                     KIND_VERSION_TABLE, Section)
+from ..model import (KIND_IMAGE, KIND_NAMEPLATE, KIND_SPEC_TABLE, KIND_TABLE,
+                     KIND_TEXT, KIND_VERSION_TABLE, Section)
 
 CONTENT_W_MM = 170.0
 INDENT_STEP_MM = 9.0
@@ -48,13 +48,15 @@ def make_styles():
     }
 
 
-# 렌더링 한 번 동안 쓰이는 치환표. build_pdf 가 채워 넣는다.
+# 렌더링 한 번 동안 쓰이는 치환표와 표제 정보. build_pdf 가 채워 넣는다.
 _CTX: dict = {}
+_META: dict = {}
 
 
-def set_context(ctx: dict) -> None:
-    global _CTX
+def set_context(ctx: dict, meta=None) -> None:
+    global _CTX, _META
     _CTX = ctx or {}
+    _META = {"meta": meta} if meta is not None else {}
 
 
 def _esc(text: str) -> str:
@@ -111,6 +113,10 @@ def _body(section: Section, styles, base_dir: str) -> List:
     out: List = []
     if section.kind == KIND_VERSION_TABLE:
         out.extend(_version_table(section, styles))
+    elif section.kind == KIND_NAMEPLATE:
+        out.extend(_text_blocks(section, styles))
+        out.extend(_nameplate(section, styles, base_dir))
+        return out
     elif section.kind == KIND_TABLE:
         out.extend(_text_blocks(section, styles))
         if section.grid:
@@ -318,3 +324,167 @@ def _images(section: Section, styles, base_dir: str) -> List:
 
 
 __all__ = ["make_styles", "section_flowables", "CONTENT_W_MM", "HRFlowable"]
+
+
+# ── 명판 ────────────────────────────────────────────────────
+NAMEPLATE_DEFAULTS = {
+    "width_mm": 110.0,   # 문서에 넣을 명판 폭
+    "aspect": 1.93,      # 바탕 그림이 없을 때의 가로/세로 비
+    "x": 8.0,            # 글자 시작 위치 (폭의 %)
+    "y": 24.0,           # 글자 시작 위치 (높이의 %, 위에서부터)
+    "line": 9.0,         # 줄 간격 (높이의 %)
+    "size": 6.5,         # 글자 크기 (높이의 %)
+    "label_w": 40.0,     # 라벨 칸 너비 (폭의 %)
+}
+
+
+class NamePlate(Flowable):
+    """명판 도안.
+
+    · 바탕 그림(images[0])을 넣으면 그 위에 값만 찍는다.
+    · 바탕 그림이 없으면 테두리 + 로고 + 제조사 표기를 그려 명판 모양을 만든다.
+    배치는 layout 의 백분율 값으로 조절한다(가로 폭·높이 기준).
+    """
+
+    def __init__(self, rows, layout, meta, base_dir, background=None, logo=None):
+        super().__init__()
+        self.rows = rows                 # [(라벨, 값, 크기배율), ...]
+        self.cfg = dict(NAMEPLATE_DEFAULTS)
+        self.cfg.update({k: float(v) for k, v in (layout or {}).items()
+                         if isinstance(v, (int, float, str)) and str(v).strip() != ""})
+        self.meta = meta
+        self.base_dir = base_dir
+        self.bg = background
+        self.logo = logo
+        self._w = self._h = 0.0
+
+    BOTTOM_MARGIN = 0.14          # 아래쪽 제조사 표기를 위해 비워 두는 비율
+    _shrink = 1.0
+
+    def _body_fraction(self) -> float:
+        """줄들이 차지하는 높이 — 명판 높이에 대한 비율."""
+        line = self.cfg["line"] / 100.0
+        base = self.cfg["size"] / 100.0
+        return sum(max(line, base * (scale or 1.0) * 1.35) for _, _, scale in self.rows)
+
+    def wrap(self, availWidth, availHeight):
+        w = min(self.cfg["width_mm"] * mm, availWidth, CONTENT_W_MM * mm)
+        if self.bg is not None:
+            iw, ih = self.bg[1], self.bg[2]
+            ratio = (ih / float(iw)) if iw else (1.0 / self.cfg["aspect"])
+        else:
+            ratio = 1.0 / max(self.cfg["aspect"], 0.2)
+
+        # 글자 크기·줄 간격이 모두 명판 높이의 비율이므로, 명판을 키워도
+        # 글자가 같이 커진다. 따라서 넘칠 때는 글자를 줄여서 맞춘다.
+        avail = max(1.0 - self.cfg["y"] / 100.0 - self.BOTTOM_MARGIN, 0.05)
+        body = self._body_fraction()
+        self._shrink = min(1.0, avail / body) if body > 0 else 1.0
+
+        self._w, self._h = w, w * ratio
+        return self._w, self._h
+
+    def draw(self):
+        c, w, h = self.canv, self._w, self._h
+        if self.bg is not None:
+            c.drawImage(self.bg[0], 0, 0, w, h, mask="auto",
+                        preserveAspectRatio=True, anchor="c")
+        else:
+            self._draw_blank(c, w, h)
+        self._draw_values(c, w, h)
+
+    # ── 바탕 그림이 없을 때의 기본 명판 ──────────────────────
+    def _draw_blank(self, c, w, h) -> None:
+        c.saveState()
+        c.setFillColorRGB(1, 1, 1)
+        c.rect(0, 0, w, h, stroke=0, fill=1)
+        c.setStrokeColorRGB(0.35, 0.35, 0.40)
+        c.setLineWidth(1.0)
+        c.rect(0, 0, w, h, stroke=1, fill=0)
+
+        if self.logo is not None:                 # 좌측 상단 로고
+            reader, iw, ih = self.logo
+            lh = h * 0.20
+            lw = lh * (iw / float(ih or 1))
+            if lw > w * 0.30:
+                lw = w * 0.30
+                lh = lw * (ih / float(iw or 1))
+            c.drawImage(reader, w * 0.05, h - h * 0.06 - lh, lw, lh,
+                        mask="auto", preserveAspectRatio=True, anchor="nw")
+
+        company = self.meta.company or ""         # 우측 하단 제조사
+        c.setFillColorRGB(0.1, 0.1, 0.12)
+        base = max(h * 0.055, 4.0)
+        c.setFont(FONT_REGULAR, base)
+        c.drawRightString(w * 0.95, h * 0.16, "Manufacturer")
+        c.setFont(FONT_BOLD, base)
+        c.drawRightString(w * 0.95, h * 0.16 - base * 1.25, company)
+        site = str(self.cfg.get("site", "") or getattr(self.meta, "website", "") or "")
+        if site:
+            c.setFont(FONT_REGULAR, base)
+            c.drawRightString(w * 0.95, h * 0.16 - base * 2.7, site)
+        c.restoreState()
+
+    # ── 입력한 값 찍기 ───────────────────────────────────────
+    def _draw_values(self, c, w, h) -> None:
+        cfg = self.cfg
+        x = w * cfg["x"] / 100.0
+        y = h - h * cfg["y"] / 100.0
+        line = h * cfg["line"] / 100.0 * self._shrink
+        base = h * cfg["size"] / 100.0 * self._shrink
+        label_w = w * cfg["label_w"] / 100.0
+
+        c.saveState()
+        c.setFillColorRGB(0.05, 0.05, 0.07)
+        for label, value, scale in self.rows:
+            if not (label or value):
+                y -= line
+                continue
+            size = max(base * (scale or 1.0), 3.0)
+            if label:
+                c.setFont(FONT_REGULAR, size)
+                c.drawString(x, y - size, label)
+                c.setFont(FONT_BOLD, size)
+                c.drawString(x + label_w, y - size, value)
+            else:                                  # 라벨이 없으면 제목 줄
+                c.setFont(FONT_BOLD, size)
+                c.drawString(x, y - size, value)
+            y -= max(line, size * 1.35)
+        c.restoreState()
+
+    def identity(self, maxLen=None):
+        return "NamePlate"
+
+
+def _nameplate(section: Section, styles, base_dir: str) -> List:
+    from ..importers import resolve_image
+    from .frame import _find_logo
+
+    from ..placeholders import apply as _sub
+    rows = []
+    for r in section.grid:
+        try:
+            scale = float(r.cell(2) or 1.0)
+        except ValueError:
+            scale = 1.0
+        # 명판도 {제품명} {도번} 같은 자동 입력 항목을 쓸 수 있어야 한다
+        rows.append((_sub(r.cell(0), _CTX), _sub(r.cell(1), _CTX), scale))
+
+    background = None
+    if section.images:
+        path = resolve_image(section.images[0].path, base_dir)
+        if path and os.path.exists(path):
+            try:
+                reader = ImageReader(path)
+                iw, ih = reader.getSize()
+                background = (reader, iw, ih)
+            except Exception:
+                background = None
+    layout = dict(section.layout or {})
+    if section.images and section.images[0].width_mm:
+        layout.setdefault("width_mm", section.images[0].width_mm)
+
+    plate = NamePlate(rows, layout, _META.get("meta"), base_dir, background,
+                      _find_logo(_META["meta"].logo_path, base_dir) if _META.get("meta") else None)
+    plate.hAlign = "CENTER"
+    return [plate]

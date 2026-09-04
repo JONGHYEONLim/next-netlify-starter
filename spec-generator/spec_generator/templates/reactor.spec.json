@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "app_version": "1.0",
+  "app_version": "1.1",
   "template": "reactor",
   "meta": {
     "product_name": "",
@@ -87,6 +87,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -264,6 +265,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -293,6 +295,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -395,6 +398,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [
         "No.",
         "부품명 / Name",
@@ -404,6 +408,117 @@
         16.0,
         74.0,
         80.0
+      ]
+    },
+    {
+      "id": "151c23e9",
+      "key": "nameplate",
+      "audience": "both",
+      "kind": "nameplate",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "명판",
+      "title_en": "Name Plate",
+      "underline": true,
+      "page_break_before": false,
+      "note": "※ 아래 값을 적으면 명판 도안 위에 찍힙니다",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "",
+          "ko": "명판 도안(바탕 그림)을 [첨부 도면] 에 넣으면 그 위에 값이 찍힙니다. 넣지 않으면 기본 명판 모양으로 그려집니다.",
+          "en": "Attach the blank name plate artwork under [첨부 도면]; the values below are printed on top of it."
+        }
+      ],
+      "rows": [],
+      "grid": [
+        {
+          "cells": [
+            "",
+            "AC REACTOR",
+            "1.5"
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "Model",
+            "{제품명}",
+            "1.0"
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "Ratings",
+            "",
+            "1.0"
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "Inductance",
+            "",
+            "1.0"
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "Insulation Class",
+            "",
+            "1.0"
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "IP Grade",
+            "",
+            "1.0"
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "Dwg. No.",
+            "{도번}  Rev.{리비전}",
+            "1.0"
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "Mfg. No.",
+            "",
+            "1.0"
+          ],
+          "audience": "both"
+        }
+      ],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "layout": {
+        "width_mm": 115.0,
+        "aspect": 1.93,
+        "x": 8.0,
+        "y": 24.0,
+        "line": 9.0,
+        "size": 6.5,
+        "label_w": 40.0
+      },
+      "headers": [
+        "라벨 / Label",
+        "값 / Value",
+        "크기배율"
+      ],
+      "col_widths_mm": [
+        50.0,
+        100.0,
+        20.0
       ]
     },
     {
@@ -435,8 +550,8 @@
         {
           "indent": 1,
           "marker": "",
-          "ko": ".RoHS : 시험 성적서 번호      .MSDS : 자재 분류 번호 및 제조사명",
-          "en": ".RoHS : test report number      .MSDS : classification number and manufacturer"
+          "ko": ".RoHS : 시험 성적서 번호      .MSDS : 자재 분류 번호 및 제조사명      해당 없는 칸은 비워 두거나 N/A 로 적는다",
+          "en": ".RoHS : test report number      .MSDS : classification number and manufacturer      Leave blank or mark N/A where not applicable"
         }
       ],
       "rows": [],
@@ -446,6 +561,7 @@
             "1",
             "철심 / Core",
             ".재질 :\n.무방향성 전기강판",
+            "",
             "N/A",
             "",
             ""
@@ -459,6 +575,7 @@
             ".재질 :\n.내열등급 :",
             "",
             "",
+            "",
             ""
           ],
           "audience": "both"
@@ -468,6 +585,7 @@
             "3",
             "절연물 / Insulator",
             ".재질 :\n.두께 :\n.내열등급 :",
+            "",
             "",
             "",
             ""
@@ -481,6 +599,7 @@
             ".재질 :\n.두께 :",
             "",
             "",
+            "",
             ""
           ],
           "audience": "both"
@@ -490,6 +609,7 @@
             "5",
             "코어 서포트 / Core Support",
             ".재질 :\n.두께 :",
+            "",
             "N/A",
             "",
             ""
@@ -503,6 +623,7 @@
             ".재질 :\n.규격 :",
             "",
             "",
+            "",
             ""
           ],
           "audience": "both"
@@ -514,6 +635,7 @@
             ".재질 :\n.규격 :",
             "",
             "",
+            "",
             ""
           ],
           "audience": "both"
@@ -523,6 +645,7 @@
             "8",
             "볼트 · 너트 / Bolt & Nut",
             ".재질 :\n.규격 :",
+            "",
             "N/A",
             "",
             ""
@@ -534,6 +657,7 @@
             "9",
             "명판 / Name Plate",
             ".재질 :",
+            "",
             "N/A",
             "",
             ""
@@ -547,6 +671,7 @@
             ".재질 :\n.내열등급 :",
             "",
             "",
+            "",
             ""
           ],
           "audience": "both"
@@ -554,6 +679,7 @@
         {
           "cells": [
             "11",
+            "",
             "",
             "",
             "",
@@ -569,6 +695,7 @@
             "",
             "",
             "",
+            "",
             ""
           ],
           "audience": "both"
@@ -576,6 +703,7 @@
         {
           "cells": [
             "13",
+            "",
             "",
             "",
             "",
@@ -591,6 +719,7 @@
             "",
             "",
             "",
+            "",
             ""
           ],
           "audience": "both"
@@ -599,21 +728,24 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [
         "No.",
         "품명 / Name",
         "사양 / Specifications",
+        "제조사 / Manufacturer",
         "UL File No.",
         "RoHS",
         "MSDS"
       ],
       "col_widths_mm": [
-        10.0,
-        30.0,
-        54.0,
-        24.0,
+        9.0,
         26.0,
-        26.0
+        45.0,
+        24.0,
+        22.0,
+        22.0,
+        22.0
       ]
     },
     {
@@ -699,6 +831,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -764,6 +897,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -836,6 +970,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -894,6 +1029,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -959,6 +1095,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -1024,6 +1161,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -1089,6 +1227,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -1161,6 +1300,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -1220,6 +1360,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -1303,6 +1444,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -1344,6 +1486,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -1421,6 +1564,7 @@
       ],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     }

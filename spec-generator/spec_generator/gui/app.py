@@ -22,7 +22,7 @@ from ..registry import Registry
 from ..fonts import active_font_description, register_fonts
 from ..importers import SUPPORTED_EXT, copy_into_project
 from ..model import (AUDIENCE_LABELS, AUD_BOTH, AUD_CUSTOMER, AUD_INTERNAL,
-                     GridRow, KIND_TABLE, file_is_newer, KIND_IMAGE, KIND_LABELS, KIND_SPEC_TABLE, KIND_TEXT,
+                     GridRow, KIND_NAMEPLATE, KIND_TABLE, file_is_newer, KIND_IMAGE, KIND_LABELS, KIND_SPEC_TABLE, KIND_TEXT,
                      KIND_VERSION_TABLE, Block, ImageItem, Section, SpecDoc,
                      SpecRow, VersionRow)
 from ..render.build import build_approval_pdf, build_both, build_pdf
@@ -543,6 +543,7 @@ class App(tk.Tk):
         self.blocks_editor: Optional[GridEditor] = None
         self.image_editor: Optional[GridEditor] = None
         self.extra_fields: Optional[FieldGrid] = None
+        self.plate_vars = {}
 
     def show_section(self, section: Section) -> None:
         self._current = None   # 값 세팅 중 trace 로 되쓰이는 것 방지
@@ -562,6 +563,8 @@ class App(tk.Tk):
             self._pane_spec(section)
         elif section.kind == KIND_TABLE:
             self._pane_table(section)
+        elif section.kind == KIND_NAMEPLATE:
+            self._pane_nameplate(section)
         elif section.kind == KIND_VERSION_TABLE:
             self._pane_version(section)
         elif section.kind == KIND_IMAGE:
@@ -710,6 +713,59 @@ class App(tk.Tk):
         self.blocks_editor = self._blocks_grid(
             self._tab(nb, "표 위 설명글", self.BLK_HINT), section, False)
 
+    NAMEPLATE_KEYS = [
+        ("width_mm", "문서에 넣을 폭(mm)", 115.0),
+        ("aspect", "가로/세로 비", 1.93),
+        ("x", "글자 시작 X (%)", 8.0),
+        ("y", "글자 시작 Y (%)", 24.0),
+        ("line", "줄 간격 (%)", 9.0),
+        ("size", "글자 크기 (%)", 6.5),
+        ("label_w", "라벨 칸 너비 (%)", 40.0),
+    ]
+
+    def _pane_nameplate(self, section: Section) -> None:
+        """명판 — 값을 적으면 명판 도안 위에 찍힌다."""
+        nb = self._notebook()
+        page = self._tab(nb, "명판 내용",
+                         "라벨을 비우면 제목 줄이 됩니다. 크기배율 1.5 처럼 적으면 그 줄만 커집니다.\n"
+                         "{제품명} {도번} {리비전} 같은 자동 입력 항목도 쓸 수 있습니다.")
+        g = GridEditor(page, columns=[("c0", "라벨 / Label", 200),
+                                      ("c1", "값 / Value", 380),
+                                      ("c2", "크기배율", 80),
+                                      ("audience", "공개", 70)],
+                       multiline=("c1",), on_change=self._changed(),
+                       tree_height=10, panel_text_height=2)
+        g.pack(fill="both", expand=True, padx=8, pady=8)
+        g.set_rows([{"c0": r.cell(0), "c1": r.cell(1), "c2": r.cell(2) or "1.0",
+                     "audience": AUDIENCE_LABELS.get(r.audience, AUDIENCE_LABELS[AUD_BOTH])}
+                    for r in section.grid])
+        self.rows_editor = g
+        self._grid_cols = 3
+
+        lay = self._tab(nb, "배치",
+                        "명판 안에서 글자가 놓이는 자리입니다. 값은 명판 크기에 대한 % 입니다.\n"
+                        "줄이 많아 넘치면 글자 크기를 자동으로 줄여 맞춥니다.")
+        box = ttk.Frame(lay)
+        box.pack(fill="x", padx=12, pady=10)
+        self.plate_vars = {}
+        for row, (key, label, default) in enumerate(self.NAMEPLATE_KEYS):
+            ttk.Label(box, text=label, width=22).grid(row=row, column=0, sticky="e", pady=3)
+            var = tk.StringVar(value=str(section.layout.get(key, default)))
+            ttk.Entry(box, textvariable=var, width=12).grid(row=row, column=1, sticky="w", padx=6)
+            var.trace_add("write", lambda *a: self._commit_current(mark=True))
+            self.plate_vars[key] = var
+        ttk.Label(lay, foreground="#666", justify="left",
+                  text="바탕 그림(명판 도안)을 [첨부 도면] 에 넣으면 그 위에 값만 찍힙니다.\n"
+                       "넣지 않으면 테두리 + 로고 + 제조사 표기를 그려 기본 명판을 만듭니다.").pack(
+            anchor="w", padx=12)
+
+        self.image_editor = self._image_grid(
+            self._tab(nb, "첨부 도면", "명판 도안(바탕 그림)을 여기에 넣으세요.",
+                      counter=lambda: len(self.image_editor.get_rows()) if self.image_editor else 0),
+            section, False)
+        self.blocks_editor = self._blocks_grid(
+            self._tab(nb, "설명글", self.BLK_HINT), section, False)
+
     def _apply_grid_headers(self) -> None:
         """열 이름·너비를 바꾸고 표 편집기를 다시 그린다."""
         section = self._current
@@ -818,7 +874,7 @@ class App(tk.Tk):
                         for r in self.image_editor.get_rows() if r.get("path")]
         if self.rows_editor is not None:
             rows = self.rows_editor.get_rows()
-            if s.kind == KIND_TABLE:
+            if s.kind in (KIND_TABLE, KIND_NAMEPLATE):
                 n = getattr(self, "_grid_cols", len(s.headers) or 1)
                 s.grid = [GridRow([r.get(f"c{i}", "") for i in range(n)],
                                   next((k for k, v in AUDIENCE_LABELS.items()
@@ -836,6 +892,11 @@ class App(tk.Tk):
                                          r.get("changed_en", "")) for r in rows]
                 if self.extra_fields:
                     s.part_no = self.extra_fields.get("part_no")
+        if s.kind == KIND_NAMEPLATE and getattr(self, "plate_vars", None):
+            layout = {}
+            for key, _, default in self.NAMEPLATE_KEYS:
+                layout[key] = _float(self.plate_vars[key].get(), default)
+            s.layout = layout
         if mark:
             self.mark_dirty()
             self._refresh_list_labels()
@@ -874,6 +935,10 @@ class App(tk.Tk):
             section.headers = ["No.", "품명 / Name", "사양 / Specifications"]
             section.col_widths_mm = [14.0, 56.0, 100.0]
             section.grid = [GridRow(["1", "", ""])]
+        elif kind == KIND_NAMEPLATE:
+            section.headers = ["라벨 / Label", "값 / Value", "크기배율"]
+            section.layout = {k: v for k, _, v in App.NAMEPLATE_KEYS}
+            section.grid = [GridRow(["", "제품명", "1.5"]), GridRow(["Model", "", "1.0"])]
         elif kind == KIND_VERSION_TABLE:
             section.versions = [VersionRow()]
         self._sections().insert(pos, section)

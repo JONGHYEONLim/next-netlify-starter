@@ -93,7 +93,7 @@ def build_approval_pdf(doc: SpecDoc, out_path: str, font_path: Optional[str] = N
     """고객 승인 사양서 PDF. doc 은 approval.build_doc() 이 만든 문서."""
     register_fonts(font_path)
     styles = flow.make_styles()
-    flow.set_context(placeholders.build_context(doc.meta))
+    flow.set_context(placeholders.build_context(doc.meta), doc.meta)
     revisions = _revision_rows(source or doc)
 
     total = {"n": 0}
@@ -125,7 +125,7 @@ def build_pdf(doc: SpecDoc, out_path: str, font_path: Optional[str] = None) -> s
     """
     register_fonts(font_path)
     styles = flow.make_styles()
-    flow.set_context(placeholders.build_context(doc.meta))
+    flow.set_context(placeholders.build_context(doc.meta), doc.meta)
 
     total = {"n": doc.meta.page_total or 0}
     if not doc.meta.page_total:

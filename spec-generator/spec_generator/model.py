@@ -47,11 +47,13 @@ KIND_SPEC_TABLE = "spec_table"        # 항목/사양/비고 3열 표
 KIND_VERSION_TABLE = "version_table"  # 판수관리표
 KIND_IMAGE = "image"                  # 도면/그림
 KIND_TABLE = "table"                  # 자유 표 — 열 수와 열 이름을 마음대로 (자재 리스트 등)
+KIND_NAMEPLATE = "nameplate"          # 명판 — 값을 적으면 명판 도안 위에 찍힌다
 
 KIND_LABELS = {
     KIND_TEXT: "본문 항목",
     KIND_SPEC_TABLE: "사양표",
     KIND_TABLE: "자유 표",
+    KIND_NAMEPLATE: "명판",
     KIND_IMAGE: "도면/그림",
     KIND_VERSION_TABLE: "판수관리표",
 }
@@ -184,6 +186,7 @@ class Section:
     versions: List[VersionRow] = field(default_factory=list)
     images: List[ImageItem] = field(default_factory=list)
     part_no: str = ""             # 판수관리표의 <PartNo. P1> 표기
+    layout: Dict[str, float] = field(default_factory=dict)   # 명판 등 배치 설정(%)
     headers: List[str] = field(default_factory=list)          # 표 머리글(비우면 기본값)
     col_widths_mm: List[float] = field(default_factory=list)  # 표 열 너비(비우면 기본값)
 

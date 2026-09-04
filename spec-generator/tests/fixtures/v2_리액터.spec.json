@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "app_version": "1.0",
+  "app_version": "1.1",
   "template": "reactor",
   "meta": {
     "product_name": "AC Reactor (예시)",
@@ -87,6 +87,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -264,6 +265,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -302,6 +304,7 @@
         }
       ],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -404,6 +407,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [
         "No.",
         "부품명 / Name",
@@ -413,6 +417,117 @@
         16.0,
         74.0,
         80.0
+      ]
+    },
+    {
+      "id": "2c6bf4e5",
+      "key": "nameplate",
+      "audience": "both",
+      "kind": "nameplate",
+      "numbered": true,
+      "no_override": "",
+      "bullet": "",
+      "title_ko": "명판",
+      "title_en": "Name Plate",
+      "underline": true,
+      "page_break_before": false,
+      "note": "※ 아래 값을 적으면 명판 도안 위에 찍힙니다",
+      "blocks": [
+        {
+          "indent": 1,
+          "marker": "",
+          "ko": "명판 도안(바탕 그림)을 [첨부 도면] 에 넣으면 그 위에 값이 찍힙니다. 넣지 않으면 기본 명판 모양으로 그려집니다.",
+          "en": "Attach the blank name plate artwork under [첨부 도면]; the values below are printed on top of it."
+        }
+      ],
+      "rows": [],
+      "grid": [
+        {
+          "cells": [
+            "",
+            "AC REACTOR",
+            "1.5"
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "Model",
+            "{제품명}",
+            "1.0"
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "Ratings",
+            "",
+            "1.0"
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "Inductance",
+            "",
+            "1.0"
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "Insulation Class",
+            "",
+            "1.0"
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "IP Grade",
+            "",
+            "1.0"
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "Dwg. No.",
+            "{도번}  Rev.{리비전}",
+            "1.0"
+          ],
+          "audience": "both"
+        },
+        {
+          "cells": [
+            "Mfg. No.",
+            "",
+            "1.0"
+          ],
+          "audience": "both"
+        }
+      ],
+      "versions": [],
+      "images": [],
+      "part_no": "",
+      "layout": {
+        "width_mm": 115.0,
+        "aspect": 1.93,
+        "x": 8.0,
+        "y": 24.0,
+        "line": 9.0,
+        "size": 6.5,
+        "label_w": 40.0
+      },
+      "headers": [
+        "라벨 / Label",
+        "값 / Value",
+        "크기배율"
+      ],
+      "col_widths_mm": [
+        50.0,
+        100.0,
+        20.0
       ]
     },
     {
@@ -446,6 +561,12 @@
           "marker": "",
           "ko": ".RoHS : 시험 성적서 번호      .MSDS : 자재 분류 번호 및 제조사명",
           "en": ".RoHS : test report number      .MSDS : classification number and manufacturer"
+        },
+        {
+          "indent": 1,
+          "marker": "",
+          "ko": ".RoHS : 시험 성적서 번호      .MSDS : 자재 분류 번호 및 제조사명      해당 없는 칸은 비워 두거나 N/A 로 적는다",
+          "en": ".RoHS : test report number      .MSDS : classification number and manufacturer      Leave blank or mark N/A where not applicable"
         }
       ],
       "rows": [],
@@ -608,6 +729,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [
         "No.",
         "품명 / Name",
@@ -717,6 +839,7 @@
         }
       ],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -782,6 +905,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -854,6 +978,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -912,6 +1037,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -977,6 +1103,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -1042,6 +1169,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -1107,6 +1235,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -1179,6 +1308,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -1238,6 +1368,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -1321,6 +1452,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -1362,6 +1494,7 @@
       "versions": [],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     },
@@ -1439,6 +1572,7 @@
       ],
       "images": [],
       "part_no": "",
+      "layout": {},
       "headers": [],
       "col_widths_mm": []
     }
