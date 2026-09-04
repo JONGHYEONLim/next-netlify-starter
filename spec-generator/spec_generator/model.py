@@ -201,6 +201,17 @@ class Section:
         out.grid = [r for r in out.grid if goes_to_customer(r.audience)]
         return out
 
+    def to_internal(self) -> bool:
+        return goes_to_internal(self.audience)
+
+    def internal_copy(self) -> "Section":
+        """생산용 사본 — '고객용만' 으로 표시된 표의 줄은 빼고 복사한다."""
+        import copy as _copy
+        out = _copy.deepcopy(self)
+        out.rows = [r for r in out.rows if goes_to_internal(r.audience)]
+        out.grid = [r for r in out.grid if goes_to_internal(r.audience)]
+        return out
+
     def display_name(self) -> str:
         head = self.no_override or self.bullet or ""
         title = " / ".join(x for x in (self.title_ko, self.title_en) if x)
@@ -337,6 +348,26 @@ def file_is_newer(path: str) -> int:
     except (OSError, ValueError, TypeError):
         return 0
     return version if version > SCHEMA_VERSION else 0
+
+
+def internal_sections(doc: "SpecDoc") -> List[Section]:
+    """생산 사양서에 실을 항목만 (표의 줄까지 걸러서) 뽑는다.
+
+    `approval.customer_sections()` 의 거울상이다. '고객용만' 으로 표시한 항목과
+    줄은 생산 사양서에 나오지 않아야 한다.
+    """
+    out: List[Section] = []
+    for s in doc.sections:
+        if not s.to_internal():
+            continue
+        copy_ = s.internal_copy()
+        # 표만 있고 남은 줄이 하나도 없으면서 그림·글도 없으면 뺀다
+        if copy_.kind != KIND_TEXT and not (copy_.rows or copy_.grid
+                                            or copy_.images or copy_.blocks
+                                            or copy_.versions):
+            continue
+        out.append(copy_)
+    return out
 
 
 def _pick(d: Dict[str, Any], klass) -> Dict[str, Any]:

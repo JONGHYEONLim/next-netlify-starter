@@ -69,6 +69,10 @@ class GridEditor(ttk.Frame):
         self._editor: Optional[tk.Widget] = None
         self._loading = False
         self._panel: Dict[str, tk.Widget] = {}
+        # 입력칸이 지금 담고 있는 행. 선택이 바뀌는 순간과 <FocusOut> 이 도착하는
+        # 순서가 Tk 안에서 뒤바뀔 수 있어서, 쓸 때는 '선택된 행' 이 아니라
+        # '입력칸에 실제로 실려 있는 행' 을 봐야 값이 옆줄로 복사되지 않는다.
+        self._panel_idx: Optional[int] = None
 
         bar = ttk.Frame(self)
         bar.pack(fill="x", pady=(0, 4))
@@ -151,6 +155,7 @@ class GridEditor(ttk.Frame):
         idx = self._selected_index()
         self._loading = True
         try:
+            self._panel_idx = idx
             if idx is None:
                 self._set_panel_state("disabled")
                 self.hint.configure(text="행을 선택하면 입력할 수 있습니다.  ＋행 추가 로 새 줄을 만드세요.")
@@ -172,16 +177,17 @@ class GridEditor(ttk.Frame):
     def _panel_changed(self, key: str) -> None:
         if self._loading:
             return
-        idx = self._selected_index()
-        if idx is None:
+        idx = self._panel_idx
+        if idx is None or not (0 <= idx < len(self._rows)):
             return
         w = self._panel[key]
         value = w.get("1.0", "end-1c") if isinstance(w, tk.Text) else getattr(w, "_var").get()
         if self._rows[idx].get(key, "") == value:
             return
         self._rows[idx][key] = value
-        self.tree.item(str(idx), values=[flat(str(self._rows[idx].get(k, "")))
-                                         for k in self.keys])
+        if self.tree.exists(str(idx)):
+            self.tree.item(str(idx), values=[flat(str(self._rows[idx].get(k, "")))
+                                             for k in self.keys])
         self._changed()
 
     def focus_panel(self) -> None:
@@ -481,7 +487,8 @@ class HelpWindow(tk.Toplevel):
 
         wrap = ttk.Frame(self)
         wrap.pack(fill="both", expand=True, padx=10, pady=10)
-        text = tk.Text(wrap, wrap="word", font=("Malgun Gothic", 10), padx=12, pady=10)
+        # 크기는 화면 글자 크기 설정(TkTextFont)을 따라간다
+        text = tk.Text(wrap, wrap="word", font="TkTextFont", padx=12, pady=10)
         vs = ttk.Scrollbar(wrap, orient="vertical", command=text.yview)
         text.configure(yscrollcommand=vs.set)
         text.pack(side="left", fill="both", expand=True)

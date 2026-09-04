@@ -10,7 +10,7 @@ import datetime as _dt
 import tempfile
 import tkinter as tk
 import traceback
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, font as tkfont, messagebox, ttk
 from typing import Dict, List, Optional
 
 from .. import approval as approval_mod
@@ -54,6 +54,10 @@ def save_settings(data: Dict[str, str]) -> None:
 
 DEFAULT_PATTERN = "{도번}_Rev{리비전}_{날짜}"
 
+# 화면 글자 크기(%) — 고해상도 모니터를 쓰면 기본 글자가 너무 작다.
+UI_SCALES = (90, 100, 110, 125, 150, 175, 200)
+DEFAULT_UI_SCALE = 110
+
 
 def safe_name(text: str) -> str:
     """파일·폴더 이름으로 쓸 수 없는 글자를 걸러낸다."""
@@ -85,6 +89,9 @@ class App(tk.Tk):
         self._dirty = False
         self._current: Optional[Section] = None
         self.editing_approval = False      # False=생산 사양서 구성, True=승인 정형 문구
+
+        self._base_font_sizes: Dict[str, int] = {}
+        self.apply_ui_scale(self.ui_scale(), remember=False)
 
         self._build_menu()
         self._build_body()
@@ -145,6 +152,16 @@ class App(tk.Tk):
         t.add_command(label="도번 대장 보기...", command=self.show_registry)
         t.add_command(label="쓸 수 있는 자동 입력 항목...", command=self.show_placeholders)
         t.add_separator()
+        self.scale_var = tk.IntVar(value=self.ui_scale())
+        z = tk.Menu(t, tearoff=0)
+        for pct in UI_SCALES:
+            z.add_radiobutton(label=f"{pct}%" + ("  (기본)" if pct == DEFAULT_UI_SCALE else ""),
+                              value=pct, variable=self.scale_var,
+                              command=lambda p=pct: self.apply_ui_scale(p))
+        t.add_cascade(label="화면 글자 크기 (사양서 PDF 와는 무관)", menu=z)
+        t.add_command(label="글자 크게 (Ctrl + =)", command=lambda: self.nudge_ui_scale(1))
+        t.add_command(label="글자 작게 (Ctrl + -)", command=lambda: self.nudge_ui_scale(-1))
+        t.add_separator()
         t.add_command(label="PDF 폰트 지정...", command=self.choose_font)
         t.add_command(label="폰트 설정 초기화", command=self.reset_font)
         bar.add_cascade(label="도구", menu=t)
@@ -164,6 +181,10 @@ class App(tk.Tk):
         self.bind_all("<F5>", lambda e: self.preview())
         self.bind_all("<F6>", lambda e: self.preview_approval())
         self.bind_all("<F8>", lambda e: self.pull_template_updates())
+        for seq in ("<Control-equal>", "<Control-plus>", "<Control-KP_Add>"):
+            self.bind_all(seq, lambda e: self.nudge_ui_scale(1))
+        for seq in ("<Control-minus>", "<Control-KP_Subtract>"):
+            self.bind_all(seq, lambda e: self.nudge_ui_scale(-1))
         self._rebuild_recent_menu()
 
     def _build_body(self) -> None:
@@ -1426,6 +1447,59 @@ class App(tk.Tk):
         self.settings.pop("font_path", None)
         save_settings(self.settings)
         messagebox.showinfo("폰트", "기본 폰트 자동 선택으로 되돌렸습니다.")
+
+    # ── 화면 글자 크기 ───────────────────────────────────────
+    def ui_scale(self) -> int:
+        """화면 글자 크기 (%). 사양서 PDF 의 글꼴과는 아무 상관이 없다."""
+        try:
+            pct = int(self.settings.get("ui_scale", DEFAULT_UI_SCALE))
+        except (TypeError, ValueError):
+            pct = DEFAULT_UI_SCALE
+        return max(UI_SCALES[0], min(UI_SCALES[-1], pct))
+
+    def apply_ui_scale(self, percent: int, remember: bool = True) -> None:
+        """Tk 의 기본 글꼴들을 한꺼번에 키우거나 줄인다.
+
+        고해상도 모니터에서는 기본 글자가 너무 작아 보인다. PDF 로 나가는
+        사양서 글꼴은 건드리지 않고, 프로그램 화면만 키운다.
+        """
+        percent = max(UI_SCALES[0], min(UI_SCALES[-1], int(percent)))
+        for name in ("TkDefaultFont", "TkTextFont", "TkMenuFont", "TkHeadingFont",
+                     "TkFixedFont", "TkCaptionFont", "TkSmallCaptionFont",
+                     "TkIconFont", "TkTooltipFont"):
+            try:
+                f = tkfont.nametofont(name)
+            except tk.TclError:
+                continue
+            base = self._base_font_sizes.get(name)
+            if base is None:
+                base = self._base_font_sizes[name] = int(f.cget("size") or 9)
+            # Tk 는 음수 크기를 '픽셀' 로 읽는다. 부호를 지키면서 키운다.
+            size = int(round(abs(base) * percent / 100.0)) or abs(base)
+            try:
+                f.configure(size=-size if base < 0 else size)
+            except tk.TclError:
+                pass
+
+        # 표의 줄 높이는 글자를 키워도 따라오지 않아서 직접 맞춰 준다
+        try:
+            row_h = tkfont.nametofont("TkDefaultFont").metrics("linespace") + 6
+            ttk.Style(self).configure("Treeview", rowheight=row_h)
+        except tk.TclError:
+            pass
+
+        if remember:
+            self.settings["ui_scale"] = percent
+            save_settings(self.settings)
+            if hasattr(self, "scale_var"):
+                self.scale_var.set(percent)
+            self.set_status(f"화면 글자 크기를 {percent}% 로 맞췄습니다. "
+                            "(사양서 PDF 의 글꼴은 그대로입니다)")
+
+    def nudge_ui_scale(self, step: int) -> None:
+        now = self.ui_scale()
+        i = min(range(len(UI_SCALES)), key=lambda k: abs(UI_SCALES[k] - now))
+        self.apply_ui_scale(UI_SCALES[max(0, min(len(UI_SCALES) - 1, i + step))])
 
     def toggle_update_check(self) -> None:
         self.settings["check_updates_on_open"] = bool(self.update_check_var.get())

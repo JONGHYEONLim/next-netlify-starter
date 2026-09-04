@@ -11,7 +11,7 @@ from reportlab.platypus import (BaseDocTemplate, Frame, NextPageTemplate,
                                 PageBreak, PageTemplate, Spacer)
 
 from ..fonts import register_fonts
-from ..model import SpecDoc
+from ..model import SpecDoc, internal_sections
 from .. import placeholders
 from . import approval as approval_render
 from . import cover as cover_mod
@@ -39,13 +39,16 @@ class _Doc(BaseDocTemplate):
         self.addPageTemplates(pages)
 
 
-def _story(doc: SpecDoc, styles):
-    numbers = doc.assign_numbers()
+def _story(doc: SpecDoc, styles, sections=None):
+    """조판할 flowable 목록. sections 를 주면 그것만 싣는다."""
+    if sections is None:
+        sections = doc.sections
+    numbers = doc.assign_numbers(sections)
     base_dir = doc.base_dir()
     story = []
     if doc.meta.cover:
         story += [Spacer(1, 1), NextPageTemplate("std"), PageBreak()]
-    for i, s in enumerate(doc.sections):
+    for s in sections:
         if s.page_break_before and story:
             story.append(PageBreak())
         story.extend(flow.section_flowables(s, numbers.get(s.id, ""), styles, base_dir))
@@ -127,10 +130,13 @@ def build_pdf(doc: SpecDoc, out_path: str, font_path: Optional[str] = None) -> s
     styles = flow.make_styles()
     flow.set_context(placeholders.build_context(doc.meta), doc.meta)
 
+    # '고객용만' 으로 표시한 항목·줄은 생산 사양서에 싣지 않는다.
+    sections = internal_sections(doc)
+
     total = {"n": doc.meta.page_total or 0}
     if not doc.meta.page_total:
         probe = _Doc(io.BytesIO(), doc.meta, lambda: 0, doc.base_dir())
-        probe.build(_story(doc, styles))
+        probe.build(_story(doc, styles, sections))
         content_pages = probe.page - (1 if doc.meta.cover else 0)
         total["n"] = content_pages + max(0, doc.meta.page_start - 1)
 
@@ -138,5 +144,5 @@ def build_pdf(doc: SpecDoc, out_path: str, font_path: Optional[str] = None) -> s
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
     final = _Doc(out_path, doc.meta, lambda: total["n"], doc.base_dir())
-    final.build(_story(doc, styles))
+    final.build(_story(doc, styles, sections))
     return os.path.abspath(out_path)

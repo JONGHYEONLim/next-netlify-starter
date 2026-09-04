@@ -379,6 +379,56 @@ def run() -> int:
         assert shown in text, "자유 표의 줄이 승인 사양서에 실리지 않았습니다"
         assert hidden not in text, "감춘 줄이 승인 사양서에 실렸습니다"
 
+    @check("'고객용만' 으로 표시한 항목·줄은 생산 사양서에 안 나온다")
+    def _(out=out):
+        from .model import (AUD_CUSTOMER, AUD_INTERNAL, GridRow, Section,
+                            SpecRow, KIND_SPEC_TABLE, KIND_TABLE)
+        from .render.build import build_pdf
+
+        doc = SpecDoc.load(files[-1])
+        표시 = {"항목": "ZZCUSTONLYSEC", "사양표줄": "ZZCUSTONLYROW",
+               "자유표줄": "ZZCUSTONLYCELL", "생산": "ZZINTERNALROW"}
+
+        # ① 항목 전체를 '고객용만' 으로
+        doc.sections.append(Section(kind=KIND_SPEC_TABLE, audience=AUD_CUSTOMER,
+                                    title_ko=표시["항목"],
+                                    rows=[SpecRow("보증", "2년", "", "")]))
+        # ② 사양표 안의 한 줄만 '고객용만'
+        table = next(s for s in doc.sections
+                     if s.kind == KIND_SPEC_TABLE and s.audience != AUD_CUSTOMER)
+        table.rows.append(SpecRow(표시["사양표줄"], "고객에게만", "", "", AUD_CUSTOMER))
+        table.rows.append(SpecRow(표시["생산"], "생산에만", "", "", AUD_INTERNAL))
+        # ③ 자유 표 안의 한 줄만 '고객용만'
+        grid = next(s for s in doc.sections if s.kind == KIND_TABLE)
+        n = len(grid.headers) or 3
+        grid.grid.append(GridRow([표시["자유표줄"]] + [""] * (n - 1), AUD_CUSTOMER))
+
+        pdf = build_pdf(doc, os.path.join(out, "internal_only.pdf"))
+        try:
+            import pymupdf
+        except ImportError:
+            return
+        with pymupdf.open(pdf) as d:
+            text = "".join("".join(p.get_text().split()) for p in d)
+        for 이름, 값 in 표시.items():
+            if 이름 == "생산":
+                assert 값 in text, "생산용 줄이 생산 사양서에서 빠졌습니다"
+            else:
+                assert 값 not in text, f"'고객용만' 인 {이름} 이 생산 사양서에 나왔습니다"
+
+    @check("생산 사양서의 항목 번호가 '고객용만' 을 건너뛰고 이어진다")
+    def _(out=out):
+        from .model import AUD_CUSTOMER, Block, Section, internal_sections
+
+        doc = SpecDoc.load(files[-1])
+        doc.sections.insert(1, Section(audience=AUD_CUSTOMER, title_ko="고객 전용 안내",
+                                       blocks=[Block(ko="고객에게만 드리는 말씀")]))
+        kept = internal_sections(doc)
+        assert all(s.title_ko != "고객 전용 안내" for s in kept)
+        numbers = [doc.assign_numbers(kept)[s.id] for s in kept if s.numbered]
+        assert numbers == [str(i + 1) for i in range(len(numbers))], \
+            f"번호가 이어지지 않습니다: {numbers[:6]}"
+
     @check("명판에 적은 값이 도안 위에 찍힌다")
     def _(out=out):
         from . import approval as approval_mod
