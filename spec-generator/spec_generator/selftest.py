@@ -177,6 +177,30 @@ def run() -> int:
         assert any(r.spec == keep for r in basic2.rows), "사용자가 적은 값이 덮어써졌습니다"
         assert not updater.plan(old, tpl), "두 번 실행하면 중복으로 들어갑니다"
 
+    @check("예전 판으로 저장한 문서가 자재 리스트까지 되찾는다")
+    def _():
+        from . import updater, approval
+        # v1.0 무렵의 문서: 그때는 '구조 및 부품 · 명판 · 자재 리스트' 가 없었다.
+        늦게_생긴 = ("parts", "nameplate", "materials")
+        old = templates.load_template("reactor")
+        old.sections = [s for s in old.sections if s.key not in 늦게_생긴]
+        old.schema, old.app_version = 1, "1.0"
+        tpl = templates.load_template("reactor")
+
+        p = updater.plan(old, tpl)
+        찾음 = {c.label for c in p.changes if c.kind == updater.ADD_SECTION}
+        assert "자재 리스트" in 찾음, f"자재 리스트를 찾지 못했습니다: {찾음}"
+        updater.apply(old, p.changes)
+
+        keys = [s.key for s in old.sections]
+        assert keys == [s.key for s in tpl.sections], f"항목 순서가 템플릿과 다릅니다: {keys}"
+        mat = next(s for s in old.sections if s.key == "materials")
+        assert mat.grid, "자재 리스트가 빈 채로 들어왔습니다"
+        assert "제조사 / Manufacturer" in mat.headers, "제조사 열이 빠졌습니다"
+        assert mat.to_customer(), "자재 리스트가 고객 승인서로 나가지 않습니다"
+        assert any(s.key == "materials" for s in approval.customer_sections(old)), \
+            "승인 사양서에 자재 리스트가 담기지 않았습니다"
+
     @check("업데이트한 문서도 PDF 가 나온다")
     def _(out=out):
         from . import updater

@@ -135,7 +135,12 @@ class App(tk.Tk):
         bar.add_cascade(label="출력", menu=o)
 
         t = tk.Menu(bar, tearoff=0)
-        t.add_command(label="최신 템플릿의 추가 항목 가져오기...", command=self.pull_template_updates)
+        t.add_command(label="최신 템플릿의 추가 항목 가져오기...", accelerator="F8",
+                      command=self.pull_template_updates)
+        self.update_check_var = tk.BooleanVar(
+            value=bool(self.settings.get("check_updates_on_open", True)))
+        t.add_checkbutton(label="문서를 열 때 새로 생긴 항목이 있는지 확인",
+                          variable=self.update_check_var, command=self.toggle_update_check)
         t.add_separator()
         t.add_command(label="도번 대장 보기...", command=self.show_registry)
         t.add_command(label="쓸 수 있는 자동 입력 항목...", command=self.show_placeholders)
@@ -158,6 +163,7 @@ class App(tk.Tk):
         self.bind_all("<Control-e>", lambda e: self.export_to_customer_folder())
         self.bind_all("<F5>", lambda e: self.preview())
         self.bind_all("<F6>", lambda e: self.preview_approval())
+        self.bind_all("<F8>", lambda e: self.pull_template_updates())
         self._rebuild_recent_menu()
 
     def _build_body(self) -> None:
@@ -1034,6 +1040,8 @@ class App(tk.Tk):
             self.set_status(f"열었습니다: {path}")
         except Exception as exc:
             messagebox.showerror("열기 실패", f"{exc}")
+            return
+        self.after(150, self.check_template_updates)
 
     def save(self) -> bool:
         if not self.doc.source_path:
@@ -1419,6 +1427,53 @@ class App(tk.Tk):
         save_settings(self.settings)
         messagebox.showinfo("폰트", "기본 폰트 자동 선택으로 되돌렸습니다.")
 
+    def toggle_update_check(self) -> None:
+        self.settings["check_updates_on_open"] = bool(self.update_check_var.get())
+        save_settings(self.settings)
+
+    def _update_plan(self):
+        """지금 문서에 템플릿의 새 항목이 얼마나 빠져 있는지 살펴본다."""
+        names = tpl_pkg.template_names()
+        if not names:
+            return None
+        name = self.doc.template if self.doc.template in names else names[0]
+        try:
+            return updater.plan(self.doc, tpl_pkg.load_template(name))
+        except Exception:
+            return None
+
+    def check_template_updates(self) -> None:
+        """예전에 저장한 문서를 열었을 때, 그 뒤로 생긴 항목을 알려 준다.
+
+        저장된 문서를 열자마자 마음대로 고치지는 않는다. 무엇이 들어오는지
+        먼저 보여 주고, 가져올지 말지는 쓰는 사람이 정한다.
+        """
+        if not self.settings.get("check_updates_on_open", True):
+            return
+        p = self._update_plan()
+        if not p:
+            return
+        titles = [c.label for c in p.changes if c.kind == updater.ADD_SECTION]
+        self.set_status(
+            f"새로 생긴 항목 {len(p.changes)}건을 가져올 수 있습니다. "
+            "[도구 → 최신 템플릿의 추가 항목 가져오기] 또는 F8")
+        lines = ["이 문서를 저장한 뒤에 프로그램에 새로 생긴 항목이 있습니다.",
+                 "예전 문서에도 그대로 가져올 수 있습니다.",
+                 "",
+                 f"가져올 수 있는 것: {updater.summary(p)}"]
+        if titles:
+            head = ", ".join(titles[:8])
+            if len(titles) > 8:
+                head += f" 외 {len(titles) - 8}건"
+            lines += ["", f"새 항목: {head}"]
+        lines += ["",
+                  "이미 적어 두신 값은 절대 덮어쓰지 않고, 빠진 것만 더합니다.",
+                  "가져온 뒤에는 저장을 눌러야 문서에 남습니다.",
+                  "",
+                  "지금 가져올까요?"]
+        if messagebox.askyesno("새로 생긴 항목이 있습니다", "\n".join(lines)):
+            self.pull_template_updates()
+
     def pull_template_updates(self) -> None:
         """예전에 만든 문서에 템플릿의 새 항목·새 줄을 가져온다."""
         self._commit_current()
@@ -1435,6 +1490,8 @@ class App(tk.Tk):
             self.refresh_section_list()
             self.mark_dirty()
             self.set_status(f"템플릿에서 {win.applied}건을 가져왔습니다. 확인 후 저장하세요.")
+        else:
+            self.set_status("가져온 항목이 없습니다.")
 
     def show_placeholders(self) -> None:
         messagebox.showinfo(
