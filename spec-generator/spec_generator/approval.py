@@ -16,10 +16,38 @@ import copy
 from typing import List, Optional
 
 from . import templates as tpl_pkg
-from .model import (AUD_CUSTOMER, KIND_TEXT, Section, SpecDoc)
+from .model import (AUD_CUSTOMER, KIND_SPEC_TABLE, KIND_TABLE, KIND_TEXT,
+                    Section, SpecDoc)
 
 SLOT_KEY = "_customer_content"     # 이 자리에 생산 사양서의 고객 공개 항목이 들어간다
 TEMPLATE_NAME = "approval"
+# 머리글을 따로 정하지 않은 사양표는 고객 문서에서 한·영 머리글을 쓴다
+SPEC_HEADERS_EN = ["항목\nItem", "사양\nSpecification", "비고\nRemarks"]
+
+
+def tidy_for_customer(s: Section) -> Section:
+    """고객 문서에 빈칸이 그대로 나가지 않게 정리한다 (값을 만들지는 않는다).
+
+      · 사양표: 사양 칸이 빈 줄은 뺀다 (아직 정하지 않은 값)
+      · 자유 표: 번호 말고는 비어 있는 줄을 빼고, 모든 줄이 비어 있는 열도 뺀다
+    """
+    if s.kind == KIND_SPEC_TABLE:
+        s.rows = [r for r in s.rows if r.spec.strip()]
+        if not s.headers:
+            s.headers = list(SPEC_HEADERS_EN)
+    if s.kind == KIND_TABLE and s.grid:
+        s.grid = [r for r in s.grid if any(c.strip() for c in r.cells[1:])]
+        n = len(s.headers)
+        if n and s.grid:
+            keep = [i for i in range(n)
+                    if i < 2 or any(r.cell(i).strip() for r in s.grid)]
+            if len(keep) < n:
+                if len(s.col_widths_mm) == n:
+                    s.col_widths_mm = [s.col_widths_mm[i] for i in keep]
+                s.headers = [s.headers[i] for i in keep]
+                for r in s.grid:
+                    r.cells = [r.cell(i) for i in keep]
+    return s
 
 
 def customer_sections(doc: SpecDoc) -> List[Section]:
@@ -28,7 +56,7 @@ def customer_sections(doc: SpecDoc) -> List[Section]:
     for s in doc.sections:
         if not s.to_customer():
             continue
-        copy_ = s.customer_copy()
+        copy_ = tidy_for_customer(s.customer_copy())
         # 표만 있고 남은 줄이 하나도 없으면서 그림·글도 없으면 뺀다
         if copy_.kind != KIND_TEXT and not (copy_.rows or copy_.grid
                                            or copy_.images or copy_.blocks):
@@ -74,7 +102,7 @@ def build_doc(doc: SpecDoc, template: Optional[SpecDoc] = None) -> SpecDoc:
         if s.key == SLOT_KEY:
             sections.extend(copy.deepcopy(picked))
             continue
-        sections.append(copy.deepcopy(s))
+        sections.append(tidy_for_customer(copy.deepcopy(s)))
     out.sections = sections
     return out
 

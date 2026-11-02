@@ -89,7 +89,7 @@ def section_flowables(section: Section, number: str, styles, base_dir: str) -> L
 
 
 def _heading(section: Section, number: str, styles) -> Optional[Paragraph]:
-    title = "/".join(x for x in (section.title_ko, section.title_en) if x)
+    title = " / ".join(x for x in (section.title_ko, section.title_en) if x)
     if not title:
         return None
     prefix = ""
@@ -99,9 +99,19 @@ def _heading(section: Section, number: str, styles) -> Optional[Paragraph]:
         prefix = f"{section.bullet}"
     label = _esc(prefix + title)
     text = f"<u>{label}</u>" if section.underline else label
-    if section.note:
+    if _note_for_print(section):
         text += f'&nbsp;&nbsp;&nbsp;&nbsp;<font size="9">{_esc(section.note)}</font>'
     return Paragraph(text, styles["heading"])
+
+
+def _note_for_print(section: Section) -> bool:
+    """'아래 도면 참조' 같은 주기는 그 항목에 도면이 실제로 있을 때만 찍는다."""
+    note = (section.note or "").strip()
+    if not note:
+        return False
+    if any(w in note for w in ("아래 도면", "아래 그림")) and not section.images:
+        return False
+    return True
 
 
 def _body(section: Section, styles, base_dir: str) -> List:
@@ -166,6 +176,15 @@ def _widths(section: Section, default: List[float]) -> List[float]:
     return [x * scale * mm for x in w]
 
 
+def _remark_for_print(spec: str, remark: str) -> str:
+    """템플릿 비고 칸의 단위('Hz', 'Arms')가 사양에 이미 붙어 있으면 비고는 비운다."""
+    from ..placeholders import apply as _apply
+    s, r = _apply(spec or "", _CTX).strip(), _apply(remark or "", _CTX).strip()
+    if r and s.endswith(r):
+        return ""
+    return remark
+
+
 def _spec_table(section: Section, styles) -> Table:
     headers = section.headers or SPEC_HEADERS
     data = [[Paragraph(_multiline(h), styles["cell_h"]) for h in headers]]
@@ -174,7 +193,7 @@ def _spec_table(section: Section, styles) -> Table:
         data.append([
             Paragraph(item, styles["cell"]),
             Paragraph(_multiline(r.spec), styles["cell"]),
-            Paragraph(_multiline(r.remark), styles["cell_l"]),
+            Paragraph(_multiline(_remark_for_print(r.spec, r.remark)), styles["cell_l"]),
         ])
     t = Table(data, colWidths=_widths(section, SPEC_WIDTHS), repeatRows=1)
     t.setStyle(TableStyle([
@@ -359,7 +378,12 @@ class NamePlate(Flowable):
         self._w = self._h = 0.0
 
     BOTTOM_MARGIN = 0.14          # 아래쪽 제조사 표기를 위해 비워 두는 비율
+    BLANK_BOTTOM_MARGIN = 0.25    # 기본 명판은 우측 하단에 'Manufacturer / 회사명' 을 그린다
     _shrink = 1.0
+
+    def _bottom_margin(self) -> float:
+        # 바탕 그림이 없으면 _draw_blank 가 그리는 제조사 표기(높이 약 0.22)와 겹치지 않게 비운다
+        return self.BOTTOM_MARGIN if self.bg is not None else self.BLANK_BOTTOM_MARGIN
 
     def _body_fraction(self) -> float:
         """줄들이 차지하는 높이 — 명판 높이에 대한 비율."""
@@ -377,7 +401,7 @@ class NamePlate(Flowable):
 
         # 글자 크기·줄 간격이 모두 명판 높이의 비율이므로, 명판을 키워도
         # 글자가 같이 커진다. 따라서 넘칠 때는 글자를 줄여서 맞춘다.
-        avail = max(1.0 - self.cfg["y"] / 100.0 - self.BOTTOM_MARGIN, 0.05)
+        avail = max(1.0 - self.cfg["y"] / 100.0 - self._bottom_margin(), 0.05)
         body = self._body_fraction()
         self._shrink = min(1.0, avail / body) if body > 0 else 1.0
 

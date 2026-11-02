@@ -196,7 +196,7 @@ def run() -> int:
         assert keys == [s.key for s in tpl.sections], f"항목 순서가 템플릿과 다릅니다: {keys}"
         mat = next(s for s in old.sections if s.key == "materials")
         assert mat.grid, "자재 리스트가 빈 채로 들어왔습니다"
-        assert "제조사 / Manufacturer" in mat.headers, "제조사 열이 빠졌습니다"
+        assert any("Manufacturer" in h for h in mat.headers), "제조사 열이 빠졌습니다"
         assert mat.to_customer(), "자재 리스트가 고객 승인서로 나가지 않습니다"
         assert any(s.key == "materials" for s in approval.customer_sections(old)), \
             "승인 사양서에 자재 리스트가 담기지 않았습니다"
@@ -365,7 +365,7 @@ def run() -> int:
         shown = "ZZSHOWN"
         hidden = "ZZHIDDEN"
         n = len(target.headers)
-        target.grid.append(GridRow([shown] + [""] * (n - 1)))
+        target.grid.append(GridRow(["99", shown] + [""] * (n - 2)))
         target.grid.append(GridRow([hidden] + [""] * (n - 1), AUD_INTERNAL))
 
         pdf = build_approval_pdf(approval_mod.build_doc(doc),
@@ -519,9 +519,57 @@ def run() -> int:
         plate = NamePlate(rows, {"width_mm": 110, "aspect": 1.93}, None, ".")
         w, h = plate.wrap(170 * MM, 240 * MM)
         used = h * plate.cfg["y"] / 100.0 + plate._body_fraction() * h * plate._shrink
-        limit = h * (1.0 - plate.BOTTOM_MARGIN) + 0.5
+        limit = h * (1.0 - plate._bottom_margin()) + 0.5
         assert used <= limit, f"명판 글자가 넘칩니다 ({used:.1f} > {limit:.1f})"
         assert plate._shrink <= 1.0
+
+    @check("입력 안내는 PDF 에 찍히지 않는다 (예전 문서도)")
+    def _(out=out):
+        from . import approval as approval_mod
+        from .render.build import build_approval_pdf
+        for path in files + [None]:
+            doc = SpecDoc.load(path) if path else templates.load_template("reactor")
+            pdf = build_pdf(doc, os.path.join(out, "hint_p.pdf"))
+            pdf2 = build_approval_pdf(approval_mod.build_doc(doc),
+                                      os.path.join(out, "hint_a.pdf"), source=doc)
+            try:
+                import pymupdf
+            except ImportError:
+                return
+            for f in (pdf, pdf2):
+                with pymupdf.open(f) as d:
+                    text = "".join(p.get_text() for p in d)
+                for word in ("자동으로 들어갑니다", "[첨부 도면]", "명판 도안 위에 찍힙니다"):
+                    assert word not in text, f"{os.path.basename(path or 'reactor')}: 안내 문구 '{word}' 가 인쇄됐습니다"
+
+    @check("승인 사양서에 빈 줄·빈 열이 나가지 않는다")
+    def _():
+        from . import approval as approval_mod
+        from .model import AUD_BOTH, KIND_SPEC_TABLE, KIND_TABLE
+        doc = templates.load_template("reactor")
+        for s in doc.sections:
+            if s.key == "basic_spec":
+                s.audience = AUD_BOTH
+                s.rows[4].spec = "1.0 mH"
+        a = approval_mod.build_doc(doc)
+        basic = next(s for s in a.sections if s.key == "basic_spec")
+        assert all(r.spec.strip() for r in basic.rows), "사양이 빈 줄이 실렸습니다"
+        assert basic.rows, "값을 적은 줄까지 빠졌습니다"
+        mat = next(s for s in a.sections if s.key == "materials")
+        assert "MSDS" not in mat.headers, "비어 있는 열(MSDS)이 실렸습니다"
+        assert all(len(r.cells) == len(mat.headers) for r in mat.grid), "열 수가 어긋났습니다"
+        assert all(any(c.strip() for c in r.cells[1:]) for r in mat.grid), "번호만 있는 줄이 실렸습니다"
+        for s in a.sections:
+            if s.kind == KIND_SPEC_TABLE:
+                assert all(r.spec.strip() for r in s.rows), f"{s.title_ko}: 빈 줄"
+
+    @check("명령줄에서 승인 사양서도 함께 만든다")
+    def _(out=out):
+        from .__main__ import main as cli
+        src = files[-1]
+        p1, p2 = os.path.join(out, "cli_p.pdf"), os.path.join(out, "cli_a.pdf")
+        assert cli(["build", src, "-o", p1, "-a", p2]) == 0
+        assert os.path.exists(p1) and os.path.exists(p2), "PDF 가 만들어지지 않았습니다"
 
     @check("승인 사양서 정형 문구를 문서에서 고칠 수 있다")
     def _(out=out):

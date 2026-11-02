@@ -148,6 +148,7 @@ PDF 를 만들 때 ① 기본정보 값으로 자동으로 바뀝니다.
 
 ```bash
 python -m spec_generator build samples/예제_리액터_475A.spec.json -o 출력.pdf
+python -m spec_generator build 문서.spec.json -o 생산.pdf -a 승인.pdf   # 고객 승인 사양서도 함께
 python -m spec_generator templates          # 템플릿 목록
 python -m spec_generator selftest           # 호환성 자체 점검
 ```

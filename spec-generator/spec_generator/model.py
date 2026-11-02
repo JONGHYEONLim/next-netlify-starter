@@ -180,6 +180,7 @@ class Section:
     underline: bool = True
     page_break_before: bool = False
     note: str = ""                # 제목 오른쪽 또는 아래에 붙는 ※ 주기
+    hint: str = ""                # 입력 안내 — 화면에만 보이고 PDF 에는 찍히지 않는다
     blocks: List[Block] = field(default_factory=list)
     rows: List[SpecRow] = field(default_factory=list)
     grid: List[GridRow] = field(default_factory=list)      # 자유 표의 행
@@ -267,7 +268,9 @@ class SpecDoc:
                 sd["versions"] = [VersionRow(**_pick(r, VersionRow))
                                   for r in sd.get("versions") or []]
                 sd["images"] = [ImageItem(**_pick(i, ImageItem)) for i in sd.get("images") or []]
-                out.append(Section(**_pick(sd, Section)))
+                sec = Section(**_pick(sd, Section))
+                _move_old_hints(sec)
+                out.append(sec)
             return out
 
         return cls(schema=SCHEMA_VERSION, app_version=str(d.get("app_version") or ""),
@@ -303,6 +306,43 @@ class SpecDoc:
             n += 1
             out[s.id] = str(n)
         return out
+
+
+# v1.0~1.5 템플릿은 입력 안내를 '※ 주기' 나 본문 줄에 넣어 두어 PDF 에 그대로 찍혔다.
+# 문서를 열 때 이 문구들을 화면 전용 안내(hint)로 옮긴다. 사용자가 직접 쓴 주기는 건드리지 않는다.
+_OLD_HINT_NOTES = (
+    "※ 고객사·품명·모델·정격전류는 ① 기본정보 값이 자동으로 들어갑니다",
+    "※ 번호는 아래 도면의 풍선 번호와 같습니다",
+    "※ 아래 값을 적으면 명판 도안 위에 찍힙니다",
+    "※ 보빈 가공도 등 필요한 도면을 [첨부 도면] 에 넣으세요",
+)
+_OLD_HINT_BLOCKS = (
+    "명판 도안(바탕 그림)을 [첨부 도면]",
+    ".RoHS : 시험 성적서 번호",
+)
+
+
+def _squash(text: str) -> str:
+    return "".join((text or "").split())
+
+
+def _move_old_hints(s: "Section") -> None:
+    found: List[str] = []
+    if s.note and _squash(s.note) in {_squash(x) for x in _OLD_HINT_NOTES}:
+        found.append(s.note.lstrip("※ ").strip())
+        s.note = ""
+    kept: List[Block] = []
+    for b in s.blocks:
+        if any(_squash(b.ko).startswith(_squash(p)) for p in _OLD_HINT_BLOCKS):
+            found.append(" ".join(b.ko.split()))
+            continue
+        kept.append(b)
+    if len(kept) != len(s.blocks):
+        while kept and not (kept[-1].ko or kept[-1].en):   # 안내 앞에 띄워 둔 빈 줄도 정리
+            kept.pop()
+        s.blocks = kept
+    if found:
+        s.hint = "\n".join(x for x in [s.hint] + found if x)
 
 
 # v1 에서 일본어 병기용으로 쓰던 키 → 현재 한국어 키

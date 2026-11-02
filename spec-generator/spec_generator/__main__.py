@@ -4,6 +4,7 @@
   python -m spec_generator                     GUI 실행
   python -m spec_generator file.spec.json      해당 문서를 열고 GUI 실행
   python -m spec_generator build in.spec.json -o out.pdf     GUI 없이 PDF 생성
+  python -m spec_generator build in.spec.json -o out.pdf -a approval.pdf   승인 사양서도 함께
   python -m spec_generator templates           사용 가능한 템플릿 목록
   python -m spec_generator selftest            호환성 자체 점검 (예전 문서가 열리는지)
 """
@@ -45,13 +46,18 @@ def main(argv=None) -> int:
         p.add_argument("input", help="사양서 프로젝트 파일(.spec.json)")
         p.add_argument("-o", "--output", help="출력 PDF 경로")
         p.add_argument("--font", help="PDF에 사용할 폰트 파일 경로")
+        p.add_argument("-a", "--approval", help="고객 승인 사양서 PDF 경로 (주면 함께 만든다)")
         args = p.parse_args(argv[1:])
 
         from .model import SpecDoc
-        from .render.build import build_pdf
+        from .render.build import build_both, build_pdf
         doc = SpecDoc.load(args.input)
         out = args.output or os.path.splitext(os.path.splitext(args.input)[0])[0] + ".pdf"
-        print(build_pdf(doc, out, args.font))
+        if args.approval:
+            for path in build_both(doc, out, args.approval, args.font):
+                print(path)
+        else:
+            print(build_pdf(doc, out, args.font))
         return 0
 
     from .gui.app import main as gui_main

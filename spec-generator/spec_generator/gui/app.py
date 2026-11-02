@@ -438,6 +438,10 @@ class App(tk.Tk):
         sfg.add("note", "제목 옆 주기(※)", 40, span=2)
         for var in sfg.vars.values():
             var.trace_add("write", lambda *a: self._commit_current(mark=True))
+        # 입력 안내 — 화면에만 보이고 PDF 에는 찍히지 않는다
+        self.hint_var = tk.StringVar(value="")
+        ttk.Label(head, textvariable=self.hint_var, foreground="#666666",
+                  wraplength=640, justify="left").pack(fill="x", padx=8, pady=(0, 6))
 
         self.body_area = ttk.LabelFrame(right, text="내용")
         self.body_area.pack(fill="both", expand=True, pady=(6, 0))
@@ -584,6 +588,7 @@ class App(tk.Tk):
         sfg.set("page_break_before", section.page_break_before)
         sfg.set("note", section.note)
         sfg.set("audience", AUDIENCE_LABELS.get(section.audience, AUDIENCE_LABELS[AUD_INTERNAL]))
+        self.hint_var.set(f"안내 (인쇄 안 됨) : {section.hint}" if section.hint else "")
 
         self._clear_body()
         if section.kind == KIND_SPEC_TABLE:
